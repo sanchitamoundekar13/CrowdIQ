@@ -283,27 +283,27 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
   // =========================================================================
   if (!isAdminAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4 text-[#F8FAFC]">
-        <div className="w-full max-w-md bg-[#1E293B] border border-[#334155] rounded-2xl p-8 shadow-2xl space-y-6">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 text-[#0F172A]">
+        <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-xl space-y-6">
           
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-[#2563EB]/20 border border-[#3B82F6]/40 text-[#60A5FA] flex items-center justify-center mx-auto shadow-inner">
+            <div className="w-16 h-16 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] flex items-center justify-center mx-auto shadow-xs">
               <Lock className="w-8 h-8" />
             </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#93C5FD] text-[10px] font-mono uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] animate-pulse"></span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] text-[10px] font-mono uppercase tracking-wider font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] animate-pulse"></span>
               MASTER ROOT GATEWAY
             </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
               Master Admin Console
             </h1>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Dedicated high-clearance administrative environment. Root access grants total authority to inject data, manipulate CCTV matrices, and dispatch security forces.
             </p>
           </div>
 
           {authError && (
-            <div className="p-3 rounded-lg bg-[#EF4444]/20 border border-[#EF4444]/50 text-[#FCA5A5] text-xs font-mono flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FCA5A5] text-[#DC2626] text-xs font-mono flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{authError}</span>
             </div>
@@ -311,16 +311,16 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
 
           <form onSubmit={handleAuthSubmit} className="space-y-4 text-xs font-mono">
             <div>
-              <label className="block text-[#94A3B8] uppercase font-bold mb-1">
+              <label className="block text-[#475569] uppercase font-bold mb-1">
                 Root Security Passcode / Cryptographic Token
               </label>
               <div className="relative">
-                <Key className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
+                <Key className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" />
                 <input
                   type="password"
                   value={masterPasscode}
                   onChange={(e) => setMasterPasscode(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#0F172A] border border-[#334155] text-white focus:outline-hidden focus:border-[#3B82F6]"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] text-[#0F172A] focus:outline-hidden focus:border-[#2563EB] focus:bg-white placeholder:text-[#94A3B8]"
                   placeholder="MASTER-ROOT-2026"
                   required
                 />
@@ -337,11 +337,11 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
           </form>
 
           {/* Quick Demo Access Button */}
-          <div className="pt-3 border-t border-[#334155] space-y-2">
+          <div className="pt-3 border-t border-[#E2E8F0] space-y-2">
             <button
               type="button"
               onClick={handleQuickUnlock}
-              className="w-full py-2 rounded-lg bg-[#10B981]/15 hover:bg-[#10B981]/25 border border-[#10B981]/40 text-[#6EE7B7] text-xs font-mono font-bold transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-lg bg-[#F0FDF4] hover:bg-[#DCFCE7] border border-[#BBF7D0] text-[#16A34A] text-xs font-mono font-bold transition cursor-pointer flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-4 h-4" />
               <span>1-Click Unlock Master Root Session</span>
@@ -351,7 +351,7 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
               <button
                 type="button"
                 onClick={() => onNavigate('overview')}
-                className="w-full py-2 text-center text-xs text-[#94A3B8] hover:text-white transition font-mono cursor-pointer"
+                className="w-full py-2 text-center text-xs text-[#64748B] hover:text-[#0F172A] transition font-mono cursor-pointer"
               >
                 ← Return to Public Surveillance Platform
               </button>
@@ -370,17 +370,17 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-[#0F172A]">
       
       {/* Top Standalone Master Command Bar */}
-      <header className="bg-[#0F172A] text-white border-b border-[#1E293B] sticky top-0 z-40 px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="bg-white text-[#0F172A] border-b border-[#E2E8F0] sticky top-0 z-40 px-4 sm:px-6 h-16 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
         
         {/* Left: Root Brand & Clearance Stamp */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shadow-md">
+          <div className="w-9 h-9 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shadow-xs">
             <ShieldCheck className="w-5 h-5" strokeWidth={2.4} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight font-mono">
-                Crowd<span className="text-[#3B82F6]">IQ</span>
+              <span className="font-extrabold text-base tracking-tight font-mono text-[#0F172A]">
+                Crowd<span className="text-[#2563EB]">IQ</span>
               </span>
               <span className="text-[10px] font-mono font-bold bg-[#EF4444] text-white px-1.5 py-0.2 rounded uppercase">
                 ROOT MASTER
@@ -389,25 +389,25 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
                 Clearance: Level 5
               </span>
             </div>
-            <p className="text-[10px] text-[#94A3B8] font-mono">
+            <p className="text-[10px] text-[#64748B] font-mono">
               Centralized Infrastructure, Data Ingestion & Force Dispatch Console
             </p>
           </div>
         </div>
 
         {/* Center: Live Telemetry Micro-Badges */}
-        <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-[#94A3B8]">
-          <div className="flex items-center gap-1.5">
-            <Cpu className="w-3.5 h-3.5 text-[#3B82F6]" />
-            <span>CPU: <strong className="text-white">{diagnostics.cpuLoad}%</strong></span>
+        <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-[#64748B]">
+          <div className="flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-1 rounded-md">
+            <Cpu className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>CPU: <strong className="text-[#0F172A]">{diagnostics.cpuLoad}%</strong></span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5 text-[#10B981]" />
-            <span>Inference: <strong className="text-white">{diagnostics.inferenceLatency}</strong></span>
+          <div className="flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-1 rounded-md">
+            <Activity className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Inference: <strong className="text-[#0F172A]">{diagnostics.inferenceLatency}</strong></span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span>Node Clock: <strong className="text-white">{currentTime}</strong></span>
+          <div className="flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-1 rounded-md">
+            <Clock className="w-3.5 h-3.5 text-[#D97706]" />
+            <span>Node Clock: <strong className="text-[#0F172A]">{currentTime}</strong></span>
           </div>
         </div>
 
@@ -416,9 +416,9 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
           {onNavigate && (
             <button
               onClick={() => onNavigate('dashboard')}
-              className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-xs font-mono font-semibold text-white transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-xs font-mono font-semibold text-[#0F172A] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <Eye className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <Eye className="w-3.5 h-3.5 text-[#2563EB]" />
               <span className="hidden sm:inline">Live Operations</span>
             </button>
           )}
@@ -426,16 +426,16 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
           {onNavigate && (
             <button
               onClick={() => onNavigate('overview')}
-              className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-xs font-mono font-semibold text-white transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-xs font-mono font-semibold text-[#0F172A] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-[#A78BFA]" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#7C3AED]" />
               <span className="hidden sm:inline">Exit to Platform</span>
             </button>
           )}
 
           <button
             onClick={logoutAdmin}
-            className="px-3 py-1.5 rounded-lg bg-[#EF4444]/20 hover:bg-[#EF4444]/30 border border-[#EF4444]/40 text-[#FCA5A5] text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] border border-[#FCA5A5] text-[#DC2626] text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Lock</span>
@@ -970,7 +970,7 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
                     <div key={cam.id} className="p-3 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-xs font-mono flex items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded bg-[#0F172A] text-white font-bold text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#0F172A] font-bold text-[10px]">
                             {cam.camNumber}
                           </span>
                           <strong className="text-[#0F172A]">{cam.name}</strong>
@@ -1537,8 +1537,8 @@ export function MasterAdminPortal({ onNavigate }: { onNavigate?: (route: string)
               </p>
 
               {/* Code Mirror Preview */}
-              <div className="bg-[#0F172A] rounded-xl p-4 overflow-x-auto max-h-[380px] border border-[#334155]">
-                <pre className="text-emerald-400 font-mono text-[11px] leading-relaxed">
+              <div className="bg-[#F8FAFC] rounded-xl p-4 overflow-x-auto max-h-[380px] border border-[#CBD5E1] shadow-inner">
+                <pre className="text-[#0F172A] font-mono text-[11px] leading-relaxed">
                   {JSON.stringify({
                     platform: 'CrowdIQ',
                     clearance: 'ROOT_MASTER_ACCESS',
