@@ -85,9 +85,6 @@ export function RiskAlertSystemSection() {
         
         {/* Section Header */}
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-xs font-bold text-[#2563EB] mb-3">
-            <span>INCIDENT MANAGEMENT & CLASSIFICATION</span>
-          </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0F172A] tracking-tight">
             Risk & Alert Classification System
           </h2>
@@ -132,9 +129,6 @@ export function RiskAlertSystemSection() {
               <h3 className="text-base font-bold text-[#0F172A]">Real-Time Security Incident Dispatch Log</h3>
               <p className="text-xs text-[#64748B]">Active surveillance triggers logged from edge vision streams</p>
             </div>
-            <span className="text-xs font-mono text-[#2563EB] bg-[#EFF6FF] px-2.5 py-1 rounded font-semibold self-start sm:self-auto">
-              OPERATIONS DESK
-            </span>
           </div>
 
           <div className="overflow-x-auto">
