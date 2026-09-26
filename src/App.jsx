@@ -162,8 +162,9 @@ function AppContent() {
                   <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded">
                     Operations Platform
                   </span>
-                  <span className="text-[11px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded border border-[#E2E8F0]">
-                    DEMO SIMULATION
+                  <span className="text-[11px] font-semibold text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+                    LIVE TELEMETRY ACTIVE
                   </span>
                 </div>
                 <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight mt-1">

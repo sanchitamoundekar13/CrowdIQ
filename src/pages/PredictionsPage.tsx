@@ -33,8 +33,9 @@ export const PredictionsPage: React.FC = () => {
           </p>
         </div>
 
-        <span className="px-3 py-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] font-mono text-xs font-semibold flex items-center gap-2">
-          <span>DEMO PREDICTIVE SIMULATION</span>
+        <span className="px-3 py-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] font-mono text-xs font-semibold flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] animate-pulse"></span>
+          <span>AI PREDICTIVE RADAR ACTIVE</span>
         </span>
       </div>
 

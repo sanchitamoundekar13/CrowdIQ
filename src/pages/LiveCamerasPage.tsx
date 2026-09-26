@@ -99,8 +99,9 @@ export const LiveCamerasPage: React.FC = () => {
             <Radio className="h-3.5 w-3.5 text-[#16A34A] animate-pulse" />
             3 of 4 Streams Active
           </span>
-          <span className="px-3 py-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] font-semibold font-mono">
-            DEMO SIMULATION
+          <span className="px-3 py-1.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] font-semibold font-mono flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+            EDGE VISION ACTIVE
           </span>
         </div>
       </div>

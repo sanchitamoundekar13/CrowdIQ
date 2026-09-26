@@ -46,8 +46,9 @@ export function LiveCrowdMonitoringPreview({ onLaunchFullConsole, onJumpToSimula
                 <span className="text-[11px] font-bold font-mono tracking-wider uppercase text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded">
                   Control Room Telemetry
                 </span>
-                <span className="text-[11px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded border border-[#E2E8F0]">
-                  DEMO SIMULATION
+                <span className="text-[11px] font-semibold text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+                  LIVE INFERENCE
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight mt-1">
@@ -61,13 +62,6 @@ export function LiveCrowdMonitoringPreview({ onLaunchFullConsole, onJumpToSimula
                 <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
                 <span>SYSTEM ONLINE</span>
               </div>
-
-              <button
-                onClick={onJumpToSimulation}
-                className="px-3.5 py-1.5 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-xs font-semibold text-[#0F172A] shadow-sm transition-colors cursor-pointer"
-              >
-                Interactive Controls ↓
-              </button>
 
               <button
                 onClick={onLaunchFullConsole}

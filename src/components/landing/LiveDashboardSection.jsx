@@ -29,12 +29,6 @@ export function LiveDashboardSection() {
     selectZone,
     cameraFeeds,
     alerts,
-    stage,
-    isSimulating,
-    startSurgeSimulation,
-    resetSimulation,
-    approveRecommendation,
-    recommendationApproved,
     totalPeople,
     averageDensity,
     activeAlertsCount,
@@ -43,20 +37,6 @@ export function LiveDashboardSection() {
 
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'heatmap' | 'cameras' | 'alerts'
   const [selectedCameraId, setSelectedCameraId] = useState('cam-02');
-
-  // Progression display mapping
-  const stages = [
-    { key: 'NORMAL', label: 'NORMAL' },
-    { key: 'BUILDING', label: 'MODERATE DENSITY' },
-    { key: 'WARNING', label: 'HIGH DENSITY' },
-    { key: 'CRITICAL', label: 'CRITICAL CONGESTION' }
-  ];
-
-  const currentStageIndex = 
-    stage === 'CRITICAL' ? 3 :
-    stage === 'WARNING' ? 2 :
-    stage === 'BUILDING' ? 1 :
-    stage === 'RECOVERY' || stage === 'SAFE' ? 0 : 0;
 
   // Zone color styling based on safety thresholds
   const getZoneStyle = (density, isSelected) => {
@@ -95,15 +75,16 @@ export function LiveDashboardSection() {
     <section className="bg-white py-12 lg:py-16 border-b border-[#E2E8F0]" id="live-dashboard">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Section Header with Demo Simulation Notice */}
+        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold font-mono tracking-wider text-[#2563EB] uppercase">
-                Interactive Surveillance Suite
+                Intelligent Surveillance Suite
               </span>
-              <span className="text-[11px] font-bold text-[#DC2626] bg-[#FEF2F2] border border-[#FCA5A5] px-2 py-0.5 rounded">
-                DEMO SIMULATION
+              <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+                LIVE TELEMETRY ACTIVE
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-1">
@@ -114,99 +95,13 @@ export function LiveDashboardSection() {
             </p>
           </div>
 
-          {/* Simulation Control Bar */}
-          <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl p-3 flex flex-wrap items-center gap-3 shadow-sm">
-            <button
-              onClick={startSurgeSimulation}
-              disabled={isSimulating || (stage !== 'NORMAL' && stage !== 'SAFE')}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                stage === 'NORMAL' || stage === 'SAFE'
-                  ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm active:scale-95'
-                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
-              }`}
-            >
-              <Play className={`w-3.5 h-3.5 fill-current ${isSimulating ? 'animate-spin' : ''}`} />
-              <span>{isSimulating ? 'Simulating Surge...' : 'Start Simulation'}</span>
-            </button>
-
-            <button
-              onClick={resetSimulation}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-xs font-semibold text-[#475569] transition-colors cursor-pointer"
-              title="Reset to baseline"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Simulation Progression Stepper */}
-        <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-[#E2E8F0]">
-            <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wide flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#2563EB]" />
-              Simulation Lifecycle Progression
-            </span>
-            <span className="text-xs text-[#64748B]">
-              Current Stage: <strong className="text-[#0F172A]">{stage}</strong>
+          <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-4 py-2.5 flex items-center gap-3 text-xs font-mono shadow-xs">
+            <span className="text-[#64748B]">Venue Telemetry:</span>
+            <span className="font-bold text-[#16A34A] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
+              All 4 Sectors Online
             </span>
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {stages.map((st, idx) => {
-              const isActive = idx === currentStageIndex;
-              const isPast = idx < currentStageIndex;
-              return (
-                <div 
-                  key={st.key}
-                  className={`p-2.5 rounded-lg border text-center transition-all ${
-                    isActive
-                      ? idx === 3 
-                        ? 'bg-[#FEF2F2] border-[#DC2626] text-[#DC2626] font-bold'
-                        : idx === 2
-                        ? 'bg-[#FFFBEB] border-[#F59E0B] text-[#D97706] font-bold'
-                        : 'bg-[#EFF6FF] border-[#2563EB] text-[#2563EB] font-bold'
-                      : isPast
-                      ? 'bg-white border-[#CBD5E1] text-[#64748B]'
-                      : 'bg-white/50 border-[#E2E8F0] text-[#94A3B8]'
-                  }`}
-                >
-                  <div className="text-[10px] font-mono uppercase mb-0.5">Stage 0{idx + 1}</div>
-                  <div className="text-xs">{st.label}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Intervention Callout when Congestion Occurs */}
-          {(stage === 'CRITICAL' || stage === 'WARNING') && !recommendationApproved && (
-            <div className="mt-4 p-3.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-5 h-5 text-[#D97706] shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-bold text-[#92400E]">
-                    Automated Hazard Mitigator: Inflow Overload at Gate B
-                  </div>
-                  <div className="text-xs text-[#B45309]">
-                    Recommendation: Deploy Security Team 04 to Gate B turnstiles & redirect 40% inflow to Gate C.
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={approveRecommendation}
-                className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
-              >
-                Approve & Execute Reroute
-              </button>
-            </div>
-          )}
-
-          {stage === 'SAFE' && (
-            <div className="mt-4 p-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] flex items-center gap-2 text-xs font-semibold text-[#16A34A]">
-              <CheckCircle className="w-4 h-4 shrink-0" />
-              <span>Congestion averted successfully! Crowd density at Gate B normalized to 68% and flow stabilized.</span>
-            </div>
-          )}
         </div>
 
         {/* Part A: 6 Overview Metrics */}
