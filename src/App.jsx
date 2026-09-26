@@ -1,62 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { SimulationProvider } from './context/SimulationContext';
+import { AuthProvider } from './context/AuthContext';
+import { SimulationProvider, useSimulation } from './context/SimulationContext';
 import { ToastContainer } from './components/common/ToastContainer.tsx';
 import { EmergencyOverlay } from './components/emergency/EmergencyOverlay.tsx';
+import { DatabaseStatusModal } from './components/common/DatabaseStatusModal.tsx';
+import { ProfileModal } from './components/common/ProfileModal.tsx';
 
-// Light-Theme Sticky Navbar and Platform Sections
+// Clean Operational Navigation & Footer
 import { CrowdIQNavbar } from './components/landing/CrowdIQNavbar';
-import { CrowdIQHero } from './components/landing/CrowdIQHero';
-import { LiveCrowdMonitoringPreview } from './components/landing/LiveCrowdMonitoringPreview';
-import { LiveDashboardSection } from './components/landing/LiveDashboardSection';
-import { ProblemSolutionSection } from './components/landing/ProblemSolutionSection';
-import { HowCrowdIQWorks } from './components/landing/HowCrowdIQWorks';
-import { ComputerVisionSection } from './components/landing/ComputerVisionSection';
-import { RiskAlertSystemSection } from './components/landing/RiskAlertSystemSection';
-import { VenueIntelligenceSection } from './components/landing/VenueIntelligenceSection';
-import { TechnologySection } from './components/landing/TechnologySection';
 import { CrowdIQFooter } from './components/landing/CrowdIQFooter';
-import { RequestDemoModal } from './components/landing/RequestDemoModal';
 
-// Dedicated Platform Application Pages
+// Operational Platform Pages
 import { CommandCenterPage } from './pages/CommandCenterPage.tsx';
+import { LiveDashboardSection } from './components/landing/LiveDashboardSection';
 import { LiveCamerasPage } from './pages/LiveCamerasPage.tsx';
+import { EventsPage } from './pages/EventsPage.tsx';
 import { VenueMapPage } from './pages/VenueMapPage.tsx';
-import { AlertsPage } from './pages/AlertsPage.tsx';
-import { PredictionsPage } from './pages/PredictionsPage.tsx';
 import { AnalyticsPage } from './pages/AnalyticsPage.tsx';
-import { SecurityTeamsPage } from './pages/SecurityTeamsPage.tsx';
-import { SettingsPage } from './pages/SettingsPage.tsx';
-
-import { 
-  Shield, 
-  Activity, 
-  Map, 
-  TrendingUp, 
-  Users, 
-  Settings, 
-  ArrowRight, 
-  CheckCircle2, 
-  Radio, 
-  ExternalLink 
-} from 'lucide-react';
+import { AlertsPage } from './pages/AlertsPage.tsx';
+import { IncidentsPage } from './pages/IncidentsPage.tsx';
+import { ReportsPage } from './pages/ReportsPage.tsx';
+import { AboutPage } from './pages/AboutPage.tsx';
+import { AdminPortalPage } from './pages/AdminPortalPage.tsx';
 
 function AppContent() {
-  // Synchronize route with URL hash for GitHub Pages direct navigation & bookmarking
+  // Synchronize route with URL hash for seamless direct navigation & bookmarking
   const getRouteFromHash = () => {
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-    if (['dashboard', 'console', 'command-center'].includes(hash)) return 'dashboard';
-    if (['monitoring', 'live-monitoring', 'cameras'].includes(hash)) return 'monitoring';
-    if (['dispatch', 'security-dispatch', 'security', 'track'].includes(hash)) return 'dispatch';
-    if (['analytics'].includes(hash)) return 'analytics';
-    if (['alerts', 'incidents'].includes(hash)) return 'alerts';
-    if (['how-it-works', 'howitworks'].includes(hash)) return 'how-it-works';
-    if (['technology', 'tech'].includes(hash)) return 'technology';
-    return 'overview';
+    if (['admin', 'admin-portal'].includes(hash)) return 'admin';
+    if (['monitoring', 'live-monitor', 'cameras'].includes(hash)) return 'monitoring';
+    if (['events', 'event', 'schedule'].includes(hash)) return 'events';
+    if (['zones', 'sectors', 'map'].includes(hash)) return 'zones';
+    if (['analytics', 'trends', 'flow'].includes(hash)) return 'analytics';
+    if (['alerts', 'alerts-events'].includes(hash)) return 'alerts';
+    if (['incidents', 'incident', 'dispatch', 'response'].includes(hash)) return 'incidents';
+    if (['reports', 'report'].includes(hash)) return 'reports';
+    if (['about', 'info'].includes(hash)) return 'about';
+    return 'dashboard'; // Direct operational landing
   };
 
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash);
-  const [dashboardSubTab, setDashboardSubTab] = useState('overview'); // 'overview' | 'spatial' | 'predictive' | 'dispatch'
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [dashboardSubTab, setDashboardSubTab] = useState('overview'); // 'overview' | 'command'
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { isDatabaseModalOpen, closeDatabaseModal, openDatabaseModal } = useSimulation();
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -75,84 +61,21 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-[#0F172A] font-sans antialiased flex flex-col">
       {/* ===================================================================
-          STICKY MAIN NAVIGATION BAR (MANDATORY ON ALL PAGES)
-          Contains: Overview | Dashboard | Live Monitoring | Analytics | Alerts | How It Works | Technology | ● System Online
+          STREAMLINED PLATFORM NAVIGATION BAR
+          CrowdIQ | Dashboard | Live Monitor | Events | Zones | Analytics | Alerts | Incidents
+          Right side: 🟢 System Online | Profile
           =================================================================== */}
       <CrowdIQNavbar
         activeRoute={activeRoute}
         onNavigate={handleNavigate}
-        onRequestDemo={() => setIsDemoModalOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       {/* ===================================================================
-          MAIN PLATFORM VIEWPORT (ROUTED VIEW)
+          MAIN OPERATIONAL VIEWPORT
           =================================================================== */}
       <main className="flex-1">
-        {/* ROUTE 1: OVERVIEW / LANDING PAGE */}
-        {activeRoute === 'overview' && (
-          <div className="space-y-0">
-            {/* 1. Hero Section */}
-            <CrowdIQHero
-              onLaunchDashboard={() => handleNavigate('dashboard')}
-              onViewDemo={() => handleNavigate('monitoring')}
-              onRequestDemo={() => setIsDemoModalOpen(true)}
-            />
-
-            {/* 2. Live Product Preview (Immediate below Hero with 1,842 people, 72% density, LOW risk, DEMO SIMULATION) */}
-            <LiveCrowdMonitoringPreview
-              onLaunchFullConsole={() => handleNavigate('dashboard')}
-              onJumpToSimulation={() => handleNavigate('dashboard')}
-            />
-
-            {/* 3. Problem / Solution Comparison */}
-            <ProblemSolutionSection
-              onLaunchDashboard={() => handleNavigate('dashboard')}
-            />
-
-            {/* 5. Crowd Detection (Computer Vision YOLOv8 + DeepSORT) */}
-            <ComputerVisionSection />
-
-            {/* 6. Risk & Alert System */}
-            <RiskAlertSystemSection />
-
-            {/* 7. Venue Spatial Intelligence */}
-            <VenueIntelligenceSection />
-
-
-            {/* 9. Direct Call to Action */}
-            <section className="bg-white py-14 border-t border-b border-[#E2E8F0]">
-              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-xs font-semibold text-[#2563EB]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
-                  INTELLIGENT SURVEILLANCE SUITE
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
-                  Ready to deploy intelligent crowd risk prevention?
-                </h2>
-                <p className="text-sm text-[#64748B] max-w-2xl mx-auto">
-                  Experience live CCTV telemetry, spatial heatmaps, kinematic bottleneck tracking, and automated security team dispatching.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={() => handleNavigate('dashboard')}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold shadow-sm transition-all duration-150 cursor-pointer active:scale-95"
-                  >
-                    <span>Open Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleNavigate('monitoring')}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-[#0F172A] text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-                  >
-                    <span>Inspect CCTV Feeds</span>
-                  </button>
-                </div>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* ROUTE 2: MAIN DASHBOARD VIEW */}
+        {/* MODULE 1: DASHBOARD */}
         {activeRoute === 'dashboard' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             {/* Dashboard Operational Header */}
@@ -188,140 +111,89 @@ function AppContent() {
                   Live Operations & Heatmap
                 </button>
                 <button
-                  onClick={() => setDashboardSubTab('spatial')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    dashboardSubTab === 'spatial'
+                  onClick={() => setDashboardSubTab('command')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition cursor-pointer ${
+                    dashboardSubTab === 'command'
                       ? 'bg-[#2563EB] text-white shadow-2xs'
                       : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#CBD5E1]'
                   }`}
                 >
-                  Spatial Blueprint
-                </button>
-                <button
-                  onClick={() => setDashboardSubTab('predictive')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    dashboardSubTab === 'predictive'
-                      ? 'bg-[#2563EB] text-white shadow-2xs'
-                      : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#CBD5E1]'
-                  }`}
-                >
-                  Predictive Analysis
-                </button>
-                <button
-                  onClick={() => setDashboardSubTab('dispatch')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    dashboardSubTab === 'dispatch'
-                      ? 'bg-[#2563EB] text-white shadow-2xs'
-                      : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#CBD5E1]'
-                  }`}
-                >
-                  Security Dispatch
+                  Command Metrics Grid
                 </button>
               </div>
             </div>
 
-            {/* Dashboard Sub-tab Content */}
-            {dashboardSubTab === 'overview' && (
-              <div className="space-y-6">
-                <LiveDashboardSection />
-              </div>
-            )}
-
-            {dashboardSubTab === 'spatial' && (
-              <div className="space-y-6">
-                <VenueMapPage />
-              </div>
-            )}
-
-            {dashboardSubTab === 'predictive' && (
-              <div className="space-y-6">
-                <PredictionsPage />
-              </div>
-            )}
-
-            {dashboardSubTab === 'dispatch' && (
-              <div className="space-y-6">
-                <SecurityTeamsPage />
-              </div>
+            {dashboardSubTab === 'overview' ? (
+              <LiveDashboardSection />
+            ) : (
+              <CommandCenterPage />
             )}
           </div>
         )}
 
-        {/* ROUTE 3: LIVE MONITORING VIEW */}
+        {/* MODULE 2: LIVE MONITOR */}
         {activeRoute === 'monitoring' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <LiveCamerasPage />
           </div>
         )}
 
-        {/* ROUTE: SECURITY DISPATCH & TRACKING VIEW */}
-        {activeRoute === 'dispatch' && (
+        {/* MODULE 3: EVENTS */}
+        {activeRoute === 'events' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-            <SecurityTeamsPage />
+            <EventsPage />
           </div>
         )}
 
-        {/* ROUTE 4: ANALYTICS VIEW */}
+        {/* MODULE 4: ZONES */}
+        {activeRoute === 'zones' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <VenueMapPage />
+          </div>
+        )}
+
+        {/* MODULE 5: ANALYTICS */}
         {activeRoute === 'analytics' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <AnalyticsPage />
           </div>
         )}
 
-        {/* ROUTE 5: ALERTS VIEW */}
+        {/* MODULE 6: ALERTS */}
         {activeRoute === 'alerts' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <AlertsPage />
           </div>
         )}
 
-        {/* ROUTE 6: HOW IT WORKS VIEW */}
-        {activeRoute === 'how-it-works' && (
-          <div className="space-y-6 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-xs mb-8">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded">
-                  Technical Architecture Pipeline
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-2">
-                  How CrowdIQ Works
-                </h1>
-                <p className="text-sm text-[#64748B] mt-1 max-w-3xl leading-relaxed">
-                  A high-throughput computer vision pipeline connecting RTSP surveillance feeds to edge YOLO detection, DeepSORT tracking, density estimation, and risk dispatch.
-                </p>
-              </div>
-            </div>
-            <HowCrowdIQWorks />
-            <ComputerVisionSection />
+        {/* MODULE 7: INCIDENTS */}
+        {activeRoute === 'incidents' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <IncidentsPage />
           </div>
         )}
 
-        {/* ROUTE 7: TECHNOLOGY VIEW */}
-        {activeRoute === 'technology' && (
-          <div className="space-y-6 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-xs mb-8">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded">
-                  System Stack & Specifications
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-2">
-                  CrowdIQ Technical Specifications & Architecture
-                </h1>
-                <p className="text-sm text-[#64748B] mt-1 max-w-3xl leading-relaxed">
-                  Built on industry-standard computer vision, spatial mathematics, and real-time state machines designed for low-latency operational environments.
-                </p>
-              </div>
-            </div>
-            <TechnologySection />
+        {/* MODULE 8: REPORTS */}
+        {activeRoute === 'reports' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <ReportsPage />
           </div>
+        )}
+
+        {/* MODULE 9: ABOUT */}
+        {activeRoute === 'about' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <AboutPage />
+          </div>
+        )}
+
+        {/* RESTRICTED MODULE: ADMIN PORTAL */}
+        {activeRoute === 'admin' && (
+          <AdminPortalPage />
         )}
       </main>
 
-      {/* ===================================================================
-          PROFESSIONAL PLATFORM FOOTER (MANDATORY ON ALL PAGES)
-          Includes: © 2026 CrowdIQ. All rights reserved.
-          CrowdIQ — Intelligent Crowd Safety Platform | Hackathon 2026
-          =================================================================== */}
+      {/* OPERATIONAL FOOTER */}
       <CrowdIQFooter onNavigate={handleNavigate} />
 
       {/* Emergency Overlay Modal */}

@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { Shield, Activity, Menu, X, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { Shield, Menu, X, User } from 'lucide-react';
 
-export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
+export function CrowdIQNavbar({ activeRoute, onNavigate, onOpenProfile }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // CrowdIQ | Dashboard | Live Monitor | Analytics | Alerts & Events | Reports | Zones | Incidents | About
   const navItems = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'monitoring', label: 'Live Monitoring' },
-    { id: 'dispatch', label: 'Security Dispatch & Track' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'alerts', label: 'Alerts' },
-    { id: 'how-it-works', label: 'How It Works' },
-    { id: 'technology', label: 'Technology' },
+    { id: 'dashboard',  label: 'Dashboard' },
+    { id: 'monitoring', label: 'Live Monitor' },
+    { id: 'analytics',  label: 'Analytics' },
+    { id: 'alerts',     label: 'Alerts & Events' },
+    { id: 'reports',    label: 'Reports' },
+    { id: 'zones',      label: 'Zones' },
+    { id: 'incidents',  label: 'Incidents' },
+    { id: 'about',      label: 'About' },
   ];
 
   const handleItemClick = (id) => {
@@ -24,10 +25,10 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        {/* LEFT: CrowdIQ logo / brand name */}
+        {/* LEFT: CrowdIQ Brand Logo */}
         <div 
-          className="flex items-center gap-2.5 cursor-pointer select-none group"
-          onClick={() => handleItemClick('overview')}
+          className="flex items-center gap-2.5 cursor-pointer select-none group mr-4"
+          onClick={() => handleItemClick('dashboard')}
           title="CrowdIQ — Intelligent Crowd Safety Platform"
         >
           <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white shadow-xs transition-transform duration-150 group-hover:scale-105">
@@ -40,7 +41,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
           </div>
         </div>
 
-        {/* CENTER: Primary Navigation items with subtle blue active indicator */}
+        {/* CENTER: Clean, Focused Platform Navigation */}
         <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => {
             const isActive = activeRoute === item.id;
@@ -48,14 +49,14 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
-                className={`relative px-3 py-2 text-sm font-medium transition-all duration-150 cursor-pointer ${
+                className={`relative px-3.5 py-2 text-sm font-medium transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'text-[#2563EB] font-semibold'
+                    ? 'text-[#2563EB] font-bold'
                     : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-md'
                 }`}
               >
                 <span>{item.label}</span>
-                {/* Subtle blue active-state indicator */}
+                {/* Subtle blue active-state indicator bar */}
                 {isActive && (
                   <span className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#2563EB] rounded-full animate-fadeIn" />
                 )}
@@ -66,7 +67,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
 
         {/* Medium-screen nav for md breakpoints */}
         <nav className="hidden md:flex lg:hidden items-center gap-0.5">
-          {navItems.slice(0, 6).map((item) => {
+          {navItems.map((item) => {
             const isActive = activeRoute === item.id;
             return (
               <button
@@ -74,7 +75,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
                 onClick={() => handleItemClick(item.id)}
                 className={`relative px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                   isActive
-                    ? 'text-[#2563EB] font-semibold'
+                    ? 'text-[#2563EB] font-bold'
                     : 'text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
@@ -128,7 +129,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
         </div>
       </div>
 
-      {/* Mobile Drawer (Clean, Light, Responsive) */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#E2E8F0] px-4 pt-2 pb-4 space-y-1 shadow-md">
           {navItems.map((item) => {
