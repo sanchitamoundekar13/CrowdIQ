@@ -26,7 +26,7 @@ import { PredictionsPage } from './pages/PredictionsPage.tsx';
 import { AnalyticsPage } from './pages/AnalyticsPage.tsx';
 import { SecurityTeamsPage } from './pages/SecurityTeamsPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
-import { AdminPortalPage } from './pages/AdminPortalPage';
+import { MasterAdminPortal } from './pages/MasterAdminPortal';
 
 import { 
   Shield, 
@@ -73,6 +73,17 @@ function AppContent() {
     window.location.hash = `#/${routeId}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Dedicated Standalone Master Admin Portal (Separated environment with Root Access)
+  if (activeRoute === 'admin') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased flex flex-col">
+        <MasterAdminPortal onNavigate={handleNavigate} />
+        <EmergencyOverlay />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-[#0F172A] font-sans antialiased flex flex-col">
@@ -263,13 +274,6 @@ function AppContent() {
         {activeRoute === 'alerts' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <AlertsPage />
-          </div>
-        )}
-
-        {/* ROUTE: ADMIN DATA MANAGEMENT & LOGIN PORTAL */}
-        {activeRoute === 'admin' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-            <AdminPortalPage onNavigate={handleNavigate} />
           </div>
         )}
 

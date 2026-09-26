@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Activity, Menu, X, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { Shield, Activity, Menu, X, ArrowUpRight, CheckCircle2, Lock } from 'lucide-react';
 
 export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -11,7 +11,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
     { id: 'dispatch', label: 'Security Dispatch & Track' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'alerts', label: 'Alerts' },
-    { id: 'admin', label: 'Admin Portal' },
+    { id: 'admin', label: 'Master Admin' },
   ];
 
   const handleItemClick = (id) => {
@@ -53,7 +53,14 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
                     : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-md'
                 }`}
               >
-                <span>{item.label}</span>
+                {item.id === 'admin' ? (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] font-bold text-xs">
+                    <Lock className="w-3 h-3 text-[#2563EB]" />
+                    <span>Master Admin</span>
+                  </span>
+                ) : (
+                  <span>{item.label}</span>
+                )}
                 {/* Subtle blue active-state indicator */}
                 {isActive && (
                   <span className="absolute bottom-0 left-2.5 right-2.5 h-[2.5px] bg-[#2563EB] rounded-full animate-fadeIn" />
