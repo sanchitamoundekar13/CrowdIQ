@@ -18,32 +18,32 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
     switch (level) {
       case 'SAFE':
         return {
-          bg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
-          dot: 'bg-emerald-400',
+          bg: 'bg-[#F0FDF4] border-[#BBF7D0] text-[#16A34A]',
+          dot: 'bg-[#16A34A]',
           label: 'SAFE',
         };
       case 'WATCH':
         return {
-          bg: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-          dot: 'bg-amber-400',
+          bg: 'bg-[#FEFCE8] border-[#FEF08A] text-[#CA8A04]',
+          dot: 'bg-[#EAB308]',
           label: 'WATCH',
         };
       case 'HIGH':
         return {
-          bg: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
-          dot: 'bg-orange-400',
+          bg: 'bg-[#FFFBEB] border-[#FDE68A] text-[#D97706]',
+          dot: 'bg-[#F59E0B]',
           label: 'HIGH RISK',
         };
       case 'CRITICAL':
         return {
-          bg: 'bg-rose-500/15 border-rose-500/40 text-rose-400 animate-pulse',
-          dot: 'bg-rose-500',
+          bg: 'bg-[#FEF2F2] border-[#FCA5A5] text-[#DC2626]',
+          dot: 'bg-[#DC2626]',
           label: 'CRITICAL',
         };
       default:
         return {
-          bg: 'bg-slate-500/10 border-slate-500/30 text-slate-400',
-          dot: 'bg-slate-400',
+          bg: 'bg-[#F1F5F9] border-[#CBD5E1] text-[#475569]',
+          dot: 'bg-[#64748B]',
           label: 'NORMAL',
         };
     }
@@ -59,7 +59,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border backdrop-blur-sm ${config.bg} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border ${config.bg} ${sizeClasses[size]} ${className}`}
     >
       {showDot && (
         <span className={`h-1.5 w-1.5 rounded-full ${config.dot} ${level === 'CRITICAL' ? 'animate-ping' : ''}`} />

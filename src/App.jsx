@@ -5,11 +5,18 @@ import { Navbar } from './components/layout/Navbar.tsx';
 import { ToastContainer } from './components/common/ToastContainer.tsx';
 import { EmergencyOverlay } from './components/emergency/EmergencyOverlay.tsx';
 
-// Product Landing Page Components (matching reference design)
-import { CrowdGuardNavbar } from './components/landing/CrowdGuardNavbar';
-import { CrowdGuardHero } from './components/landing/CrowdGuardHero';
-import { HowItWorksSection } from './components/landing/HowItWorksSection';
-import { RequestDemoModal } from './components/landing/RequestDemoModal';
+// Redesigned Light-Theme CrowdIQ Product Sections
+import { CrowdIQNavbar } from './components/landing/CrowdIQNavbar';
+import { CrowdIQHero } from './components/landing/CrowdIQHero';
+import { LiveCrowdMonitoringPreview } from './components/landing/LiveCrowdMonitoringPreview';
+import { LiveDashboardSection } from './components/landing/LiveDashboardSection';
+import { HowCrowdIQWorks } from './components/landing/HowCrowdIQWorks';
+import { ComputerVisionSection } from './components/landing/ComputerVisionSection';
+import { RiskAlertSystemSection } from './components/landing/RiskAlertSystemSection';
+import { VenueIntelligenceSection } from './components/landing/VenueIntelligenceSection';
+import { TechnologySection } from './components/landing/TechnologySection';
+import { ProblemSolutionSection } from './components/landing/ProblemSolutionSection';
+import { CrowdIQFooter } from './components/landing/CrowdIQFooter';
 
 // Command Center Pages
 import { CommandCenterPage } from './pages/CommandCenterPage.tsx';
@@ -21,17 +28,16 @@ import { AnalyticsPage } from './pages/AnalyticsPage.tsx';
 import { SecurityTeamsPage } from './pages/SecurityTeamsPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 
-import { Shield, ArrowLeft } from 'lucide-react';
+import { Shield, ArrowLeft, ArrowUpRight } from 'lucide-react';
 
 function AppContent() {
   const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'console'
   const [currentPage, setCurrentPage] = useState('command-center');
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('product');
+  const [activeSection, setActiveSection] = useState('overview');
 
   const handleLaunchConsole = (page = 'command-center') => {
-    // Map feature shortcuts to pages
     const pageMap = {
+      'overview': 'command-center',
       'dashboard': 'command-center',
       'command-center': 'command-center',
       'live-cameras': 'live-cameras',
@@ -87,84 +93,93 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F7F9FC] text-[#0F172A] font-sans antialiased">
       {/* ===================================================================
-          1. PRODUCT OVERVIEW MODE (Matches Reference Image Exactly)
+          1. REDESIGNED LIGHT-THEME PRODUCT & SECURITY OPERATIONS WEBSITE
           =================================================================== */}
       {viewMode === 'landing' ? (
-        <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-          {/* Top SaaS Header */}
-          <CrowdGuardNavbar 
-            onOpenDemoModal={() => setIsDemoModalOpen(true)}
-            onLaunchConsole={() => handleLaunchConsole('command-center')}
+        <div className="flex flex-col min-h-screen bg-[#F7F9FC]">
+          
+          {/* Professional Clean Light Navbar */}
+          <CrowdIQNavbar
+            onLaunchDashboard={() => handleLaunchConsole('command-center')}
             activeSection={activeSection}
             onNavigateSection={handleNavigateSection}
           />
 
-          <main style={{ flex: 1 }}>
-            {/* Hero Section with AI Computer Vision Screen */}
-            <CrowdGuardHero 
-              onOpenDemoModal={() => setIsDemoModalOpen(true)}
-              onViewLiveDemo={() => handleLaunchConsole('command-center')}
+          <main className="flex-1">
+            {/* 1. Hero Section with CCTV Bounding Box Visualizer */}
+            <CrowdIQHero
+              onLaunchDashboard={() => handleLaunchConsole('command-center')}
+              onViewDemo={() => handleNavigateSection('live-dashboard')}
             />
 
-            {/* How CrowdGuard Works & 4 Feature Showcase Cards */}
-            <HowItWorksSection 
-              onNavigateToTab={(tab) => handleLaunchConsole(tab)}
+            {/* 2. Show The Product Early: Live Crowd Monitoring Preview */}
+            <LiveCrowdMonitoringPreview
+              onLaunchFullConsole={() => handleLaunchConsole('command-center')}
+              onJumpToSimulation={() => handleNavigateSection('live-dashboard')}
+            />
+
+            {/* 3. Live Dashboard with Heatmap, Cameras, Alerts & Demo Simulation */}
+            <LiveDashboardSection />
+
+            {/* 4. How CrowdIQ Works: 6-Step Technical Pipeline */}
+            <HowCrowdIQWorks />
+
+            {/* 5. CCTV + Computer Vision Deep Dive */}
+            <ComputerVisionSection />
+
+            {/* 6. Venue Spatial Intelligence (WHERE, HOW, WHICH, WHERE) */}
+            <VenueIntelligenceSection />
+
+            {/* 7. Risk & Alert Incident Management System */}
+            <RiskAlertSystemSection />
+
+            {/* 8. Technical Architecture Stack */}
+            <TechnologySection />
+
+            {/* 9. Problem & Solution Comparison */}
+            <ProblemSolutionSection
+              onLaunchDashboard={() => handleLaunchConsole('command-center')}
             />
           </main>
 
-          {/* Simple SaaS Footer */}
-          <footer style={{ borderTop: '1px solid #e2e8f0', background: '#ffffff', padding: '2rem', textAlign: 'center' }}>
-            <div style={{ maxWidth: 1360, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: '#0b192c', fontSize: '1rem' }}>
-                <Shield size={18} color="#0066ff" fill="#0066ff" />
-                CrowdGuard AI Platform
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#64748b' }}>
-                © {new Date().getFullYear()} CrowdGuard AI Technologies. Autonomous computer vision & stampede prevention systems.
-              </p>
-              <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.82rem', color: '#64748b' }}>
-                <span style={{ cursor: 'pointer' }} onClick={() => setIsDemoModalOpen(true)}>Security Architecture</span>
-                <span style={{ cursor: 'pointer' }} onClick={() => handleLaunchConsole('command-center')}>Command Center</span>
-              </div>
-            </div>
-          </footer>
-
-          {/* Lead Capture Modal */}
-          <RequestDemoModal 
-            isOpen={isDemoModalOpen} 
-            onClose={() => setIsDemoModalOpen(false)}
-            onLaunchConsole={() => handleLaunchConsole('command-center')}
+          {/* Clean Light Footer */}
+          <CrowdIQFooter
+            onNavigateSection={handleNavigateSection}
+            onLaunchDashboard={() => handleLaunchConsole('command-center')}
           />
         </div>
       ) : (
         /* ===================================================================
-           2. LIVE COMMAND CENTER / OPERATIONAL CONSOLE MODE
+           2. DEDICATED FULL-SCREEN WORKSTATION CONSOLE (100% LIGHT THEME)
            =================================================================== */
-        <div className="flex flex-col min-h-screen bg-[#080c14] text-slate-100 font-sans">
+        <div className="flex flex-col min-h-screen bg-[#F7F9FC] text-[#0F172A] font-sans">
           {/* Quick Header Banner to return to Landing */}
-          <div className="bg-[#0b192c] border-b border-slate-800 px-6 py-2.5 flex justify-between items-center text-xs">
+          <div className="bg-white border-b border-[#E2E8F0] px-6 py-2.5 flex justify-between items-center text-xs shadow-xs">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setViewMode('landing')}
-                className="bg-slate-800/80 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1.5 font-medium transition cursor-pointer"
-                title="Return to CrowdGuard AI Product Page"
+                className="bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#0F172A] px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition cursor-pointer"
+                title="Return to CrowdIQ Product Overview"
               >
-                <ArrowLeft size={13} /> Back to Product Overview
+                <ArrowLeft size={13} /> Back to Overview
               </button>
-              <span className="flex items-center gap-2 text-slate-300 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
-                CrowdGuard AI Command Center • Live Telemetry Active
+              <span className="flex items-center gap-2 text-[#475569] font-medium hidden sm:flex">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
+                CrowdIQ Operations Console • Live Telemetry Synchronized
               </span>
             </div>
 
             <div className="flex items-center gap-3">
+              <span className="text-[11px] font-mono text-[#64748B] hidden md:inline">
+                Metropolitan Arena Sector Map
+              </span>
               <button 
-                onClick={() => setIsDemoModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold cursor-pointer transition"
+                onClick={() => setViewMode('landing')}
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition shadow-xs"
               >
-                Request Custom Deployment
+                Exit Console
               </button>
             </div>
           </div>
@@ -174,7 +189,7 @@ function AppContent() {
             <Sidebar currentPage={currentPage} onSelectPage={setCurrentPage} />
 
             {/* Main Command Center Viewport */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-[#F7F9FC]">
               <Navbar />
               
               <main className="flex-1 p-6 overflow-y-auto max-w-[1720px] w-full mx-auto">
@@ -188,13 +203,6 @@ function AppContent() {
 
           {/* Global Real-time Toast Stack */}
           <ToastContainer />
-
-          {/* Lead Capture Modal available in console */}
-          <RequestDemoModal 
-            isOpen={isDemoModalOpen} 
-            onClose={() => setIsDemoModalOpen(false)}
-            onLaunchConsole={() => {}}
-          />
         </div>
       )}
     </div>

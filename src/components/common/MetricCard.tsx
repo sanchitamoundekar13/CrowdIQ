@@ -23,21 +23,21 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   pulse = false,
 }) => {
   const iconBgMap = {
-    cyan: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30',
-    emerald: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
-    amber: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
-    rose: 'bg-rose-500/15 text-rose-400 border border-rose-500/40',
-    slate: 'bg-slate-800 text-slate-300 border border-slate-700',
+    cyan: 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]',
+    emerald: 'bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]',
+    amber: 'bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]',
+    rose: 'bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5]',
+    slate: 'bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]',
   };
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border p-4 backdrop-blur-md transition-all duration-300 hover:border-slate-600 bg-slate-900/80 border-slate-800 ${
-        pulse ? 'ring-1 ring-rose-500/50 animate-pulse' : ''
+      className={`relative overflow-hidden rounded-xl border p-4 bg-white border-[#E2E8F0] shadow-sm transition-all duration-200 hover:border-[#CBD5E1] ${
+        pulse ? 'ring-1 ring-[#DC2626]/40 animate-pulse' : ''
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
           {label}
         </span>
         <div className={`rounded-lg p-2 ${iconBgMap[statusColor]}`}>
@@ -46,11 +46,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       </div>
 
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold font-mono tracking-tight text-white">
+        <span className="text-2xl font-extrabold font-mono tracking-tight text-[#0F172A]">
           {value}
         </span>
         {subValue && (
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-[#64748B] font-mono">
             {subValue}
           </span>
         )}
@@ -59,15 +59,15 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       {trendValue && (
         <div className="mt-2 flex items-center gap-1.5 text-xs font-mono">
           {trend === 'up' && (
-            <span className="text-rose-400 flex items-center">? {trendValue}</span>
+            <span className="text-[#DC2626] font-semibold flex items-center">↑ {trendValue}</span>
           )}
           {trend === 'down' && (
-            <span className="text-emerald-400 flex items-center">? {trendValue}</span>
+            <span className="text-[#16A34A] font-semibold flex items-center">↓ {trendValue}</span>
           )}
           {trend === 'neutral' && (
-            <span className="text-slate-400">? {trendValue}</span>
+            <span className="text-[#64748B] flex items-center">→ {trendValue}</span>
           )}
-          <span className="text-slate-500 text-[11px]">vs baseline</span>
+          <span className="text-[#94A3B8] text-[11px]">vs baseline</span>
         </div>
       )}
     </div>

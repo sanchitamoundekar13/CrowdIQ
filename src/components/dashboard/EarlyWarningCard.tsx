@@ -28,109 +28,86 @@ export const EarlyWarningCard: React.FC = () => {
   ];
 
   return (
-    <div className="rounded-2xl border border-amber-500/40 bg-[#0c1220] p-5 shadow-xl relative overflow-hidden">
-      {/* Background Warning Glow */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm relative overflow-hidden">
       {/* Card Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400">
+          <div className="p-1.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706]">
             <AlertTriangle className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
-              ? EARLY WARNING SYSTEM
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+              EARLY WARNING SYSTEM
             </span>
-            <p className="text-[11px] text-slate-400 font-mono">
-              Target: {zone.shortName} � Real-time Predictive Modeling
+            <p className="text-[11px] text-[#64748B] font-mono">
+              Target: {zone.shortName} • Real-time Predictive Modeling
             </p>
           </div>
         </div>
-        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold uppercase animate-pulse">
-          HIGH CONGESTION RISK
+        <span className={`text-[11px] font-mono px-2 py-0.5 rounded font-semibold uppercase ${
+          currentD >= 85 
+            ? 'bg-[#FEF2F2] border border-[#FCA5A5] text-[#DC2626]' 
+            : currentD >= 70
+            ? 'bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706]'
+            : 'bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A]'
+        }`}>
+          {currentD >= 85 ? 'HIGH CONGESTION RISK' : currentD >= 70 ? 'MODERATE SURGE' : 'SAFE BASELINE'}
         </span>
       </div>
 
       {/* Projection Comparison Columns */}
       <div className="grid grid-cols-3 gap-3 my-4">
-        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
-          <span className="text-[10px] font-mono uppercase text-slate-400">Current (NOW)</span>
-          <div className="text-xl font-bold font-mono text-white mt-0.5">
+        <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+          <span className="text-[10px] font-mono uppercase text-[#64748B]">Current (NOW)</span>
+          <div className="text-xl font-bold font-mono text-[#0F172A] mt-0.5">
             {currentD}%
           </div>
-          <span className="text-[10px] text-amber-400 font-mono">Active telemetry</span>
+          <span className="text-[10px] text-[#2563EB] font-mono">Active telemetry</span>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
-          <span className="text-[10px] font-mono uppercase text-slate-400">+2 Min Forecast</span>
-          <div className="text-xl font-bold font-mono text-orange-400 mt-0.5">
+        <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+          <span className="text-[10px] font-mono uppercase text-[#64748B]">+2 Min Forecast</span>
+          <div className="text-xl font-bold font-mono text-[#D97706] mt-0.5">
             {pred2m}%
           </div>
-          <span className="text-[10px] text-orange-400 font-mono">? Rapid accumulation</span>
+          <span className="text-[10px] text-[#D97706] font-mono">↑ Rapid accumulation</span>
         </div>
 
-        <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/40">
-          <span className="text-[10px] font-mono uppercase text-rose-300">+4 Min Bottleneck</span>
-          <div className="text-xl font-bold font-mono text-rose-400 mt-0.5">
+        <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FCA5A5]">
+          <span className="text-[10px] font-mono uppercase text-[#DC2626] font-bold">+4 Min Forecast</span>
+          <div className="text-xl font-bold font-mono text-[#DC2626] mt-0.5">
             {pred4m}%
           </div>
-          <span className="text-[10px] text-rose-400 font-mono">? Threshold Breach</span>
+          <span className="text-[10px] text-[#DC2626] font-bold font-mono">! CRITICAL OVERLOAD</span>
         </div>
       </div>
 
-      {/* Recharts Area Chart for Trend */}
-      <div className="h-32 w-full my-2">
+      {/* Early Warning Explanatory Line */}
+      <div className="p-3 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex items-start gap-2 text-xs font-mono text-[#92400E] mb-4">
+        <TrendingUp className="h-4 w-4 text-[#D97706] shrink-0 mt-0.5" />
+        <div>
+          <strong>Prediction Engine:</strong> Inflow surge will overload {zone.shortName} capacity in ~4 minutes. Immediate intervention enables smooth recovery before stampede risk escalates.
+        </div>
+      </div>
+
+      {/* Recharts Area Chart Preview */}
+      <div className="h-40 w-full pt-1">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
-              <linearGradient id="warningGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6} />
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
+              <linearGradient id="earlyWarningGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
-            <YAxis domain={[0, 120]} stroke="#64748b" fontSize={10} tickLine={false} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#090d18',
-                borderColor: '#334155',
-                borderRadius: '8px',
-                fontSize: '11px',
-                fontFamily: 'monospace',
-              }}
+            <XAxis dataKey="time" stroke="#94A3B8" fontSize={10} tickLine={false} />
+            <YAxis domain={[0, 130]} stroke="#94A3B8" fontSize={10} tickLine={false} />
+            <Tooltip 
+              contentStyle={{ background: '#FFFFFF', borderColor: '#CBD5E1', borderRadius: '8px', color: '#0F172A', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
             />
-            <Area
-              type="monotone"
-              dataKey="density"
-              stroke="#f59e0b"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#warningGrad)"
-            />
+            <Area type="monotone" dataKey="density" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#earlyWarningGrad)" />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* Explanatory Assessment */}
-      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-300 leading-relaxed">
-        <p className="flex items-start gap-1.5">
-          <span className="text-amber-400 font-bold">�</span>
-          <span>
-            Rapid inflow combined with reduced outflow indicates a potential congestion event within ~4 minutes.
-          </span>
-        </p>
-      </div>
-
-      {/* Prototype Simulated Data Disclaimer */}
-      <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-slate-500 border-t border-slate-800/80 pt-2">
-        <span className="flex items-center gap-1">
-          <Info className="h-3 w-3" />
-          Model Confidence: 94.2% (LSTM Ensemble)
-        </span>
-        <span className="uppercase text-amber-500/80 font-semibold">
-          [Simulated Hackathon Prototype Data]
-        </span>
       </div>
     </div>
   );

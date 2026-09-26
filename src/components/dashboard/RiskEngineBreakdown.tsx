@@ -45,73 +45,67 @@ export const RiskEngineBreakdown: React.FC = () => {
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-[#090e1a] p-5 shadow-xl">
+    <div className="rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <div className="p-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB]">
             <Calculator className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
               Risk Engine Mathematical Breakdown
             </span>
-            <p className="text-[11px] text-slate-400 font-mono">
+            <p className="text-[11px] text-[#64748B] font-mono">
               Transparent multi-factor scoring model for {selectedZone?.shortName || 'Zone'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xl font-bold font-mono text-white">
-              {riskBreakdown.totalScore}
-              <span className="text-xs text-slate-400 font-normal"> / 100</span>
-            </div>
-          </div>
-          <RiskBadge level={riskBreakdown.riskLevel} size="md" />
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold font-mono text-[#0F172A]">
+            {riskBreakdown.totalRiskScore}
+            <span className="text-xs text-[#64748B]">/100</span>
+          </span>
+          <RiskBadge level={riskBreakdown.calculatedLevel} />
         </div>
       </div>
 
-      {/* Factor Bars */}
-      <div className="space-y-3.5 my-4">
-        {factors.map((f, i) => (
-          <div key={i} className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
-            <div className="flex items-center justify-between text-xs font-mono mb-1.5">
+      {/* Factor Rows */}
+      <div className="mt-4 space-y-3">
+        {factors.map((f) => (
+          <div key={f.name} className="p-2.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-[#0F172A] font-bold">{f.name}</span>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-200">{f.name}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                  Weight: {f.weight}%
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 text-[11px]">Score: {f.rawScore}/100</span>
-                <span className="font-bold text-cyan-400">+{f.contribution} pts</span>
+                <span className="text-[#64748B] text-[10px]">Weight: {f.weight}%</span>
+                <span className="font-bold text-[#2563EB]">+{f.contribution} pts</span>
               </div>
             </div>
 
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            {/* Progress / Contribution Bar */}
+            <div className="w-full bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-cyan-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${f.rawScore}%` }}
+                className={`h-full transition-all duration-300 ${
+                  f.rawScore > 80 ? 'bg-[#DC2626]' : f.rawScore > 60 ? 'bg-[#F59E0B]' : 'bg-[#2563EB]'
+                }`}
+                style={{ width: `${Math.min(100, f.rawScore)}%` }}
               />
             </div>
-            <span className="text-[10px] text-slate-500 font-mono mt-1 block">
-              {f.desc}
-            </span>
+
+            <div className="flex items-center justify-between text-[10px] text-[#64748B] font-mono">
+              <span>{f.desc}</span>
+              <span>Raw index: {f.rawScore}/100</span>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Formula & Explanatory Footer */}
-      <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] font-mono text-slate-400">
-        <div className="flex items-center gap-1.5 text-slate-300 font-semibold mb-1">
-          <Info className="h-3.5 w-3.5 text-cyan-400" />
-          <span>Transparent Formulation:</span>
-        </div>
-        <p className="text-[10px] text-slate-400 leading-relaxed font-mono">
-          Total Risk = (0.35 � Density) + (0.25 � Growth) + (0.20 � Flow Imbalance) + (0.10 � Movement) + (0.10 � Capacity) = <strong className="text-cyan-300">{riskBreakdown.totalScore}/100</strong>
-        </p>
+      <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-[#64748B] font-mono">
+        <span className="flex items-center gap-1">
+          <Info className="h-3 w-3 text-[#2563EB]" /> Deterministic, fully explainable model
+        </span>
+        <span className="text-[#0F172A] font-semibold">Normalized Threshold: 85%</span>
       </div>
     </div>
   );

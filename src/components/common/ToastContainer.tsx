@@ -11,23 +11,23 @@ export const ToastContainer: React.FC = () => {
     <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-md w-full pointer-events-none">
       {toasts.map((toast) => {
         const icons = {
-          info: <Info className="h-4 w-4 text-cyan-400 shrink-0" />,
-          warning: <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />,
-          error: <XCircle className="h-4 w-4 text-rose-400 shrink-0" />,
-          success: <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />,
+          info: <Info className="h-4 w-4 text-[#2563EB] shrink-0" />,
+          warning: <AlertTriangle className="h-4 w-4 text-[#D97706] shrink-0" />,
+          error: <XCircle className="h-4 w-4 text-[#DC2626] shrink-0" />,
+          success: <CheckCircle2 className="h-4 w-4 text-[#16A34A] shrink-0" />,
         };
 
         const borderColors = {
-          info: 'border-cyan-500/30 bg-slate-900/95 text-slate-200',
-          warning: 'border-amber-500/40 bg-amber-950/90 text-amber-100',
-          error: 'border-rose-500/50 bg-rose-950/90 text-rose-100 animate-bounce',
-          success: 'border-emerald-500/40 bg-slate-900/95 text-emerald-100',
+          info: 'border-[#BFDBFE] bg-white text-[#0F172A]',
+          warning: 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]',
+          error: 'border-[#FCA5A5] bg-[#FEF2F2] text-[#991B1B]',
+          success: 'border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]',
         };
 
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start justify-between gap-3 p-3.5 rounded-xl border shadow-xl backdrop-blur-xl transition-all duration-300 ${
+            className={`pointer-events-auto flex items-start justify-between gap-3 p-3.5 rounded-xl border shadow-lg transition-all duration-300 ${
               borderColors[toast.type]
             }`}
           >
@@ -37,14 +37,14 @@ export const ToastContainer: React.FC = () => {
                 <p className="text-xs font-semibold uppercase tracking-wider font-mono">
                   {toast.title}
                 </p>
-                <p className="text-xs mt-0.5 opacity-90 leading-relaxed">
+                <p className="text-xs mt-0.5 leading-relaxed">
                   {toast.message}
                 </p>
               </div>
             </div>
             <button
               onClick={() => dismissToast(toast.id)}
-              className="text-slate-400 hover:text-white p-1 rounded transition-colors"
+              className="text-[#94A3B8] hover:text-[#0F172A] p-1 rounded transition-colors cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>

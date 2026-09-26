@@ -24,24 +24,24 @@ export const EmergencyOverlay: React.FC = () => {
   const safeExits = zones.filter(z => z.category === 'EXIT' || (z.category === 'GATE' && z.riskLevel === 'SAFE'));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl rounded-2xl border-2 border-rose-500 bg-[#0c0507] p-6 shadow-2xl shadow-rose-950/80 animate-alert-border text-slate-100">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="relative w-full max-w-4xl rounded-2xl border-2 border-[#DC2626] bg-white p-6 shadow-2xl text-[#0F172A]">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-rose-500/40">
+        <div className="flex items-start justify-between pb-4 border-b border-[#FCA5A5]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-600 text-white animate-pulse">
+            <div className="p-2.5 rounded-xl bg-[#DC2626] text-white animate-pulse">
               <ShieldAlert className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold font-mono tracking-wider text-rose-300 uppercase">
-                  ?? EMERGENCY MODE ACTIVE
+                <h2 className="text-xl font-bold font-mono tracking-wider text-[#DC2626] uppercase">
+                  EMERGENCY MODE ACTIVE
                 </h2>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-rose-600/30 border border-rose-500 text-rose-200">
-                  CODE RED
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#FEF2F2] border border-[#FCA5A5] text-[#DC2626] font-bold">
+                  PRIORITY RESPONSE
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
                 Priority venue evacuation & rapid incident response orchestration
               </p>
             </div>
@@ -49,7 +49,7 @@ export const EmergencyOverlay: React.FC = () => {
 
           <button
             onClick={toggleEmergencyMode}
-            className="p-2 rounded-lg bg-rose-950/50 hover:bg-rose-900 border border-rose-500/40 text-rose-300 transition-colors"
+            className="p-2 rounded-lg bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#475569] transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -58,109 +58,70 @@ export const EmergencyOverlay: React.FC = () => {
         {/* Emergency Dashboard Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
           {/* Critical Hazard Zones */}
-          <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30">
-            <div className="flex items-center gap-2 text-rose-400 font-mono text-xs font-bold uppercase mb-3">
+          <div className="p-4 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2]">
+            <span className="text-xs font-mono font-bold text-[#DC2626] uppercase tracking-wider flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              <span>Critical Risk Zones ({criticalZones.length})</span>
-            </div>
-            <div className="space-y-2">
+              Critical Hazard Zones ({criticalZones.length})
+            </span>
+            <div className="mt-2.5 space-y-2 max-h-40 overflow-y-auto pr-1">
               {criticalZones.map(z => (
-                <div key={z.id} className="p-2.5 rounded-lg bg-rose-950/50 border border-rose-500/40 flex items-center justify-between text-xs font-mono">
-                  <div>
-                    <span className="font-bold text-rose-200 block">{z.name}</span>
-                    <span className="text-[11px] text-rose-300/80">Occupancy: {z.density}% ({z.currentPeople} pax)</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-rose-600 text-white font-bold text-[10px]">
-                    EVACUATE
-                  </span>
+                <div key={z.id} className="p-2 rounded-lg bg-white border border-[#FECACA] flex items-center justify-between text-xs font-mono">
+                  <span className="font-bold text-[#0F172A]">{z.name}</span>
+                  <span className="text-[#DC2626] font-bold">{z.density}% Load</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Recommended Safe Evacuation Exits */}
-          <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
-            <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold uppercase mb-3">
+          {/* Recommended Egress Routes */}
+          <div className="p-4 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4]">
+            <span className="text-xs font-mono font-bold text-[#16A34A] uppercase tracking-wider flex items-center gap-2">
               <Navigation className="h-4 w-4" />
-              <span>Recommended Safe Evac Exits ({safeExits.length})</span>
-            </div>
-            <div className="space-y-2">
+              Primary Egress Routes ({safeExits.length})
+            </span>
+            <div className="mt-2.5 space-y-2 max-h-40 overflow-y-auto pr-1">
               {safeExits.map(z => (
-                <div key={z.id} className="p-2.5 rounded-lg bg-emerald-950/50 border border-emerald-500/40 flex items-center justify-between text-xs font-mono">
-                  <div>
-                    <span className="font-bold text-emerald-200 block">{z.name}</span>
-                    <span className="text-[11px] text-emerald-300/80">Available Buffer: {z.maxCapacity - z.currentPeople} pax</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">
-                    CLEAR ROUTE
-                  </span>
+                <div key={z.id} className="p-2 rounded-lg bg-white border border-[#BBF7D0] flex items-center justify-between text-xs font-mono">
+                  <span className="font-bold text-[#0F172A]">{z.name}</span>
+                  <span className="text-[#16A34A] font-bold">Clear Flow ({z.density}%)</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Security & Medical Dispatch Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-mono uppercase text-slate-400 font-semibold block">
-                Security Squad Mobilization
-              </span>
-              <span className="text-xs font-mono text-cyan-400 mt-0.5 block">
-                {securityTeams.length} Squads on perimeter protocol
-              </span>
-            </div>
-            <span className="text-xs font-mono px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
-              DEPLOYED
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-mono uppercase text-slate-400 font-semibold block">
-                Medical & Triage Readiness
-              </span>
-              <span className="text-xs font-mono text-emerald-400 mt-0.5 block">
-                Station Alpha Paramedics on Standby
-              </span>
-            </div>
-            <button
-              onClick={() => setMedicalDispatched(true)}
-              className="text-xs font-mono px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold transition-colors"
-            >
-              {medicalDispatched ? 'DISPATCHED' : 'DISPATCH MED'}
-            </button>
-          </div>
-        </div>
-
-        {/* Public Warning Broadcast Controller */}
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            <span className="text-xs font-mono uppercase text-slate-200 font-bold flex items-center gap-1.5">
-              <Radio className="h-4 w-4 text-rose-400" />
-              Public Evacuation Wayfinding Broadcast
-            </span>
-            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-              Push mass audio PA sirens and digital exit arrows to all venue attendee screens.
-            </p>
-          </div>
-
+        {/* Quick Emergency Actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#E2E8F0]">
           <button
             onClick={() => setBroadcastSent(true)}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-colors shrink-0 ${
+            className={`p-3 rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
               broadcastSent
-                ? 'bg-emerald-600 text-white'
-                : 'bg-rose-600 hover:bg-rose-500 text-white'
+                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#16A34A]'
+                : 'bg-[#DC2626] hover:bg-[#B91C1C] text-white border-[#B91C1C]'
             }`}
           >
-            {broadcastSent ? '? BROADCAST BROADCASTING' : 'TRIGGER MASS BROADCAST'}
+            <Radio className="h-4 w-4" />
+            <span>{broadcastSent ? 'PUBLIC ANNOUNCEMENT SENT' : 'BROADCAST EVACUATION PA'}</span>
           </button>
-        </div>
 
-        {/* Decision Support Disclaimer */}
-        <div className="mt-4 pt-3 border-t border-rose-950/80 text-[10px] font-mono text-slate-500 text-center">
-          * Prototype decision-support interface. Does not transmit to external 911/emergency physical radio networks.
+          <button
+            onClick={() => setMedicalDispatched(true)}
+            className={`p-3 rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              medicalDispatched
+                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#16A34A]'
+                : 'bg-white hover:bg-[#F8FAFC] text-[#0F172A] border-[#CBD5E1]'
+            }`}
+          >
+            <HeartHandshake className="h-4 w-4 text-[#2563EB]" />
+            <span>{medicalDispatched ? 'PARAMEDICS DISPATCHED' : 'DISPATCH MEDICAL SQUADS'}</span>
+          </button>
+
+          <button
+            onClick={toggleEmergencyMode}
+            className="p-3 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-mono font-bold text-[#475569] transition-all cursor-pointer"
+          >
+            <span>DEACTIVATE EMERGENCY</span>
+          </button>
         </div>
       </div>
     </div>

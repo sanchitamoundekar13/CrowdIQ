@@ -25,125 +25,127 @@ export const AlertsPage: React.FC = () => {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'CRITICAL':
-        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+        return 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]';
       case 'HIGH':
-        return 'bg-orange-500/20 text-orange-300 border-orange-500/40';
+        return 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]';
       case 'WARNING':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+        return 'bg-[#FEFCE8] text-[#CA8A04] border-[#FEF08A]';
       case 'ACTION':
-        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+        return 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]';
       case 'RECOVERY':
-        return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+        return 'bg-[#F0FDFA] text-[#0F766E] border-[#CCFBF1]';
       case 'RESOLVED':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+        return 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]';
       default:
-        return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+        return 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]';
     }
   };
 
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-2">
-            <AlertOctagon className="h-5 w-5 text-rose-400" />
-            <h2 className="text-base font-bold font-mono uppercase tracking-wider text-white">
+            <AlertOctagon className="h-5 w-5 text-[#DC2626]" />
+            <h2 className="text-base font-bold font-mono uppercase tracking-wider text-[#0F172A]">
               Incident Registry & Alert Dispatch Log
             </h2>
           </div>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
+          <p className="text-xs text-[#64748B] font-mono mt-0.5">
             Audit trail of anomalies, predictive alarms, and executed countermeasures
           </p>
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-slate-800 bg-slate-900/60">
-        {/* Search */}
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+      {/* Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#CBD5E1] shadow-sm">
+        <div className="relative flex-1 max-w-md">
+          <Search className="h-4 w-4 text-[#94A3B8] absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search alerts, zones, actions..."
+            placeholder="Search alerts by zone or trigger description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] text-xs font-mono text-[#0F172A] placeholder-[#94A3B8] focus:outline-hidden focus:border-[#2563EB]"
           />
         </div>
 
-        {/* Severity Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 self-start md:self-center">
-          {['ALL', 'CRITICAL', 'HIGH', 'WARNING', 'ACTION', 'RESOLVED'].map((f) => (
+        {/* Severity Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-mono">
+          {['ALL', 'CRITICAL', 'HIGH', 'WARNING', 'ACTION', 'RESOLVED'].map((lvl) => (
             <button
-              key={f}
-              onClick={() => setFilterSeverity(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${
-                filterSeverity === f
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                  : 'text-slate-400 hover:text-white bg-slate-950/60 border border-slate-800'
+              key={lvl}
+              onClick={() => setFilterSeverity(lvl)}
+              className={`px-3 py-1.5 rounded-lg border font-semibold transition-colors cursor-pointer ${
+                filterSeverity === lvl
+                  ? 'bg-[#2563EB] text-white border-[#1D4ED8]'
+                  : 'bg-white text-[#475569] border-[#CBD5E1] hover:bg-[#F8FAFC]'
               }`}
             >
-              {f}
+              {lvl}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Incidents Table / List */}
-      <div className="rounded-2xl border border-slate-800 bg-[#090e1a] overflow-hidden shadow-xl">
+      {/* Alerts Table */}
+      <div className="rounded-xl border border-[#CBD5E1] bg-white overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs font-mono">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400 uppercase text-[11px]">
-                <th className="py-3 px-4">Time</th>
-                <th className="py-3 px-4">Severity</th>
-                <th className="py-3 px-4">Zone</th>
-                <th className="py-3 px-4">Event Description</th>
-                <th className="py-3 px-4">Countermeasure / Action</th>
-                <th className="py-3 px-4 text-right">Status</th>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase text-[11px]">
+                <th className="py-3 px-4 font-bold">Severity</th>
+                <th className="py-3 px-4 font-bold">Zone</th>
+                <th className="py-3 px-4 font-bold">Alert Title</th>
+                <th className="py-3 px-4 font-bold">Details</th>
+                <th className="py-3 px-4 font-bold">Action Taken</th>
+                <th className="py-3 px-4 font-bold">Time</th>
+                <th className="py-3 px-4 font-bold">Status</th>
+                <th className="py-3 px-4 font-bold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {filteredAlerts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
-                    No incidents matching selected filter.
+                  <td colSpan={8} className="py-8 text-center text-[#64748B]">
+                    No security alerts matching current filter parameters.
                   </td>
                 </tr>
               ) : (
-                filteredAlerts.map((alert) => (
-                  <tr key={alert.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-300 whitespace-nowrap">
-                      {alert.timeFormatted}
-                    </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${getSeverityBadge(alert.severity)}`}>
-                        {alert.severity}
+                filteredAlerts.map((a) => (
+                  <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${getSeverityBadge(a.severity)}`}>
+                        {a.severity}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-white font-semibold whitespace-nowrap">
-                      {alert.zoneName}
+                    <td className="py-3 px-4 font-bold text-[#0F172A]">{a.zoneName}</td>
+                    <td className="py-3 px-4 font-semibold text-[#0F172A] max-w-[200px] truncate">{a.title}</td>
+                    <td className="py-3 px-4 text-[#475569] max-w-[280px] truncate">{a.description}</td>
+                    <td className="py-3 px-4 text-[#0F766E] max-w-[220px] truncate">{a.actionTaken}</td>
+                    <td className="py-3 px-4 text-[#64748B] whitespace-nowrap">{a.timeFormatted}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        a.status === 'ACTIVE'
+                          ? 'bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5]'
+                          : a.status === 'ACKNOWLEDGED'
+                          ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]'
+                          : 'bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]'
+                      }`}>
+                        {a.status}
+                      </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-300">
-                      <span className="font-bold text-slate-100 block mb-0.5">{alert.title}</span>
-                      <span className="text-slate-400 text-[11px]">{alert.description}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-cyan-300 text-[11px]">
-                      {alert.actionTaken || 'Monitoring baseline'}
-                    </td>
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      {alert.status === 'ACTIVE' ? (
+                    <td className="py-3 px-4">
+                      {a.status === 'ACTIVE' ? (
                         <button
-                          onClick={() => acknowledgeAlert(alert.id)}
-                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[10px] font-bold"
+                          onClick={() => acknowledgeAlert(a.id)}
+                          className="px-2.5 py-1 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[10px] font-bold transition-colors cursor-pointer"
                         >
-                          ACKNOWLEDGE
+                          ACK
                         </button>
                       ) : (
-                        <span className="text-[10px] text-emerald-400 font-semibold uppercase">
-                          ? {alert.status}
-                        </span>
+                        <span className="text-[#94A3B8]">—</span>
                       )}
                     </td>
                   </tr>

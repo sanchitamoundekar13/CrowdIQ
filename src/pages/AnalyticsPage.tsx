@@ -56,169 +56,149 @@ export const AnalyticsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-cyan-400" />
-            <h2 className="text-base font-bold font-mono uppercase tracking-wider text-white">
-              Event Telemetry & Crowd Analytics
+            <BarChart3 className="h-5 w-5 text-[#2563EB]" />
+            <h2 className="text-base font-bold font-mono uppercase tracking-wider text-[#0F172A]">
+              Historical Telemetry & Spatial Trends
             </h2>
           </div>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Post-incident diagnostics, peak density distributions, and ingress/egress throughput
+          <p className="text-xs text-[#64748B] font-mono mt-0.5">
+            Macro-level throughput analysis, bottleneck duration logs, and gate flow metrics
           </p>
         </div>
-      </div>
 
-      {/* Incident Summary Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard
-          label="Total Incidents"
-          value="12"
-          subValue="Past 6 hours"
-          icon={Activity}
-          statusColor="cyan"
-        />
-        <MetricCard
-          label="Resolved Countermeasures"
-          value="10"
-          subValue="83.3% clearance"
-          icon={CheckCircle2}
-          statusColor="emerald"
-        />
-        <MetricCard
-          label="Active Alarms"
-          value={activeAlertsCount}
-          subValue="Security dispatch"
-          icon={AlertTriangle}
-          statusColor={activeAlertsCount > 1 ? 'rose' : 'amber'}
-        />
-        <MetricCard
-          label="Avg Response Time"
-          value="01:42"
-          subValue="Target < 03:00"
-          icon={Clock}
-          statusColor="emerald"
-        />
-      </div>
-
-      {/* Peak Period Callout */}
-      <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/15 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
-            <Flame className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-amber-300">
-              Peak Crowd Period Detected: 20:30 � 21:15 (Main Stage Headline & East Gate Ingress)
-            </h4>
-            <p className="text-xs text-slate-300 font-mono mt-0.5">
-              Venue occupancy peaked at 81% overall with Gate B hitting 94% surge threshold.
-            </p>
-          </div>
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-[#475569]">
+            Reporting Interval: 30m Aggregate
+          </span>
         </div>
       </div>
 
-      {/* Charts Grid */}
+      {/* Aggregate KPI Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] shadow-sm">
+          <span className="text-xs font-mono text-[#64748B] uppercase">Peak Venue Inflow</span>
+          <div className="text-2xl font-bold font-mono text-[#0F172A] mt-1">214 /min</div>
+          <span className="text-[10px] text-[#2563EB] font-mono">Recorded at 20:30 (Gate B)</span>
+        </div>
+
+        <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] shadow-sm">
+          <span className="text-xs font-mono text-[#64748B] uppercase">Bottleneck Duration</span>
+          <div className="text-2xl font-bold font-mono text-[#D97706] mt-1">04m 18s</div>
+          <span className="text-[10px] text-[#16A34A] font-mono">Resolved via Gate C diversion</span>
+        </div>
+
+        <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] shadow-sm">
+          <span className="text-xs font-mono text-[#64748B] uppercase">Total Egress Volume</span>
+          <div className="text-2xl font-bold font-mono text-[#0F172A] mt-1">14,280</div>
+          <span className="text-[10px] text-[#64748B] font-mono">Cumulative safe egress count</span>
+        </div>
+
+        <div className="p-4 rounded-xl bg-white border border-[#CBD5E1] shadow-sm">
+          <span className="text-xs font-mono text-[#64748B] uppercase">Mean Squad Response</span>
+          <div className="text-2xl font-bold font-mono text-[#16A34A] mt-1">01m 24s</div>
+          <span className="text-[10px] text-[#16A34A] font-mono">Exceeds 03:00 safety SLA</span>
+        </div>
+      </div>
+
+      {/* Chart Rows */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Crowd Density Over Time */}
-        <div className="rounded-2xl border border-slate-800 bg-[#090e1a] p-5 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-cyan-400" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
-                Crowd Density Over Time (%)
-              </span>
+        {/* Chart 1: Temporal Density Curve */}
+        <div className="rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-4">
+            <div>
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+                Temporal Density Progression (%)
+              </h3>
+              <p className="text-[11px] text-[#64748B] font-mono">
+                Comparative time-series: Concourse, Arena, and Venue Mean
+              </p>
             </div>
-            <span className="text-[11px] font-mono text-slate-400">Hourly Intervals</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EFF6FF] text-[#2563EB] font-bold border border-[#BFDBFE]">
+              TIME SERIES
+            </span>
           </div>
 
-          <div className="h-64 w-full my-4">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={densityHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="time" stroke="#64748b" fontSize={10} />
-                <YAxis domain={[0, 100]} stroke="#64748b" fontSize={10} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d18',
-                    borderColor: '#334155',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                  }}
+              <LineChart data={densityHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="time" stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <YAxis domain={[0, 100]} stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ background: '#FFFFFF', borderColor: '#CBD5E1', borderRadius: '8px', color: '#0F172A', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
                 />
-                <Line type="monotone" dataKey="overall" stroke="#38bdf8" strokeWidth={2.5} name="Venue Overall" />
-                <Line type="monotone" dataKey="gateB" stroke="#ef4444" strokeWidth={2} name="Gate B" />
-                <Line type="monotone" dataKey="stage" stroke="#f59e0b" strokeWidth={2} name="Main Stage" />
-                <Legend wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace' }} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Line type="monotone" dataKey="overall" name="Venue Mean" stroke="#2563EB" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="gateB" name="Gate B Concourse" stroke="#DC2626" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="stage" name="Main Stage" stroke="#F59E0B" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 2: Inflow vs Outflow Comparison */}
-        <div className="rounded-2xl border border-slate-800 bg-[#090e1a] p-5 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-cyan-400" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
-                Inflow vs Outflow Rates (Pax / Min)
-              </span>
+        {/* Chart 2: Flow Balance by Zone */}
+        <div className="rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-4">
+            <div>
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+                Inflow vs Outflow Rate by Zone (/min)
+              </h3>
+              <p className="text-[11px] text-[#64748B] font-mono">
+                Identifies bottleneck accumulation imbalance ratios
+              </p>
             </div>
-            <span className="text-[11px] font-mono text-slate-400">Turnstile Telemetry</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F0FDFA] text-[#0F766E] font-bold border border-[#CCFBF1]">
+              FLOW BALANCE
+            </span>
           </div>
 
-          <div className="h-64 w-full my-4">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={flowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d18',
-                    borderColor: '#334155',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                  }}
+              <BarChart data={flowData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ background: '#FFFFFF', borderColor: '#CBD5E1', borderRadius: '8px', color: '#0F172A', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
                 />
-                <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Outflow" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                <Legend wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace' }} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar dataKey="Inflow" name="Inflow Rate" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Outflow" name="Outflow Rate" fill="#0F766E" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 3: Zone Occupancy Distribution */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#090e1a] p-5 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-cyan-400" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
-                Sector Occupancy Saturation Distribution (%)
-              </span>
+        {/* Chart 3: Zone Occupancy vs Safety Limit */}
+        <div className="lg:col-span-2 rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-4">
+            <div>
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+                Real-Time Zone Saturation vs Absolute Safety Ceilings
+              </h3>
+              <p className="text-[11px] text-[#64748B] font-mono">
+                Cross-zone capacity compliance telemetry
+              </p>
             </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569] font-bold border border-[#E2E8F0]">
+              CAPACITY THRESHOLD
+            </span>
           </div>
 
-          <div className="h-64 w-full my-4">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={occupancyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d18',
-                    borderColor: '#334155',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                  }}
+              <BarChart data={occupancyData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <YAxis domain={[0, 100]} stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ background: '#FFFFFF', borderColor: '#CBD5E1', borderRadius: '8px', color: '#0F172A', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
                 />
-                <Bar dataKey="Occupancy" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar dataKey="Occupancy" name="Current Load %" fill="#2563EB" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

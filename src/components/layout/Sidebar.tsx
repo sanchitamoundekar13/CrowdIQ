@@ -9,9 +9,9 @@ import {
   ShieldCheck, 
   Settings, 
   ShieldAlert,
-  Cpu,
   Radio,
-  BellRing
+  Layers,
+  Shield
 } from 'lucide-react';
 import { useSimulation } from '../../context/SimulationContext';
 
@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) =
       label: 'Alerts & Incidents', 
       icon: AlertOctagon, 
       badge: activeAlertsCount > 0 ? activeAlertsCount : undefined,
-      badgeColor: 'bg-rose-500 text-white'
+      badgeColor: 'bg-[#DC2626] text-white'
     },
     { id: 'predictions', label: 'Predictions', icon: TrendingUp },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -41,30 +41,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) =
   ];
 
   return (
-    <aside className="w-64 bg-[#090e1a] border-r border-slate-800/80 flex flex-col justify-between h-screen sticky top-0 select-none z-30">
+    <aside className="w-64 bg-white border-r border-[#E2E8F0] flex flex-col justify-between h-screen sticky top-0 select-none z-30 shadow-[1px_0_3px_rgba(0,0,0,0.02)]">
       <div>
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800/80">
+        <div className="p-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg border ${emergencyMode ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'}`}>
-              <ShieldAlert className="h-6 w-6" />
+            <div className={`p-2 rounded-lg border ${
+              emergencyMode 
+                ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#DC2626] animate-pulse' 
+                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#2563EB]'
+            }`}>
+              <Shield className="h-5 w-5" strokeWidth={2.2} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-sm tracking-wider font-mono text-white">
-                  CROWDGUARD AI
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-extrabold text-sm tracking-tight text-[#0F172A]">
+                  Crowd<span className="text-[#2563EB]">IQ</span>
                 </h1>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#F1F5F9] text-[#475569] font-bold">OPS</span>
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A34A]"></span>
                 </span>
-                <span className="text-[11px] font-mono text-emerald-400 tracking-wider uppercase font-semibold">
-                  LIVE SYSTEM
+                <span className="text-[10px] font-mono text-[#16A34A] tracking-wider uppercase font-bold">
+                  ONLINE
                 </span>
                 {stage !== 'NORMAL' && stage !== 'SAFE' && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 uppercase">
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FFFBEB] border border-[#FDE68A] text-[#D97706] uppercase font-bold">
                     {stage}
                   </span>
                 )}
@@ -82,18 +87,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) =
               <button
                 key={item.id}
                 onClick={() => onSelectPage(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium font-mono transition-all duration-200 group ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm shadow-cyan-500/10'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] shadow-xs'
+                    : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] border border-transparent'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`h-4 w-4 transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                <div className="flex items-center gap-2.5">
+                  <Icon className={`h-4 w-4 transition-colors ${isActive ? 'text-[#2563EB]' : 'text-[#64748B]'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && (
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${item.badgeColor || 'bg-slate-800 text-slate-300'}`}>
+                  <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-[#F1F5F9] text-[#475569]'}`}>
                     {item.badge}
                   </span>
                 )}
@@ -104,32 +109,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) =
       </div>
 
       {/* Bottom Status Section */}
-      <div className="p-4 border-t border-slate-800/80 bg-[#070b14]/60">
-        <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-2.5 flex items-center gap-1.5">
-          <Radio className="h-3 w-3 text-cyan-400" />
-          System Status
+      <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-[#64748B] font-bold mb-2 flex items-center gap-1.5">
+          <Radio className="h-3 w-3 text-[#2563EB]" />
+          System Health
         </div>
-        <div className="space-y-2 text-[11px] font-mono">
-          <div className="flex items-center justify-between text-slate-300">
+        <div className="space-y-1.5 text-[11px] font-mono">
+          <div className="flex items-center justify-between text-[#475569]">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              AI Engine
+              <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A]"></span>
+              Vision Engine
             </span>
-            <span className="text-emerald-400">Online</span>
+            <span className="text-[#16A34A] font-semibold">Online</span>
           </div>
-          <div className="flex items-center justify-between text-slate-300">
+          <div className="flex items-center justify-between text-[#475569]">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-              Camera Network
+              <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A]"></span>
+              CCTV Grid
             </span>
-            <span className="text-emerald-400">4 / 4 Live</span>
+            <span className="text-[#16A34A] font-semibold">4 / 4 Live</span>
           </div>
-          <div className="flex items-center justify-between text-slate-300">
+          <div className="flex items-center justify-between text-[#475569]">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-              Alert System
+              <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A]"></span>
+              Risk Pipeline
             </span>
-            <span className="text-emerald-400">Active</span>
+            <span className="text-[#16A34A] font-semibold">Nominal</span>
           </div>
         </div>
       </div>

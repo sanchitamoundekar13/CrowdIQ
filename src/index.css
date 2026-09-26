@@ -2,49 +2,46 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   CROWDGUARD AI DESIGN SYSTEM
-   Modern, high-tech AI safety SaaS interface
+   CROWDIQ DESIGN SYSTEM - LIGHT THEME SECURITY PLATFORM
+   Clean, modern, professional security operations UI
    ========================================================================== */
 
 :root {
-  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   
   /* Core Brand Colors */
-  --brand-navy: #0b192c;
-  --brand-navy-light: #1e293b;
-  --brand-blue: #0066ff;
-  --brand-blue-hover: #0052cc;
-  --brand-cyan: #0284c7;
-  --brand-cyan-light: #e0f2fe;
-  --brand-cyan-glow: rgba(0, 102, 255, 0.35);
+  --brand-navy: #0F172A;
+  --brand-navy-light: #1E293B;
+  --brand-blue: #2563EB;
+  --brand-blue-hover: #1D4ED8;
+  --brand-teal: #0F766E;
+  --brand-teal-light: #F0FDFA;
 
   /* Status Colors */
-  --status-critical: #dc2626;
-  --status-warning: #f59e0b;
-  --status-safe: #10b981;
-  --status-purple: #8b5cf6;
+  --status-critical: #DC2626;
+  --status-warning: #F59E0B;
+  --status-safe: #16A34A;
 
   /* Neutrals */
-  --bg-page: #f8fafc;
-  --bg-white: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-subtle: #f8fafc;
+  --bg-page: #F7F9FC;
+  --bg-white: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #F8FAFC;
   
-  --border-light: #e2e8f0;
-  --border-subtle: #edf2f7;
-  --border-card: #e2e8f0;
+  --border-light: #E2E8F0;
+  --border-subtle: #CBD5E1;
+  --border-card: #E2E8F0;
 
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-subtle: #94a3b8;
-  --text-inverted: #ffffff;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --text-inverted: #FFFFFF;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 10px 30px -10px rgba(15, 23, 42, 0.08);
-  --shadow-card-hover: 0 20px 40px -12px rgba(15, 23, 42, 0.12);
-  --shadow-hud: 0 20px 40px rgba(0, 0, 0, 0.45);
+  /* Subtle Clean Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 /* ==========================================================================
