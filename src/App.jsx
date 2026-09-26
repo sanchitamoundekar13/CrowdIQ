@@ -209,11 +209,18 @@ function AppContent() {
       {/* Global Real-time Toast Stack */}
       <ToastContainer />
 
-      {/* 100% Light Theme Request Demo Modal */}
-      <RequestDemoModal 
-        isOpen={isDemoModalOpen} 
-        onClose={() => setIsDemoModalOpen(false)}
-        onLaunchDashboard={() => handleNavigate('dashboard')}
+      {/* Operator Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onNavigateAdmin={() => handleNavigate('admin')}
+        onOpenDatabase={openDatabaseModal}
+      />
+
+      {/* LocalStorage Database Management Modal */}
+      <DatabaseStatusModal 
+        isOpen={isDatabaseModalOpen} 
+        onClose={closeDatabaseModal} 
       />
     </div>
   );
@@ -221,8 +228,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SimulationProvider>
-      <AppContent />
-    </SimulationProvider>
+    <AuthProvider>
+      <SimulationProvider>
+        <AppContent />
+      </SimulationProvider>
+    </AuthProvider>
   );
 }

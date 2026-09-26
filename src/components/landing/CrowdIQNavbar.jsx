@@ -88,35 +88,35 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onOpenProfile }) {
           })}
         </nav>
 
-        {/* RIGHT: ● System Online Status + Quick Action */}
+        {/* RIGHT SIDE: 🟢 System Online | Profile */}
         <div className="hidden sm:flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-semibold text-[#16A34A]">
+          {/* 🟢 System Online indicator */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-semibold text-[#16A34A] select-none">
             <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
-            <span>● System Online</span>
+            <span>System Online</span>
           </div>
 
-          {onRequestDemo && (
-            <button
-              onClick={onRequestDemo}
-              className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-xs font-semibold text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
-            >
-              Request Demo
-            </button>
-          )}
+          {/* Profile Button */}
+          <button
+            onClick={onOpenProfile}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-semibold text-[#0F172A] shadow-2xs transition-colors cursor-pointer active:scale-95"
+            title="Operator Profile & Role Clearance"
+          >
+            <div className="w-5 h-5 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-[10px] font-bold">
+              <User className="w-3 h-3" />
+            </div>
+            <span>Profile</span>
+          </button>
         </div>
 
-        {/* Mobile Hamburger Menu Toggle */}
+        {/* Mobile Header Elements */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Direct quick jump to Dashboard on mobile header */}
           <button
-            onClick={() => handleItemClick('dashboard')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
-              activeRoute === 'dashboard'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]'
-            }`}
+            onClick={onOpenProfile}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#CBD5E1] bg-white text-xs font-semibold text-[#0F172A] cursor-pointer"
           >
-            Dashboard
+            <User className="w-3.5 h-3.5 text-blue-600" />
+            <span>Profile</span>
           </button>
 
           <button
@@ -153,19 +153,17 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onOpenProfile }) {
           <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-xs font-medium text-[#16A34A]">
               <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
-              ● System Online
+              System Online
             </span>
-            {onRequestDemo && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onRequestDemo();
-                }}
-                className="text-xs font-semibold text-[#2563EB] hover:underline"
-              >
-                Request Demo
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenProfile();
+              }}
+              className="text-xs font-semibold text-[#2563EB] hover:underline"
+            >
+              Open Profile →
+            </button>
           </div>
         </div>
       )}
