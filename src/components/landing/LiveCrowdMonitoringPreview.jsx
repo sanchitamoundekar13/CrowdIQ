@@ -48,7 +48,7 @@ export function LiveCrowdMonitoringPreview({ onLaunchFullConsole, onJumpToSimula
                 </span>
                 <span className="text-[11px] font-semibold text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
-                  LIVE INFERENCE
+                  PRODUCTION TELEMETRY
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight mt-1">

@@ -17,6 +17,7 @@ import {
   initialSettings, 
   computeRiskBreakdown 
 } from '../data/initialData';
+import { localDatabase } from '../services/localDatabase';
 
 export interface ToastNotification {
   id: string;
@@ -107,12 +108,12 @@ const playTone = (type: 'warning' | 'critical' | 'success') => {
 };
 
 export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [zones, setZones] = useState<Zone[]>(initialZones);
+  const [zones, setZones] = useState<Zone[]>(() => localDatabase.getZones());
   const [selectedZoneId, setSelectedZoneId] = useState<string>('gate-b');
-  const [securityTeams, setSecurityTeams] = useState<SecurityTeam[]>(initialSecurityTeams);
-  const [cameraFeeds, setCameraFeeds] = useState<CameraFeed[]>(initialCameraFeeds);
-  const [alerts, setAlerts] = useState<AlertItem[]>(initialAlerts);
-  const [settings, setSettings] = useState<EventSettings>(initialSettings);
+  const [securityTeams, setSecurityTeams] = useState<SecurityTeam[]>(() => localDatabase.getSecurityTeams());
+  const [cameraFeeds, setCameraFeeds] = useState<CameraFeed[]>(() => localDatabase.getCameraFeeds());
+  const [alerts, setAlerts] = useState<AlertItem[]>(() => localDatabase.getAlerts());
+  const [settings, setSettings] = useState<EventSettings>(() => localDatabase.getSettings());
   const [stage, setStage] = useState<SimulationStage>('NORMAL');
   const [emergencyMode, setEmergencyMode] = useState<boolean>(false);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -121,6 +122,28 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [recommendationApproved, setRecommendationApproved] = useState<boolean>(false);
   const [recommendationDismissed, setRecommendationDismissed] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('09:45:00');
+  const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState<boolean>(false);
+
+  // Synchronize state with persistent LocalStorage database
+  useEffect(() => {
+    localDatabase.saveZones(zones);
+  }, [zones]);
+
+  useEffect(() => {
+    localDatabase.saveSecurityTeams(securityTeams);
+  }, [securityTeams]);
+
+  useEffect(() => {
+    localDatabase.saveCameraFeeds(cameraFeeds);
+  }, [cameraFeeds]);
+
+  useEffect(() => {
+    localDatabase.saveAlerts(alerts);
+  }, [alerts]);
+
+  useEffect(() => {
+    localDatabase.saveSettings(settings);
+  }, [settings]);
 
   const simulationTimerRef = useRef<number | null>(null);
   const teamTimerRef = useRef<number | null>(null);
@@ -202,7 +225,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setRecommendationDismissed(false);
     setSelectedZoneId('gate-b');
 
-    addToast('warning', 'Simulation Started', 'Simulating rapid crowd inflow surge at Gate B...');
+    addToast('warning', 'Live Surge Incident Triggered', 'Rapid crowd inflow surge detected at Gate B. Automated prevention engaged...');
 
     // Step 1: 42% -> 55%
     setTimeout(() => {
@@ -542,18 +565,25 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const resetSimulation = useCallback(() => {
     if (teamTimerRef.current) clearInterval(teamTimerRef.current);
     if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
-    setZones(initialZones);
+    localDatabase.resetDatabaseToBaseline();
+    setZones(localDatabase.getZones());
     setSelectedZoneId('gate-b');
-    setSecurityTeams(initialSecurityTeams);
-    setCameraFeeds(initialCameraFeeds);
-    setAlerts(initialAlerts);
+    setSecurityTeams(localDatabase.getSecurityTeams());
+    setCameraFeeds(localDatabase.getCameraFeeds());
+    setAlerts(localDatabase.getAlerts());
+    setSettings(localDatabase.getSettings());
     setStage('NORMAL');
     setEmergencyMode(false);
     setIsSimulating(false);
     setRecommendationApproved(false);
     setRecommendationDismissed(false);
-    addToast('info', 'System Reset', 'Simulation reset to baseline state.');
+    addToast('info', 'System Reset', 'Operational telemetry and LocalStorage database reset to baseline.');
   }, [addToast]);
+
+  const openDatabaseModal = useCallback(() => setIsDatabaseModalOpen(true), []);
+  const closeDatabaseModal = useCallback(() => setIsDatabaseModalOpen(false), []);
+  const exportDatabaseBackup = useCallback(() => localDatabase.exportDatabaseJSON(), []);
+  const importDatabaseBackup = useCallback((jsonStr: string) => localDatabase.importDatabaseJSON(jsonStr), []);
 
   // Aggregated dynamic metrics
   const totalPeople = zones.reduce((acc, z) => acc + z.currentPeople, 0);
@@ -586,6 +616,12 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         highRiskZonesCount,
         averageDensity,
         responseTime,
+        isDatabaseConnected: true,
+        isDatabaseModalOpen,
+        openDatabaseModal,
+        closeDatabaseModal,
+        exportDatabaseBackup,
+        importDatabaseBackup,
         selectZone,
         startSurgeSimulation,
         dispatchSecurityTeam,

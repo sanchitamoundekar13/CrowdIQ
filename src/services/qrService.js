@@ -1,16 +1,5 @@
-// QR Code generation, parsing, and digital ticket pass validation
 import QRCode from 'qrcode';
-
-// Mock initial database of valid tickets
-const initialTickets = [
-  { id: 'TKT-8841-VIP', attendee: 'Elena Rostova', tier: 'VIP Access', zone: 'zone-arena-bowl', gate: 'Gate VIP-1', valid: true, used: false, timestamp: null },
-  { id: 'TKT-7729-GEN', attendee: 'Marcus Chen', tier: 'General Admission', zone: 'zone-north-gate', gate: 'Gate North-A', valid: true, used: true, timestamp: '18:22:10' },
-  { id: 'TKT-9912-STF', attendee: 'Sarah Jenkins', tier: 'Security / Staff', zone: 'ALL-ZONES', gate: 'Gate All', valid: true, used: false, timestamp: null },
-  { id: 'TKT-4410-GEN', attendee: 'Devin Thorne', tier: 'General Admission', zone: 'zone-east-food', gate: 'Gate East-C', valid: true, used: false, timestamp: null },
-  { id: 'TKT-3105-GEN', attendee: 'Aria Patel', tier: 'General Admission', zone: 'zone-west-concourse', gate: 'Gate West-B', valid: true, used: false, timestamp: null },
-];
-
-let ticketRegistry = [...initialTickets];
+import { localDatabase } from './localDatabase';
 
 /**
  * Generate a Data URL for a QR code representing the ticket payload
@@ -51,8 +40,8 @@ export function validateTicketPayload(rawCode, activeGate = null) {
     ticketId = rawCode;
   }
 
-  const existing = ticketRegistry.find(t => t.id.toLowerCase() === ticketId.trim().toLowerCase());
-
+  const tickets = localDatabase.getTickets();
+  const existing = tickets.find(t => t.id.toLowerCase() === ticketId.trim().toLowerCase());
   const nowStr = new Date().toLocaleTimeString();
 
   if (!existing) {
@@ -68,7 +57,8 @@ export function validateTicketPayload(rawCode, activeGate = null) {
         used: true,
         timestamp: nowStr
       };
-      ticketRegistry.push(newEntry);
+      localDatabase.saveTickets([newEntry, ...tickets]);
+      localDatabase.addAuditLog('TICKET_VALIDATED', `New pass registered & admitted: ${newEntry.id} (${newEntry.attendee})`, 'TURNSTILE_A', 'SUCCESS');
       return {
         status: 'GRANTED',
         message: 'Access Granted - New Pass Registered',
@@ -77,6 +67,7 @@ export function validateTicketPayload(rawCode, activeGate = null) {
       };
     }
 
+    localDatabase.addAuditLog('TICKET_REJECTED', `Unrecognized ticket code rejected: ${ticketId}`, 'TURNSTILE_A', 'WARNING');
     return {
       status: 'INVALID',
       message: 'Invalid Ticket - Code not recognized in security database',
@@ -86,9 +77,10 @@ export function validateTicketPayload(rawCode, activeGate = null) {
   }
 
   if (existing.used) {
+    localDatabase.addAuditLog('ANTI_PASSBACK_TRIGGERED', `Duplicate pass reuse attempt: ${existing.id}`, 'TURNSTILE_A', 'CRITICAL');
     return {
       status: 'DUPLICATE',
-      message: `Access Denied - Ticket already scanned at ${existing.timestamp}! Potential fraudulent pass reuse.`,
+      message: `Access Denied - Ticket already scanned at ${existing.timestamp}! Anti-passback triggered.`,
       ticket: existing,
       timestamp: nowStr
     };
@@ -97,6 +89,8 @@ export function validateTicketPayload(rawCode, activeGate = null) {
   // Mark ticket as scanned/used
   existing.used = true;
   existing.timestamp = nowStr;
+  localDatabase.saveTickets([...tickets]);
+  localDatabase.addAuditLog('TICKET_ADMITTED', `Turnstile access granted: ${existing.id} (${existing.attendee})`, 'TURNSTILE_A', 'INFO');
 
   return {
     status: 'GRANTED',
@@ -113,10 +107,12 @@ export function registerNewPass(passData) {
     used: false,
     timestamp: null
   };
-  ticketRegistry.unshift(newPass);
+  const tickets = localDatabase.getTickets();
+  localDatabase.saveTickets([newPass, ...tickets.filter(t => t.id !== newPass.id)]);
+  localDatabase.addAuditLog('PASS_GENERATED', `Digital Pass created for ${newPass.attendee} (${newPass.id})`, 'TICKET_OFFICE', 'INFO');
   return newPass;
 }
 
 export function getTicketRegistry() {
-  return [...ticketRegistry];
+  return localDatabase.getTickets();
 }

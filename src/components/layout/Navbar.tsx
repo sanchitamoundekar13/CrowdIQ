@@ -52,8 +52,8 @@ export const Navbar: React.FC = () => {
               <span className="h-2 w-2 rounded-full bg-[#16A34A] animate-ping" />
               LIVE TELEMETRY
             </span>
-            <span className="hidden md:inline text-[10px] uppercase px-1.5 py-0.2 rounded bg-[#EFF6FF] text-[#2563EB] font-bold border border-[#BFDBFE]">
-              DEMO SIMULATION
+            <span className="hidden md:inline text-[10px] uppercase px-1.5 py-0.2 rounded bg-[#F0FDF4] text-[#16A34A] font-bold border border-[#BBF7D0]">
+              PRODUCTION LIVE
             </span>
           </div>
         </div>
@@ -102,7 +102,7 @@ export const Navbar: React.FC = () => {
           }`}
         >
           <Play className={`h-3.5 w-3.5 fill-current ${isSimulating ? 'animate-spin' : ''}`} />
-          <span>{isSimulating ? 'SIMULATING...' : 'START SIMULATION'}</span>
+          <span>{isSimulating ? 'TESTING INFLOW...' : 'TEST SURGE INFLOW'}</span>
         </button>
 
         {/* EMERGENCY MODE TOGGLE */}

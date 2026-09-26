@@ -81,11 +81,11 @@ export function LiveDashboardSection() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold font-mono tracking-wider text-[#2563EB] uppercase">
-                Intelligent Surveillance Suite
+                Active Surveillance Suite
               </span>
-              <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
-                LIVE TELEMETRY ACTIVE
+                PRODUCTION LIVE
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-1">

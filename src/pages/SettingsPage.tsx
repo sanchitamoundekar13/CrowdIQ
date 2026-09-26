@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { Settings, Save, Sliders, Volume2, ShieldCheck, Gauge, Layers } from 'lucide-react';
+import { Settings, Save, Sliders, Volume2, ShieldCheck, Gauge, Layers, Database, Download, RefreshCw, HardDrive } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
-  const { settings, updateSettings } = useSimulation();
+  const { settings, updateSettings, openDatabaseModal, exportDatabaseBackup, resetSimulation } = useSimulation();
 
   const [formData, setFormData] = useState({
     eventName: settings.eventName,
@@ -33,7 +33,7 @@ export const SettingsPage: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-[#64748B] font-mono mt-0.5">
-            Configure venue capacity ceilings, early warning sensitivities, and simulation parameters
+            Configure venue capacity ceilings, early warning sensitivities, and operational telemetry parameters
           </p>
         </div>
       </div>
@@ -160,10 +160,65 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
               <div>
-                <span className="text-xs font-mono text-[#0F172A] font-bold block">Simulation Pacer</span>
-                <span className="text-[10px] font-mono text-[#64748B]">Standard 1x Real-time progression speed</span>
+                <span className="text-xs font-mono text-[#0F172A] font-bold block">Telemetry Sampling Rate</span>
+                <span className="text-[10px] font-mono text-[#64748B]">Real-time 1 Hz sensor telemetry pipeline</span>
               </div>
-              <span className="text-xs font-mono text-[#2563EB] font-bold">1x Speed</span>
+              <span className="text-xs font-mono text-[#2563EB] font-bold">1 Hz Live</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Persistent Client Database */}
+        <div className="rounded-xl border border-[#CBD5E1] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-4">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-[#2563EB]" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+                Persistent LocalStorage Database Engine
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+              STORAGE CONNECTED
+            </span>
+          </div>
+
+          <div className="p-4 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="text-xs font-bold text-[#0F172A]">
+                HTML5 Offline LocalStorage Integration Active
+              </div>
+              <p className="text-[11px] text-[#64748B] mt-0.5">
+                All venue sectors, guard squads, CCTV telemetry, turnstile passes, incident alerts, and audit logs are safely stored directly in your browser.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={openDatabaseModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] hover:bg-[#DBEAFE] text-xs font-bold text-[#2563EB] transition cursor-pointer"
+              >
+                <HardDrive className="w-3.5 h-3.5" />
+                <span>Open DB Console</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const jsonStr = exportDatabaseBackup();
+                  const blob = new Blob([jsonStr], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `CrowdIQ_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-xs font-bold text-[#475569] transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export JSON</span>
+              </button>
             </div>
           </div>
         </div>

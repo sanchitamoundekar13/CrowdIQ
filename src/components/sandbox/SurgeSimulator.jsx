@@ -55,11 +55,11 @@ export function SurgeSimulator() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Sliders size={18} color="var(--accent-gold)" />
             <span className="font-display" style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              CHAOS & CROWD SURGE SIMULATION SANDBOX
+              DYNAMIC INCIDENT DISPATCH & STRESS DRILL CONTROLLER
             </span>
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            Stress test the AI Stampede Prevention algorithms by injecting synthetic surges and observing response telemetry.
+            Conduct operational safety drills and stress-test the real-time AI Stampede Prevention systems against peak load incidents.
           </p>
         </div>
 

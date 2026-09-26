@@ -33,9 +33,9 @@ export const PredictionsPage: React.FC = () => {
           </p>
         </div>
 
-        <span className="px-3 py-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] font-mono text-xs font-semibold flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] animate-pulse"></span>
-          <span>AI PREDICTIVE RADAR ACTIVE</span>
+        <span className="px-3 py-1.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] font-mono text-xs font-semibold flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+          <span>LIVE PREDICTIVE INFERENCE</span>
         </span>
       </div>
 
