@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Activity, Menu, X, ArrowRight } from 'lucide-react';
 
-export function CrowdIQNavbar({ onLaunchDashboard, activeSection, onNavigateSection }) {
+export function CrowdIQNavbar({ onLaunchDashboard, onRequestDemo, activeSection, onNavigateSection }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -58,12 +58,19 @@ export function CrowdIQNavbar({ onLaunchDashboard, activeSection, onNavigateSect
           })}
         </nav>
 
-        {/* Right: Live Status & Launch Dashboard CTA */}
-        <div className="hidden sm:flex items-center gap-3">
+        {/* Right: Live Status & Actions */}
+        <div className="hidden sm:flex items-center gap-2.5">
           <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-semibold text-[#16A34A]">
             <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
             <span>SYSTEM ONLINE</span>
           </div>
+
+          <button
+            onClick={onRequestDemo}
+            className="px-3.5 py-2 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-[#0F172A] text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+          >
+            Request Demo
+          </button>
 
           <button
             onClick={onLaunchDashboard}

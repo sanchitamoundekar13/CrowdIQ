@@ -12,7 +12,7 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 
-export function CrowdIQHero({ onLaunchDashboard, onViewDemo }) {
+export function CrowdIQHero({ onLaunchDashboard, onViewDemo, onRequestDemo }) {
   // Live fluctuating telemetry for realistic camera feed HUD
   const [telemetry, setTelemetry] = useState({
     peopleCount: 47,
@@ -75,6 +75,13 @@ export function CrowdIQHero({ onLaunchDashboard, onViewDemo }) {
               >
                 <Play className="w-4 h-4 text-[#2563EB] fill-[#2563EB]" />
                 <span>View System Demo</span>
+              </button>
+
+              <button
+                onClick={onRequestDemo}
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#475569] hover:text-[#0F172A] text-sm font-semibold border border-[#E2E8F0] shadow-xs transition-all duration-150 cursor-pointer"
+              >
+                <span>Request Demo</span>
               </button>
             </div>
 

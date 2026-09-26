@@ -17,6 +17,7 @@ import { VenueIntelligenceSection } from './components/landing/VenueIntelligence
 import { TechnologySection } from './components/landing/TechnologySection';
 import { ProblemSolutionSection } from './components/landing/ProblemSolutionSection';
 import { CrowdIQFooter } from './components/landing/CrowdIQFooter';
+import { RequestDemoModal } from './components/landing/RequestDemoModal';
 
 // Command Center Pages
 import { CommandCenterPage } from './pages/CommandCenterPage.tsx';
@@ -34,6 +35,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'console'
   const [currentPage, setCurrentPage] = useState('command-center');
   const [activeSection, setActiveSection] = useState('overview');
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   const handleLaunchConsole = (page = 'command-center') => {
     const pageMap = {
@@ -103,6 +105,7 @@ function AppContent() {
           {/* Professional Clean Light Navbar */}
           <CrowdIQNavbar
             onLaunchDashboard={() => handleLaunchConsole('command-center')}
+            onRequestDemo={() => setIsDemoModalOpen(true)}
             activeSection={activeSection}
             onNavigateSection={handleNavigateSection}
           />
@@ -112,6 +115,7 @@ function AppContent() {
             <CrowdIQHero
               onLaunchDashboard={() => handleLaunchConsole('command-center')}
               onViewDemo={() => handleNavigateSection('live-dashboard')}
+              onRequestDemo={() => setIsDemoModalOpen(true)}
             />
 
             {/* 2. Show The Product Early: Live Crowd Monitoring Preview */}
@@ -205,6 +209,13 @@ function AppContent() {
           <ToastContainer />
         </div>
       )}
+
+      {/* 100% Light Theme Request Demo Modal */}
+      <RequestDemoModal 
+        isOpen={isDemoModalOpen} 
+        onClose={() => setIsDemoModalOpen(false)}
+        onLaunchDashboard={() => handleLaunchConsole('command-center')}
+      />
     </div>
   );
 }
