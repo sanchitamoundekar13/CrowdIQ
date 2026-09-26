@@ -151,7 +151,7 @@ export function RequestDemoModal({ isOpen, onClose, onLaunchDashboard }) {
             </h3>
             
             <p className="text-xs text-[#64748B] mb-5 leading-relaxed max-w-sm mx-auto">
-              Thank you, <strong>{formData.name}</strong>. Your prototype demo session has been prepared. You can immediately inspect the live interactive security dashboard below.
+              Thank you, <strong>{formData.name}</strong>. Your operational demo session has been prepared. You can immediately inspect the live interactive security dashboard below.
             </p>
 
             <div className="flex flex-col gap-2.5">

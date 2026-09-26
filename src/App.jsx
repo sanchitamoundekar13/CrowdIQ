@@ -309,7 +309,7 @@ function AppContent() {
       {/* ===================================================================
           PROFESSIONAL PLATFORM FOOTER (MANDATORY ON ALL PAGES)
           Includes: © 2026 CrowdIQ. All rights reserved.
-          CrowdIQ — Intelligent Crowd Safety Platform | Hackathon 2026
+          CrowdIQ — Intelligent Crowd Safety Platform
           =================================================================== */}
       <CrowdIQFooter onNavigate={handleNavigate} />
 
