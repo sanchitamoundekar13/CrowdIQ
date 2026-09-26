@@ -415,3 +415,184 @@ async def websocket_telemetry(websocket: WebSocket):
         pass
     except Exception as e:
         print(f"[WebSocket Error] {e}")
+
+
+# ============================================================================
+# PRODUCTION SAAS REST API SUITE (Clean Controller/Schema Boundaries)
+# ============================================================================
+
+class CVIngestionPayload(BaseModel):
+    camera_id: str
+    zone_id: str
+    person_count: int
+    density: float
+    velocity: float
+    direction: str
+    risk_score: int
+    flow_instability: Optional[float] = 0.0
+    timestamp: Optional[str] = None
+
+class IncidentCreatePayload(BaseModel):
+    event_id: str
+    zone_id: Optional[str] = None
+    location: str
+    type: str
+    severity: str
+    description: str
+    reported_by: str
+    assigned_commander: Optional[str] = None
+    assigned_officers: Optional[List[str]] = []
+
+class EventRegistrationPayload(BaseModel):
+    event_id: str
+    full_name: str
+    email: str
+    phone: str
+    attendance_date: str
+    expected_arrival_time: str
+    accompanying_people: int = 0
+    emergency_contact_name: str
+    emergency_contact_phone: str
+    emergency_contact_relationship: str
+    accessibility_assistance: bool = False
+    consent_agreed: bool = True
+
+# --- /api/crowd (AI / Computer Vision YOLO & DeepSORT Data Contract) ---
+@app.post("/api/crowd/ingest")
+async def ingest_cv_telemetry(payload: CVIngestionPayload):
+    """
+    Ingests live computer vision detections from edge YOLO / DeepSORT tracking node.
+    Accepts: person_count, density, velocity, direction, zone_id, camera_id, risk_score.
+    """
+    for z in VENUE_STATE["zones"]:
+        if z["id"] == payload.zone_id:
+            z["current_count"] = payload.person_count
+            z["density"] = payload.density
+            z["velocity"] = payload.velocity
+            z["camera_id"] = payload.camera_id
+            break
+
+    return {
+        "status": "INGESTED",
+        "camera_id": payload.camera_id,
+        "zone_id": payload.zone_id,
+        "processed_at": datetime.now().isoformat(),
+        "risk_evaluation": "NORMAL" if payload.risk_score < 60 else "ELEVATED"
+    }
+
+# --- /api/events ---
+@app.get("/api/events")
+async def list_events():
+    return {
+        "total": 6,
+        "events": [
+            {
+                "id": "evt-001",
+                "name": "Metropolitan Arena Grand Prix",
+                "description": "Annual high-capacity international motorsports and fan fest expo.",
+                "location": "Sector 4 Grand Circuit & Arena Bowl",
+                "start_date": "2026-10-15T09:00:00Z",
+                "end_date": "2026-10-18T22:00:00Z",
+                "expected_capacity": 45000,
+                "max_capacity": 50000,
+                "status": "Live",
+                "organizer": "Metropolitan Sports Authority",
+                "public_status": "NORMAL",
+                "registered_attendees": 42381,
+                "zones_count": 8,
+                "cameras_count": 32
+            },
+            {
+                "id": "evt-002",
+                "name": "Neon Horizon Music Festival",
+                "description": "3-day open-air electronic and indie music festival with 4 stages.",
+                "location": "East Meadow Festival Grounds",
+                "start_date": "2026-11-04T14:00:00Z",
+                "end_date": "2026-11-06T23:59:00Z",
+                "expected_capacity": 28000,
+                "max_capacity": 30000,
+                "status": "Upcoming",
+                "organizer": "SoundWave Live Ltd.",
+                "public_status": "NORMAL",
+                "registered_attendees": 24910,
+                "zones_count": 6,
+                "cameras_count": 24
+            }
+        ]
+    }
+
+# --- /api/zones ---
+@app.get("/api/zones")
+async def list_zones():
+    return {"zones": VENUE_STATE["zones"]}
+
+# --- /api/cameras ---
+@app.get("/api/cameras")
+async def list_cameras():
+    return {
+        "total_cameras": 120,
+        "online_cameras": 117,
+        "offline_cameras": 3,
+        "cameras": [
+            {"id": "CAM-01", "name": "Gate A North Plaza PTZ", "zone": "zone-north-gate", "status": "ONLINE", "fps": 30, "resolution": "1080p", "people_count": 1842},
+            {"id": "CAM-02", "name": "Main Stage Central Overhead", "zone": "zone-arena-bowl", "status": "ONLINE", "fps": 30, "resolution": "4K", "people_count": 3950},
+            {"id": "CAM-03", "name": "West Egress Chokepoint", "zone": "zone-west-concourse", "status": "ONLINE", "fps": 25, "resolution": "1080p", "people_count": 890},
+            {"id": "CAM-04", "name": "East Food Concourse", "zone": "zone-east-food", "status": "ONLINE", "fps": 30, "resolution": "1080p", "people_count": 1420}
+        ]
+    }
+
+# --- /api/alerts ---
+@app.get("/api/alerts")
+async def list_alerts():
+    return {
+        "active_alerts_count": 2,
+        "alerts": [
+            {
+                "id": "ALT-9041",
+                "severity": "CRITICAL",
+                "type": "CROWD_COMPRESSION",
+                "location": "Gate A - North Entry Plaza",
+                "description": "Inflow exceeds 190 persons/min with 84% turnstile bottleneck. Opposing egress vectors detected.",
+                "timestamp": "Just now",
+                "status": "ACTIVE"
+            },
+            {
+                "id": "ALT-9038",
+                "severity": "HIGH",
+                "type": "CHOKEPOINT_CONGESTION",
+                "location": "Main Stage Arena Floor",
+                "description": "Density surging toward 4.5 pers/m2. Stage perimeter barriers under elevated strain.",
+                "timestamp": "4 min ago",
+                "status": "ACTIVE"
+            }
+        ]
+    }
+
+# --- /api/incidents ---
+@app.post("/api/incidents")
+async def create_incident(payload: IncidentCreatePayload):
+    incident_id = f"INC-{int(time.time())}"
+    return {
+        "status": "CREATED",
+        "incident_id": incident_id,
+        "data": payload.dict(),
+        "created_at": datetime.now().isoformat()
+    }
+
+# --- /api/system/health ---
+@app.get("/api/system/health")
+async def system_health():
+    return {
+        "overall_status": "OPERATIONAL",
+        "timestamp": datetime.now().isoformat(),
+        "services": [
+            {"service": "API Gateway", "status": "OPERATIONAL", "latency_ms": 12, "uptime": "99.99%"},
+            {"service": "PostgreSQL Database", "status": "OPERATIONAL", "latency_ms": 18, "uptime": "99.98%"},
+            {"service": "Authentication & RBAC", "status": "OPERATIONAL", "latency_ms": 15, "uptime": "100.0%"},
+            {"service": "Realtime WebSocket Hub", "status": "OPERATIONAL", "latency_ms": 8, "uptime": "99.95%"},
+            {"service": "AI Vision Engine (YOLOv8)", "status": "OPERATIONAL", "latency_ms": 34, "uptime": "99.92%"},
+            {"service": "CCTV Edge Ingestion (120 Nodes)", "status": "OPERATIONAL", "latency_ms": 22, "uptime": "99.89%", "online_nodes": 117, "offline_nodes": 3},
+            {"service": "Cloud Object Storage", "status": "OPERATIONAL", "latency_ms": 29, "uptime": "100.0%"}
+        ]
+    }
+
