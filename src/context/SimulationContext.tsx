@@ -61,6 +61,23 @@ interface SimulationContextType {
   resetSimulation: () => void;
   dismissToast: (id: string) => void;
   playAlertSound: (severity: 'warning' | 'critical' | 'success') => void;
+  // Admin & Data Ingestion Operations
+  isAdminAuthenticated: boolean;
+  loginAdmin: (email?: string, password?: string) => boolean;
+  logoutAdmin: () => void;
+  addAlert: (alert: Omit<AlertItem, 'id' | 'timestamp' | 'timeFormatted' | 'status'> & { status?: AlertItem['status'] }) => void;
+  resolveAlert: (alertId: string) => void;
+  deleteAlert: (alertId: string) => void;
+  addSecurityTeam: (team: Omit<SecurityTeam, 'id'>) => void;
+  updateSecurityTeam: (id: string, updates: Partial<SecurityTeam>) => void;
+  deleteSecurityTeam: (id: string) => void;
+  addCameraFeed: (camera: Omit<CameraFeed, 'id'>) => void;
+  updateCameraFeed: (id: string, updates: Partial<CameraFeed>) => void;
+  deleteCameraFeed: (id: string) => void;
+  updateZone: (id: string, updates: Partial<Zone>) => void;
+  addZone: (zone: Zone) => void;
+  deleteZone: (id: string) => void;
+  addToast: (type: ToastNotification['type'], title: string, message: string) => void;
 }
 
 const SimulationContext = createContext<SimulationContextType | undefined>(undefined);
@@ -122,6 +139,14 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [recommendationDismissed, setRecommendationDismissed] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('09:45:00');
 
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('crowdiq_admin_logged_in') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const simulationTimerRef = useRef<number | null>(null);
   const teamTimerRef = useRef<number | null>(null);
 
@@ -135,6 +160,133 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
     setToasts(prev => [newToast, ...prev.slice(0, 4)]);
   }, []);
+
+  const loginAdmin = useCallback((_email?: string, _password?: string) => {
+    setIsAdminAuthenticated(true);
+    try {
+      localStorage.setItem('crowdiq_admin_logged_in', 'true');
+    } catch {
+      // Ignore
+    }
+    playTone('success');
+    addToast('success', 'Admin Authenticated', 'Operational Control & Data Management Terminal Active.');
+    return true;
+  }, [addToast]);
+
+  const logoutAdmin = useCallback(() => {
+    setIsAdminAuthenticated(false);
+    try {
+      localStorage.removeItem('crowdiq_admin_logged_in');
+    } catch {
+      // Ignore
+    }
+    addToast('info', 'Logged Out', 'Admin session terminated.');
+  }, [addToast]);
+
+  // Alerts Management CRUD
+  const addAlert = useCallback((alertData: Omit<AlertItem, 'id' | 'timestamp' | 'timeFormatted' | 'status'> & { status?: AlertItem['status'] }) => {
+    const newAlert: AlertItem = {
+      ...alertData,
+      id: 'alt-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      timeFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      status: alertData.status || 'ACTIVE'
+    };
+    setAlerts(prev => [newAlert, ...prev]);
+    if (newAlert.severity === 'CRITICAL') {
+      playTone('critical');
+    } else if (newAlert.severity === 'HIGH' || newAlert.severity === 'WARNING') {
+      playTone('warning');
+    }
+    addToast(newAlert.severity === 'CRITICAL' ? 'error' : 'warning', `Incident Logged: ${newAlert.title}`, `${newAlert.zoneName} • ${newAlert.severity}`);
+  }, [addToast]);
+
+  const resolveAlert = useCallback((alertId: string) => {
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: 'RESOLVED', actionTaken: a.actionTaken || 'Resolved by Incident Commander' } : a));
+    addToast('success', 'Alert Resolved', 'Incident marked as resolved.');
+  }, [addToast]);
+
+  const deleteAlert = useCallback((alertId: string) => {
+    setAlerts(prev => prev.filter(a => a.id !== alertId));
+    addToast('info', 'Alert Deleted', 'Record removed from incident log.');
+  }, [addToast]);
+
+  // Security Teams Management CRUD
+  const addSecurityTeam = useCallback((teamData: Omit<SecurityTeam, 'id'>) => {
+    const newTeam: SecurityTeam = {
+      ...teamData,
+      id: 'team-' + Date.now()
+    };
+    setSecurityTeams(prev => [...prev, newTeam]);
+    addToast('success', 'Squad Commissioned', `${newTeam.name} added under lead ${newTeam.leader}`);
+  }, [addToast]);
+
+  const updateSecurityTeam = useCallback((id: string, updates: Partial<SecurityTeam>) => {
+    setSecurityTeams(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    addToast('info', 'Squad Updated', 'Security team status and details synchronized.');
+  }, [addToast]);
+
+  const deleteSecurityTeam = useCallback((id: string) => {
+    setSecurityTeams(prev => prev.filter(t => t.id !== id));
+    addToast('info', 'Squad Decommissioned', 'Security squad removed.');
+  }, [addToast]);
+
+  // Camera Feeds Management CRUD
+  const addCameraFeed = useCallback((camData: Omit<CameraFeed, 'id'>) => {
+    const newCam: CameraFeed = {
+      ...camData,
+      id: 'cam-' + Date.now()
+    };
+    setCameraFeeds(prev => [...prev, newCam]);
+    addToast('success', 'Camera Feed Added', `${newCam.camNumber} (${newCam.name}) registered into vision matrix.`);
+  }, [addToast]);
+
+  const updateCameraFeed = useCallback((id: string, updates: Partial<CameraFeed>) => {
+    setCameraFeeds(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    addToast('info', 'Camera Updated', 'Camera configuration synchronized.');
+  }, [addToast]);
+
+  const deleteCameraFeed = useCallback((id: string) => {
+    setCameraFeeds(prev => prev.filter(c => c.id !== id));
+    addToast('info', 'Camera Feed Removed', 'Camera removed from surveillance matrix.');
+  }, [addToast]);
+
+  // Zone Management CRUD
+  const updateZone = useCallback((id: string, updates: Partial<Zone>) => {
+    setZones(prev => prev.map(z => {
+      if (z.id === id) {
+        const updated = { ...z, ...updates };
+        if (updates.currentPeople !== undefined && !updates.density) {
+          updated.density = Math.round((updates.currentPeople / updated.maxCapacity) * 100);
+        } else if (updates.density !== undefined && !updates.currentPeople) {
+          updated.currentPeople = Math.round((updated.maxCapacity * updates.density) / 100);
+        }
+        return updated;
+      }
+      return z;
+    }));
+    setCameraFeeds(prev => prev.map(c => {
+      if (c.zoneId === id && updates.density !== undefined) {
+        return {
+          ...c,
+          density: updates.density,
+          riskLevel: updates.riskLevel || (updates.density >= 85 ? 'CRITICAL' : updates.density >= 70 ? 'HIGH' : updates.density >= 50 ? 'WATCH' : 'SAFE')
+        };
+      }
+      return c;
+    }));
+    addToast('success', 'Sector Data Updated', `Zone parameters updated in spatial telemetry.`);
+  }, [addToast]);
+
+  const addZone = useCallback((newZone: Zone) => {
+    setZones(prev => [...prev, newZone]);
+    addToast('success', 'Sector Registered', `${newZone.name} added to spatial map.`);
+  }, [addToast]);
+
+  const deleteZone = useCallback((id: string) => {
+    setZones(prev => prev.filter(z => z.id !== id));
+    addToast('info', 'Sector Removed', 'Zone removed from venue blueprint.');
+  }, [addToast]);
 
   const dismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -599,6 +751,23 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         resetSimulation,
         dismissToast,
         playAlertSound,
+        // Admin & Management operations
+        isAdminAuthenticated,
+        loginAdmin,
+        logoutAdmin,
+        addAlert,
+        resolveAlert,
+        deleteAlert,
+        addSecurityTeam,
+        updateSecurityTeam,
+        deleteSecurityTeam,
+        addCameraFeed,
+        updateCameraFeed,
+        deleteCameraFeed,
+        updateZone,
+        addZone,
+        deleteZone,
+        addToast,
       }}
     >
       {children}

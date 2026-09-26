@@ -26,6 +26,7 @@ import { PredictionsPage } from './pages/PredictionsPage.tsx';
 import { AnalyticsPage } from './pages/AnalyticsPage.tsx';
 import { SecurityTeamsPage } from './pages/SecurityTeamsPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
+import { AdminPortalPage } from './pages/AdminPortalPage';
 
 import { 
   Shield, 
@@ -49,6 +50,7 @@ function AppContent() {
     if (['dispatch', 'security-dispatch', 'security', 'track'].includes(hash)) return 'dispatch';
     if (['analytics'].includes(hash)) return 'analytics';
     if (['alerts', 'incidents'].includes(hash)) return 'alerts';
+    if (['admin', 'admin-portal', 'login', 'portal'].includes(hash)) return 'admin';
     if (['how-it-works', 'howitworks'].includes(hash)) return 'how-it-works';
     if (['technology', 'tech'].includes(hash)) return 'technology';
     return 'overview';
@@ -261,6 +263,13 @@ function AppContent() {
         {activeRoute === 'alerts' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <AlertsPage />
+          </div>
+        )}
+
+        {/* ROUTE: ADMIN DATA MANAGEMENT & LOGIN PORTAL */}
+        {activeRoute === 'admin' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <AdminPortalPage onNavigate={handleNavigate} />
           </div>
         )}
 

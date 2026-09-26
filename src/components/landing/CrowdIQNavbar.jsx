@@ -11,8 +11,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
     { id: 'dispatch', label: 'Security Dispatch & Track' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'alerts', label: 'Alerts' },
-    { id: 'how-it-works', label: 'How It Works' },
-    { id: 'technology', label: 'Technology' },
+    { id: 'admin', label: 'Admin Portal' },
   ];
 
   const handleItemClick = (id) => {
@@ -66,7 +65,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
 
         {/* Medium-screen nav for md breakpoints */}
         <nav className="hidden md:flex lg:hidden items-center gap-0.5">
-          {navItems.slice(0, 6).map((item) => {
+          {navItems.map((item) => {
             const isActive = activeRoute === item.id;
             return (
               <button

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { RiskBadge } from '../components/common/RiskBadge';
 import { 
   Video, 
   Activity, 
@@ -15,68 +14,51 @@ import {
   AlertTriangle,
   Cpu,
   ArrowRight,
-  Wifi,
-  WifiOff
+  Camera,
+  Grid,
+  Square,
+  ZoomIn,
+  ZoomOut,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Sliders,
+  Sparkles
 } from 'lucide-react';
 
 export const LiveCamerasPage: React.FC = () => {
-  const { cameraFeeds, zones, stage, totalPeople } = useSimulation();
-  const [selectedCamId, setSelectedCamId] = useState<string>('cam-02');
+  const { cameraFeeds, zones, totalPeople, addToast, playAlertSound } = useSimulation();
 
-  // Camera list as requested in Section 11:
-  // CAM-01 Main Gate ONLINE, CAM-02 Gate 2 ONLINE, CAM-03 North Exit OFFLINE, CAM-04 Central Area ONLINE
-  const camerasData = [
-    {
-      id: 'cam-01',
-      code: 'CAM-01',
-      name: 'Main Gate',
-      status: 'ONLINE',
-      peopleDetected: 42,
-      density: '3.8/m²',
-      riskLevel: 'LOW',
-      fps: 30,
-      direction: 'North → Concourse',
-      resolution: '1080p 60Hz'
-    },
-    {
-      id: 'cam-02',
-      code: 'CAM-02',
-      name: 'Gate 2',
-      status: 'ONLINE',
-      peopleDetected: 47,
-      density: '5.4/m²',
-      riskLevel: 'MODERATE',
-      fps: 30,
-      direction: 'East → West',
-      resolution: '4K UltraHD'
-    },
-    {
-      id: 'cam-03',
-      code: 'CAM-03',
-      name: 'North Exit',
-      status: 'OFFLINE',
-      peopleDetected: 0,
-      density: '0.0/m²',
-      riskLevel: 'LOW',
-      fps: 0,
-      direction: 'Standby / Signal Loss',
-      resolution: 'N/A'
-    },
-    {
-      id: 'cam-04',
-      code: 'CAM-04',
-      name: 'Central Area',
-      status: 'ONLINE',
-      peopleDetected: 84,
-      density: '7.1/m²',
-      riskLevel: 'HIGH',
-      fps: 30,
-      direction: 'South → Plaza',
-      resolution: '4K UltraHD'
+  const [selectedCamId, setSelectedCamId] = useState<string>(cameraFeeds[1]?.id || cameraFeeds[0]?.id || 'cam-02');
+  const [viewLayout, setViewLayout] = useState<'focus' | 'quad'>('focus'); // 'focus' | 'quad'
+  
+  // Interactive Overlays Toggles
+  const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
+  const [showFlowVectors, setShowFlowVectors] = useState<boolean>(true);
+  const [showThermalOverlay, setShowThermalOverlay] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+
+  const activeCam = cameraFeeds.find(c => c.id === selectedCamId) || cameraFeeds[0];
+
+  const onlineFeedsCount = cameraFeeds.filter(c => c.status === 'ONLINE').length;
+
+  const handleCaptureSnapshot = () => {
+    playAlertSound('success');
+    addToast('success', 'CCTV Snapshot Captured', `High-resolution frame saved from ${activeCam?.camNumber} (${activeCam?.name}).`);
+  };
+
+  const handlePTZ = (direction: 'up' | 'down' | 'left' | 'right' | 'reset') => {
+    if (direction === 'up') setPanOffset(prev => ({ ...prev, y: Math.max(-25, prev.y - 8) }));
+    if (direction === 'down') setPanOffset(prev => ({ ...prev, y: Math.min(25, prev.y + 8) }));
+    if (direction === 'left') setPanOffset(prev => ({ ...prev, x: Math.max(-25, prev.x - 8) }));
+    if (direction === 'right') setPanOffset(prev => ({ ...prev, x: Math.min(25, prev.x + 8) }));
+    if (direction === 'reset') {
+      setPanOffset({ x: 0, y: 0 });
+      setZoomLevel(1);
     }
-  ];
-
-  const activeCam = camerasData.find(c => c.id === selectedCamId) || camerasData[1];
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -84,278 +66,397 @@ export const LiveCamerasPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-2">
-            <Video className="h-5 w-5 text-[#2563EB]" />
+            <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[#2563EB]">
+              <Video className="h-4.5 w-4.5" />
+            </div>
             <h1 className="text-xl font-extrabold text-[#0F172A] tracking-tight">
-              Live Monitoring & Edge Vision Matrix
+              Live Monitoring & Edge Computer Vision Matrix
             </h1>
           </div>
           <p className="text-xs text-[#64748B] mt-0.5">
-            CCTV Feeds with Real-Time YOLOv8 Person Detection & DeepSORT Kinematic Tracking
+            Real-time CCTV Feeds with YOLOv8 Person Detection, DeepSORT Tracking, and Optical Flow Analysis
           </p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs">
-          <span className="px-3 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] font-mono flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
+          <span className="px-3 py-1.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] font-semibold flex items-center gap-2">
             <Radio className="h-3.5 w-3.5 text-[#16A34A] animate-pulse" />
-            3 of 4 Streams Active
+            <span>{onlineFeedsCount} / {cameraFeeds.length} Streams Online</span>
           </span>
-          <span className="px-3 py-1.5 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0] text-[#16A34A] font-semibold font-mono flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
-            EDGE VISION ACTIVE
-          </span>
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center rounded-lg border border-[#CBD5E1] bg-white p-0.5">
+            <button
+              onClick={() => setViewLayout('focus')}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                viewLayout === 'focus' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-[#475569] hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <Square className="w-3.5 h-3.5" />
+              <span>Focus View</span>
+            </button>
+            <button
+              onClick={() => setViewLayout('quad')}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                viewLayout === 'quad' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-[#475569] hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <Grid className="w-3.5 h-3.5" />
+              <span>Quad Matrix</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* SECTION 8: PRIMARY FEATURED CCTV STREAM WITH YOLO + DEEPSORT DETECTION OVERLAYS */}
-      <div className="bg-white rounded-2xl border border-[#CBD5E1] shadow-sm overflow-hidden">
-        <div className="p-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white font-mono font-bold text-xs">
-              {activeCam.code}
-            </span>
-            <span className="font-bold text-[#0F172A] text-sm">{activeCam.name}</span>
-            <span className="text-[#94A3B8]">|</span>
-            <span className="font-mono text-[#64748B]">{activeCam.resolution}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[#16A34A] font-semibold">
-              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
-              <span>LIVE RTSP FEED</span>
-            </div>
-            <span className="text-[11px] font-mono text-[#64748B] bg-white px-2.5 py-1 rounded border border-[#E2E8F0]">
-              Inference Latency: 14ms (YOLOv8 + DeepSORT)
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-          {/* Main Video Viewport with Simulated Bounding Boxes & Trajectory Vectors */}
-          <div className="lg:col-span-8 bg-[#0F172A] relative min-h-[380px] sm:min-h-[440px] flex items-center justify-center overflow-hidden select-none">
-            <img 
-              src="./assets/crowd_detection_cctv.jpg" 
-              alt="CCTV Crowd Detection Feed" 
-              className="w-full h-full object-cover opacity-85"
-              onError={(e) => {
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80';
-              }}
-            />
-
-            {/* SVG Bounding Boxes, IDs, and Movement Indicators (Person 01, Person 02, Person 03) */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 450">
-              <defs>
-                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981" />
-                </marker>
-              </defs>
-
-              {/* PERSON 01 */}
-              <g>
-                <rect x="210" y="140" width="58" height="135" rx="3" stroke="#2563EB" strokeWidth="2.5" fill="rgba(37, 99, 235, 0.15)" />
-                {/* Detection Label */}
-                <rect x="210" y="118" width="85" height="20" rx="3" fill="#2563EB" />
-                <text x="215" y="132" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Person 01</text>
-                {/* DeepSORT Tracking Vector */}
-                <line x1="239" y1="205" x2="285" y2="205" stroke="#10B981" strokeWidth="2" strokeDasharray="3,2" markerEnd="url(#arrow)" />
-                <circle cx="239" cy="205" r="3.5" fill="#10B981" />
-                <text x="212" y="290" fill="#93C5FD" fontSize="10" fontFamily="monospace">ID: #8421</text>
-              </g>
-
-              {/* PERSON 02 */}
-              <g>
-                <rect x="330" y="160" width="54" height="128" rx="3" stroke="#2563EB" strokeWidth="2.5" fill="rgba(37, 99, 235, 0.15)" />
-                <rect x="330" y="138" width="85" height="20" rx="3" fill="#2563EB" />
-                <text x="335" y="152" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Person 02</text>
-                <line x1="357" y1="225" x2="400" y2="228" stroke="#10B981" strokeWidth="2" strokeDasharray="3,2" markerEnd="url(#arrow)" />
-                <circle cx="357" cy="225" r="3.5" fill="#10B981" />
-                <text x="332" y="303" fill="#93C5FD" fontSize="10" fontFamily="monospace">ID: #8422</text>
-              </g>
-
-              {/* PERSON 03 */}
-              <g>
-                <rect x="440" y="130" width="56" height="142" rx="3" stroke="#2563EB" strokeWidth="2.5" fill="rgba(37, 99, 235, 0.15)" />
-                <rect x="440" y="108" width="85" height="20" rx="3" fill="#2563EB" />
-                <text x="445" y="122" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Person 03</text>
-                <line x1="468" y1="200" x2="515" y2="198" stroke="#10B981" strokeWidth="2" strokeDasharray="3,2" markerEnd="url(#arrow)" />
-                <circle cx="468" cy="200" r="3.5" fill="#10B981" />
-                <text x="442" y="287" fill="#93C5FD" fontSize="10" fontFamily="monospace">ID: #8423</text>
-              </g>
-
-              {/* PERSON 04 Background */}
-              <g>
-                <rect x="560" y="175" width="46" height="110" rx="2" stroke="#0F766E" strokeWidth="2" fill="rgba(15, 118, 110, 0.15)" />
-                <rect x="560" y="157" width="75" height="17" rx="2" fill="#0F766E" />
-                <text x="564" y="169" fill="#FFFFFF" fontSize="9" fontFamily="monospace" fontWeight="bold">Person 04</text>
-                <circle cx="583" cy="230" r="3" fill="#10B981" />
-              </g>
-            </svg>
-
-            {/* Top HUD Badges */}
-            <div className="absolute top-3 left-3 flex items-center gap-2">
-              <div className="bg-black/80 backdrop-blur-sm px-2.5 py-1 rounded text-white font-mono text-[10px] flex items-center gap-1.5 border border-white/10">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span>REC • 30 FPS</span>
-              </div>
-              <div className="bg-black/80 backdrop-blur-sm px-2.5 py-1 rounded text-[#93C5FD] font-mono text-[10px] border border-white/10">
-                <span>YOLOv8 + DeepSORT</span>
-              </div>
-            </div>
-
-            {/* Bottom HUD: Detection count */}
-            <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md border border-[#CBD5E1] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#16A34A]"></span>
-                  <span className="font-bold text-[#0F172A] font-mono">TRACKING ACTIVE:</span>
-                  <span className="text-[#2563EB] font-mono font-bold">{activeCam.peopleDetected} Persons In Frame</span>
-                </div>
-              </div>
-              <div className="font-mono text-[11px] text-[#64748B]">
-                Kinematic Flow Vector: <strong className="text-[#0F172A]">East → West</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Beside the Camera Feed: Exactly specified Section 8 Metrics */}
-          <div className="lg:col-span-4 p-5 sm:p-6 bg-white border-t lg:border-t-0 lg:border-l border-[#CBD5E1] flex flex-col justify-between space-y-5">
-            <div>
-              <div className="pb-3 border-b border-[#F1F5F9]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#2563EB] font-mono block">
-                  Vision Telemetry Panel
+      {/* VIEW MODE 1: FOCUS VIEW (Featured Stream + Interactive HUD + Side Roster) */}
+      {viewLayout === 'focus' && (
+        <div className="space-y-6">
+          
+          {/* Main Video Viewport & Controls */}
+          <div className="bg-white rounded-2xl border border-[#CBD5E1] shadow-sm overflow-hidden">
+            {/* Camera Metadata Strip */}
+            <div className="p-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white font-bold text-xs">
+                  {activeCam?.camNumber}
                 </span>
-                <h3 className="text-lg font-bold text-[#0F172A] mt-0.5">
-                  {activeCam.name} Live Metrics
-                </h3>
+                <span className="font-bold text-[#0F172A] text-sm">{activeCam?.name}</span>
+                <span className="text-[#94A3B8]">|</span>
+                <span className="text-[#475569]">Res: {activeCam?.resolution}</span>
+                <span className="text-[#94A3B8]">|</span>
+                <span className="text-[#475569]">{activeCam?.fps} FPS</span>
               </div>
 
-              {/* Exact Section 8 Metrics */}
-              <div className="mt-4 space-y-3.5">
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <span className="text-[11px] uppercase font-bold text-[#64748B] block">People Detected</span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-2xl font-extrabold font-mono text-[#0F172A]">
-                      {activeCam.peopleDetected}
-                    </span>
-                    <span className="text-xs text-[#16A34A] font-medium font-mono">Live Bounding Boxes</span>
-                  </div>
-                </div>
+              {/* Live Overlay Toggles */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition cursor-pointer ${
+                    showBoundingBoxes ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#2563EB]' : 'bg-white border-[#CBD5E1] text-[#94A3B8]'
+                  }`}
+                >
+                  YOLO Boxes: {showBoundingBoxes ? 'ON' : 'OFF'}
+                </button>
 
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <span className="text-[11px] uppercase font-bold text-[#64748B] block">Average Density</span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-2xl font-extrabold font-mono text-[#0F172A]">
-                      {activeCam.density}
-                    </span>
-                    <span className="text-xs text-[#64748B] font-mono">persons/m²</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setShowFlowVectors(!showFlowVectors)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition cursor-pointer ${
+                    showFlowVectors ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#2563EB]' : 'bg-white border-[#CBD5E1] text-[#94A3B8]'
+                  }`}
+                >
+                  Flow Vectors: {showFlowVectors ? 'ON' : 'OFF'}
+                </button>
 
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <span className="text-[11px] uppercase font-bold text-[#64748B] block">Movement Direction</span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-base font-bold font-mono text-[#0F766E] flex items-center gap-1.5">
-                      <Compass className="w-4 h-4 text-[#0F766E]" />
-                      {activeCam.direction}
-                    </span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setShowThermalOverlay(!showThermalOverlay)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition cursor-pointer ${
+                    showThermalOverlay ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#DC2626]' : 'bg-white border-[#CBD5E1] text-[#94A3B8]'
+                  }`}
+                >
+                  Thermal Heatmap: {showThermalOverlay ? 'ON' : 'OFF'}
+                </button>
 
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <span className="text-[11px] uppercase font-bold text-[#64748B] block">Current Risk</span>
-                  <div className="mt-1">
-                    <span className={`inline-block px-3 py-1 rounded-md text-xs font-extrabold font-mono border ${
-                      activeCam.riskLevel === 'HIGH' 
-                        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'
-                        : activeCam.riskLevel === 'MODERATE'
-                        ? 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]'
-                        : 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]'
-                    }`}>
-                      {activeCam.riskLevel}
-                    </span>
-                  </div>
-                </div>
+                <button
+                  onClick={handleCaptureSnapshot}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-[#0F172A] text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
+                >
+                  <Camera className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Snapshot</span>
+                </button>
               </div>
             </div>
 
-            {/* Pipeline explanation badge */}
-            <div className="p-3 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#1D4ED8]">
-              <span className="font-bold block">YOLOv8 + DeepSORT Pipeline:</span>
-              <p className="mt-0.5 text-[11px] text-[#2563EB] leading-relaxed">
-                YOLO identifies human silhouettes in bounding boxes; DeepSORT calculates spatial Kalman filters across consecutive video frames to measure density and directional velocity.
-              </p>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+              
+              {/* Primary Video Feed Player (8 Cols) */}
+              <div className="lg:col-span-8 bg-[#0F172A] relative min-h-[380px] sm:min-h-[460px] flex items-center justify-center overflow-hidden select-none">
+                {/* Background CCTV Video Stream Thumbnail */}
+                <img 
+                  src="./assets/crowd_detection_cctv.jpg" 
+                  alt="Live CCTV Camera Feed" 
+                  className={`w-full h-full object-cover transition-transform duration-300 ${showThermalOverlay ? 'hue-rotate-90 saturate-200' : 'opacity-85'}`}
+                  style={{
+                    transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.src = '/CrowdIQ/assets/crowd_detection_cctv.jpg';
+                  }}
+                />
+
+                {/* Simulated AI Overlays (YOLO Bounding Boxes & DeepSORT Velocity Vectors) */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 450">
+                  <defs>
+                    <marker id="cam-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981" />
+                    </marker>
+                    <marker id="cam-arrow-warn" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B" />
+                    </marker>
+                  </defs>
+
+                  {showBoundingBoxes && (
+                    <>
+                      {/* Person 01 */}
+                      <g>
+                        <rect x="210" y="140" width="58" height="135" rx="3" stroke="#2563EB" strokeWidth="2.5" fill="rgba(37, 99, 235, 0.15)" />
+                        <rect x="210" y="118" width="85" height="20" rx="3" fill="#2563EB" />
+                        <text x="215" y="132" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Person 01</text>
+                        {showFlowVectors && (
+                          <>
+                            <line x1="239" y1="205" x2="285" y2="205" stroke="#10B981" strokeWidth="2" strokeDasharray="3,2" markerEnd="url(#cam-arrow)" />
+                            <circle cx="239" cy="205" r="3.5" fill="#10B981" />
+                          </>
+                        )}
+                      </g>
+
+                      {/* Person 02 (Surging) */}
+                      <g>
+                        <rect x="360" y="125" width="62" height="145" rx="3" stroke="#DC2626" strokeWidth="2.5" fill="rgba(220, 38, 38, 0.2)" />
+                        <rect x="360" y="103" width="105" height="20" rx="3" fill="#DC2626" />
+                        <text x="365" y="117" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Surge #02 [94%]</text>
+                        {showFlowVectors && (
+                          <>
+                            <line x1="391" y1="195" x2="445" y2="235" stroke="#F59E0B" strokeWidth="2.5" markerEnd="url(#cam-arrow-warn)" />
+                            <circle cx="391" cy="195" r="4" fill="#F59E0B" />
+                          </>
+                        )}
+                      </g>
+
+                      {/* Person 03 */}
+                      <g>
+                        <rect x="520" y="150" width="56" height="130" rx="3" stroke="#2563EB" strokeWidth="2.5" fill="rgba(37, 99, 235, 0.15)" />
+                        <rect x="520" y="128" width="85" height="20" rx="3" fill="#2563EB" />
+                        <text x="525" y="142" fill="#FFFFFF" fontSize="11" fontFamily="monospace" fontWeight="bold">Person 03</text>
+                        {showFlowVectors && (
+                          <>
+                            <line x1="548" y1="215" x2="590" y2="215" stroke="#10B981" strokeWidth="2" strokeDasharray="3,2" markerEnd="url(#cam-arrow)" />
+                            <circle cx="548" cy="215" r="3.5" fill="#10B981" />
+                          </>
+                        )}
+                      </g>
+                    </>
+                  )}
+                </svg>
+
+                {/* Top Overlay HUD Stamp */}
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/75 backdrop-blur-xs text-white font-mono text-xs px-2.5 py-1 rounded-md border border-white/10">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="font-bold">LIVE TELEMETRY STREAM</span>
+                  <span className="text-gray-400">|</span>
+                  <span>{activeCam?.camNumber}</span>
+                </div>
+
+                <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-xs text-white font-mono text-[11px] px-2.5 py-1 rounded-md border border-white/10">
+                  Latency: <strong>12ms</strong>
+                </div>
+
+                {/* Bottom Left Stream Watermark */}
+                <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white font-mono text-[11px] px-3 py-1.5 rounded-lg border border-white/10">
+                  Sector: <strong>{activeCam?.zoneId}</strong> • Optical Flow: <strong>{activeCam?.flowDirection}</strong>
+                </div>
+
+                {/* PTZ Motorized Overlay Controls */}
+                <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs p-1.5 rounded-xl border border-white/15 flex items-center gap-1.5">
+                  <button 
+                    onClick={() => handlePTZ('left')}
+                    className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                    title="Pan Left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="flex flex-col gap-1">
+                    <button 
+                      onClick={() => handlePTZ('up')}
+                      className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                      title="Tilt Up"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handlePTZ('down')}
+                      className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                      title="Tilt Down"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => handlePTZ('right')}
+                    className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                    title="Pan Right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <div className="w-[1px] h-6 bg-white/20 mx-1"></div>
+                  <button 
+                    onClick={() => setZoomLevel(prev => Math.min(2.5, +(prev + 0.25).toFixed(2)))}
+                    className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                    title="Zoom In"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setZoomLevel(prev => Math.max(1, +(prev - 0.25).toFixed(2)))}
+                    className="p-1 rounded text-white hover:bg-white/20 transition cursor-pointer"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handlePTZ('reset')}
+                    className="px-1.5 py-0.5 rounded text-[10px] text-white/80 hover:bg-white/20 transition font-mono cursor-pointer"
+                    title="Reset PTZ"
+                  >
+                    1x
+                  </button>
+                </div>
+              </div>
+
+              {/* Side Telemetry & Camera Feeds List (4 Cols) */}
+              <div className="lg:col-span-4 p-5 space-y-4 bg-white border-t lg:border-t-0 lg:border-l border-[#E2E8F0] font-mono text-xs">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] pb-2 border-b border-[#F1F5F9]">
+                    Camera Telemetry Matrix
+                  </h3>
+                  
+                  <div className="space-y-2.5 pt-3">
+                    <div className="flex items-center justify-between text-[#475569]">
+                      <span>Real-time Density:</span>
+                      <strong className="text-base text-[#0F172A]">{activeCam?.density}%</strong>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[#475569]">
+                      <span>Pedestrians Tracked:</span>
+                      <strong className="text-base text-[#2563EB]">{activeCam?.simulatedDetections} persons</strong>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[#475569]">
+                      <span>Flow Velocity:</span>
+                      <strong className="text-[#0F172A]">{activeCam?.flowRate} ppl/min</strong>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[#475569]">
+                      <span>Camera Status:</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]">
+                        {activeCam?.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[#475569]">
+                      <span>Assigned Sector:</span>
+                      <strong className="text-[#0F172A]">{activeCam?.zoneId}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* All Cameras Selector Grid */}
+                <div className="pt-2 border-t border-[#F1F5F9]">
+                  <span className="text-[11px] font-bold text-[#64748B] uppercase block mb-2">
+                    Switch Active Feed ({cameraFeeds.length})
+                  </span>
+                  
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {cameraFeeds.map((cam) => {
+                      const isSel = selectedCamId === cam.id;
+                      return (
+                        <div
+                          key={cam.id}
+                          onClick={() => setSelectedCamId(cam.id)}
+                          className={`p-2.5 rounded-lg border cursor-pointer transition flex items-center justify-between ${
+                            isSel 
+                              ? 'border-[#2563EB] bg-[#EFF6FF]' 
+                              : 'border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#94A3B8]'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-[11px] text-[#0F172A]">{cam.camNumber}</span>
+                              <span className="text-[11px] text-[#64748B] truncate max-w-[120px]">{cam.name}</span>
+                            </div>
+                            <div className="text-[10px] text-[#64748B] mt-0.5">
+                              Ppl: <strong>{cam.simulatedDetections}</strong> • {cam.density}%
+                            </div>
+                          </div>
+
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                            cam.status === 'ONLINE' ? 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]' : 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'
+                          }`}>
+                            {cam.status}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
+
         </div>
-      </div>
+      )}
 
-      {/* SECTION 11: CAMERAS / VENUE MONITORING CARDS */}
-      <div>
-        <div className="flex items-center justify-between mb-3.5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] font-mono">
-            Surveillance Node Directory (4 CCTV Feeds)
-          </h2>
-          <span className="text-xs text-[#64748B]">Click any camera to preview stream</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {camerasData.map((cam) => {
-            const isSelected = selectedCamId === cam.id;
-            const isOnline = cam.status === 'ONLINE';
-
-            return (
-              <div
-                key={cam.id}
-                onClick={() => isOnline && setSelectedCamId(cam.id)}
-                className={`p-4 rounded-xl border bg-white transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-[#2563EB] ring-2 ring-[#2563EB]/20 shadow-sm'
-                    : 'border-[#E2E8F0] hover:border-[#CBD5E1]'
-                } ${!isOnline ? 'opacity-70 cursor-not-allowed bg-[#F8FAFC]' : ''}`}
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-[#F1F5F9]">
-                  <span className="font-bold font-mono text-[#2563EB] text-xs">{cam.code}</span>
-                  <div className="flex items-center gap-1.5">
-                    {isOnline ? (
-                      <span className="px-2 py-0.5 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[10px] font-bold font-mono text-[#16A34A] flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
-                        ONLINE
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] text-[10px] font-bold font-mono text-[#DC2626] flex items-center gap-1">
-                        <WifiOff className="w-3 h-3 text-[#DC2626]" />
-                        OFFLINE
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <h4 className="font-bold text-[#0F172A] text-sm">{cam.name}</h4>
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[10px] text-[#64748B] block uppercase">Count</span>
-                      <span className="font-mono font-bold text-[#0F172A]">{cam.peopleDetected}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#64748B] block uppercase">Density</span>
-                      <span className="font-mono font-bold text-[#0F172A]">{cam.density}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-[#F1F5F9] flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-[#64748B]">Risk Level</span>
-                  <span className={`font-bold ${
-                    cam.riskLevel === 'HIGH' ? 'text-[#DC2626]' : cam.riskLevel === 'MODERATE' ? 'text-[#D97706]' : 'text-[#16A34A]'
-                  }`}>
-                    {cam.riskLevel}
+      {/* VIEW MODE 2: QUAD MATRIX (Simultaneous Multi-stream Wall) */}
+      {viewLayout === 'quad' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {cameraFeeds.map((cam) => (
+            <div 
+              key={cam.id}
+              className="bg-white rounded-xl border border-[#CBD5E1] shadow-sm overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-[#2563EB] text-white font-bold text-[10px]">
+                    {cam.camNumber}
                   </span>
+                  <span className="font-bold text-[#0F172A]">{cam.name}</span>
+                </div>
+                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.2 rounded border ${
+                  cam.status === 'ONLINE' ? 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]' : 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'
+                }`}>
+                  {cam.status}
+                </span>
+              </div>
+
+              {/* Video Thumbnail with live HUD */}
+              <div className="relative aspect-[16/9] bg-[#0F172A] overflow-hidden">
+                <img 
+                  src="./assets/crowd_detection_cctv.jpg" 
+                  alt={cam.name}
+                  className="w-full h-full object-cover opacity-80"
+                  onError={(e) => {
+                    e.currentTarget.src = '/CrowdIQ/assets/crowd_detection_cctv.jpg';
+                  }}
+                />
+                <div className="absolute top-2 left-2 bg-black/70 text-white font-mono text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> LIVE
+                </div>
+                <div className="absolute bottom-2 left-2 bg-black/70 text-white font-mono text-[10px] px-2 py-0.5 rounded">
+                  Ppl: <strong>{cam.simulatedDetections}</strong> • Density: <strong>{cam.density}%</strong>
                 </div>
               </div>
-            );
-          })}
+
+              {/* Action Footer */}
+              <div className="p-2.5 bg-white flex items-center justify-between text-xs font-mono">
+                <span className="text-[#64748B] text-[11px]">Res: {cam.resolution}</span>
+                <button
+                  onClick={() => {
+                    setSelectedCamId(cam.id);
+                    setViewLayout('focus');
+                  }}
+                  className="text-[#2563EB] hover:underline font-semibold text-xs cursor-pointer flex items-center gap-1"
+                >
+                  <span>Expand Feed</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+
     </div>
   );
 };

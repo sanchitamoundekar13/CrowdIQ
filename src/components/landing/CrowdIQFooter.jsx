@@ -93,6 +93,14 @@ export function CrowdIQFooter({ onNavigate }) {
                   <span className="text-[#94A3B8]">›</span> Incident & Alert Registry
                 </button>
               </li>
+              <li>
+                <button 
+                  onClick={() => onNavigate('admin')}
+                  className="text-[#2563EB] hover:underline font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="text-[#2563EB]">›</span> Admin Data & Control Portal
+                </button>
+              </li>
             </ul>
           </div>
 
