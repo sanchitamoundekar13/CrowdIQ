@@ -87,22 +87,29 @@ function AppContent() {
                   </span>
                   <span className="text-[11px] font-semibold text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
-                    LIVE TELEMETRY ACTIVE
+                    ACTIVE PRODUCTION
                   </span>
+                  <button
+                    onClick={openDatabaseModal}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#2563EB] border border-[#BFDBFE] transition cursor-pointer"
+                    title="Inspect LocalStorage Database"
+                  >
+                    <span>💾 DB: Connected</span>
+                  </button>
                 </div>
                 <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight mt-1">
                   CrowdIQ Security Operations Dashboard
                 </h1>
-                <p className="text-xs text-[#64748B] mt-0.5">
+                <p className="text-xs text-[#64748B] mt-0.5 font-mono">
                   Metropolitan Arena • Sector Floorplan • Real-time Congestion & Flow Telemetry
                 </p>
               </div>
 
-              {/* Sub-view Switcher for Command Center Tools */}
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Sub-view Switcher for Dashboard */}
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setDashboardSubTab('overview')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition cursor-pointer ${
                     dashboardSubTab === 'overview'
                       ? 'bg-[#2563EB] text-white shadow-2xs'
                       : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#CBD5E1]'

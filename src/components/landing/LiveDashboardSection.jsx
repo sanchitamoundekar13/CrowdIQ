@@ -17,7 +17,8 @@ import {
   ChevronRight,
   TrendingUp,
   MapPin,
-  Bell
+  Bell,
+  Database
 } from 'lucide-react';
 import { useSimulation } from '../../context/SimulationContext';
 
@@ -33,7 +34,11 @@ export function LiveDashboardSection() {
     averageDensity,
     activeAlertsCount,
     currentTime,
-    stage = 'NORMAL'
+    stage = 'NORMAL',
+    isSimulating = false,
+    startSurgeSimulation,
+    resetSimulation,
+    openDatabaseModal
   } = useSimulation();
 
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'heatmap' | 'cameras' | 'alerts'
@@ -96,11 +101,50 @@ export function LiveDashboardSection() {
             </p>
           </div>
 
-          <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-4 py-2.5 flex items-center gap-3 text-xs font-mono shadow-xs">
-            <span className="text-[#64748B]">Venue Telemetry:</span>
-            <span className="font-bold text-[#16A34A] flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></span>
-              All 4 Sectors Online
+          {/* Operational Control Bar */}
+          <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl p-3 flex flex-wrap items-center gap-3 shadow-sm">
+            <button
+              onClick={openDatabaseModal}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] hover:bg-[#DBEAFE] text-xs font-bold text-[#2563EB] transition-colors cursor-pointer"
+              title="Inspect & Manage LocalStorage Database"
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>LocalStorage DB</span>
+            </button>
+
+            <button
+              onClick={startSurgeSimulation}
+              disabled={isSimulating || (stage !== 'NORMAL' && stage !== 'SAFE')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                stage === 'NORMAL' || stage === 'SAFE'
+                  ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm active:scale-95'
+                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+              }`}
+            >
+              <Play className={`w-3.5 h-3.5 fill-current ${isSimulating ? 'animate-spin' : ''}`} />
+              <span>{isSimulating ? 'Testing Inflow Surge...' : 'Test Surge Drill'}</span>
+            </button>
+
+            <button
+              onClick={resetSimulation}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-xs font-semibold text-[#475569] transition-colors cursor-pointer"
+              title="Reset operational state & database to baseline"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Operational Threat Progression */}
+        <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-[#E2E8F0]">
+            <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wide flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#2563EB]" />
+              Threat Lifecycle Progression
+            </span>
+            <span className="text-xs text-[#64748B]">
+              Current Stage: <strong className="text-[#0F172A]">{stage}</strong>
             </span>
           </div>
         </div>

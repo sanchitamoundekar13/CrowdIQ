@@ -10,7 +10,8 @@ import {
   Calendar,
   Layers,
   Shield,
-  Activity
+  Activity,
+  Database
 } from 'lucide-react';
 import { useSimulation } from '../../context/SimulationContext';
 
@@ -25,7 +26,8 @@ export const Navbar: React.FC = () => {
     startSurgeSimulation, 
     toggleEmergencyMode, 
     toggleSound, 
-    resetSimulation 
+    resetSimulation,
+    openDatabaseModal
   } = useSimulation();
 
   return (
@@ -81,10 +83,20 @@ export const Navbar: React.FC = () => {
           {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </button>
 
+        {/* LocalStorage Database Modal Trigger */}
+        <button
+          onClick={openDatabaseModal}
+          title="Inspect & Manage LocalStorage Database"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] text-xs font-mono font-bold text-[#2563EB] hover:bg-[#DBEAFE] transition-colors cursor-pointer"
+        >
+          <Database className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Database</span>
+        </button>
+
         {/* Reset State Button */}
         <button
           onClick={resetSimulation}
-          title="Reset Simulation State"
+          title="Reset Operational State & Database"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#CBD5E1] bg-white text-xs font-mono font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
         >
           <RotateCcw className="h-3.5 w-3.5" />

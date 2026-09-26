@@ -49,6 +49,12 @@ interface SimulationContextType {
   highRiskZonesCount: number;
   averageDensity: number;
   responseTime: string;
+  isDatabaseConnected: boolean;
+  isDatabaseModalOpen: boolean;
+  openDatabaseModal: () => void;
+  closeDatabaseModal: () => void;
+  exportDatabaseBackup: () => string;
+  importDatabaseBackup: (json: string) => boolean;
   selectZone: (id: string) => void;
   startSurgeSimulation: () => void;
   dispatchSecurityTeam: (teamId: string, targetZoneId?: string) => void;
