@@ -65,7 +65,7 @@ export function CrowdIQHero({ onLaunchDashboard, onViewDemo, onRequestDemo }) {
                 onClick={onLaunchDashboard}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold shadow-sm transition-all duration-150 cursor-pointer active:scale-95"
               >
-                <span>Launch Live Dashboard</span>
+                <span>Open Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
