@@ -108,9 +108,6 @@ function AppContent() {
               onLaunchDashboard={() => handleNavigate('dashboard')}
             />
 
-            {/* 4. How CrowdIQ Works (6-step technical pipeline) */}
-            <HowCrowdIQWorks />
-
             {/* 5. Crowd Detection (Computer Vision YOLOv8 + DeepSORT) */}
             <ComputerVisionSection />
 

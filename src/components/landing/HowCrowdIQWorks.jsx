@@ -71,7 +71,7 @@ export function HowCrowdIQWorks() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-xs font-bold text-[#2563EB] mb-3">
-            <span>ENGINEERING PIPELINE</span>
+            <span>HOW IT WORKS</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0F172A] tracking-tight">
             From Camera Feed to Actionable Alert
