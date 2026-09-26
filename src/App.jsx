@@ -46,6 +46,7 @@ function AppContent() {
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
     if (['dashboard', 'console', 'command-center'].includes(hash)) return 'dashboard';
     if (['monitoring', 'live-monitoring', 'cameras'].includes(hash)) return 'monitoring';
+    if (['dispatch', 'security-dispatch', 'security', 'track'].includes(hash)) return 'dispatch';
     if (['analytics'].includes(hash)) return 'analytics';
     if (['alerts', 'incidents'].includes(hash)) return 'alerts';
     if (['how-it-works', 'howitworks'].includes(hash)) return 'how-it-works';
@@ -249,6 +250,13 @@ function AppContent() {
         {activeRoute === 'monitoring' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <LiveCamerasPage />
+          </div>
+        )}
+
+        {/* ROUTE: SECURITY DISPATCH & TRACKING VIEW */}
+        {activeRoute === 'dispatch' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <SecurityTeamsPage />
           </div>
         )}
 

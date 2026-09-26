@@ -50,6 +50,14 @@ export function CrowdIQFooter({ onNavigate }) {
               </li>
               <li>
                 <button 
+                  onClick={() => onNavigate('dispatch')}
+                  className="text-[#475569] hover:text-[#2563EB] transition-colors cursor-pointer"
+                >
+                  Security Dispatch & Track
+                </button>
+              </li>
+              <li>
+                <button 
                   onClick={() => onNavigate('analytics')}
                   className="text-[#475569] hover:text-[#2563EB] transition-colors cursor-pointer"
                 >

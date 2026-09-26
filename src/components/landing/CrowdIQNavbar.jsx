@@ -4,12 +4,11 @@ import { Shield, Activity, Menu, X, ArrowUpRight, CheckCircle2 } from 'lucide-re
 export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Exact navigation items specified in prompt:
-  // Overview | Dashboard | Live Monitoring | Analytics | Alerts | How It Works | Technology
   const navItems = [
     { id: 'overview', label: 'Overview' },
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'monitoring', label: 'Live Monitoring' },
+    { id: 'dispatch', label: 'Security Dispatch & Track' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'alerts', label: 'Alerts' },
     { id: 'how-it-works', label: 'How It Works' },
@@ -67,7 +66,7 @@ export function CrowdIQNavbar({ activeRoute, onNavigate, onRequestDemo }) {
 
         {/* Medium-screen nav for md breakpoints */}
         <nav className="hidden md:flex lg:hidden items-center gap-0.5">
-          {navItems.slice(0, 5).map((item) => {
+          {navItems.slice(0, 6).map((item) => {
             const isActive = activeRoute === item.id;
             return (
               <button
