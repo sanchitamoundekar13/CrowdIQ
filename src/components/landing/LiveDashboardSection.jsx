@@ -80,9 +80,6 @@ export function LiveDashboardSection() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono tracking-wider text-[#2563EB] uppercase">
-                Intelligent Surveillance Suite
-              </span>
               <span className="text-[11px] font-bold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
                 LIVE TELEMETRY ACTIVE

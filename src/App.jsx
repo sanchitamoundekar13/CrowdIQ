@@ -112,20 +112,9 @@ function AppContent() {
             {/* 5. Crowd Detection (Computer Vision YOLOv8 + DeepSORT) */}
             <ComputerVisionSection />
 
-            {/* 6. Risk & Alert System */}
-            <RiskAlertSystemSection />
-
-            {/* 7. Venue Spatial Intelligence */}
-            <VenueIntelligenceSection />
-
-
-            {/* 9. Direct Call to Action */}
+            {/* 4. Direct Call to Action */}
             <section className="bg-white py-14 border-t border-b border-[#E2E8F0]">
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-xs font-semibold text-[#2563EB]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
-                  INTELLIGENT SURVEILLANCE SUITE
-                </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
                   Ready to deploy intelligent crowd risk prevention?
                 </h2>
