@@ -120,8 +120,6 @@ function AppContent() {
             {/* 7. Venue Spatial Intelligence */}
             <VenueIntelligenceSection />
 
-            {/* 8. Technology Stack */}
-            <TechnologySection />
 
             {/* 9. Direct Call to Action */}
             <section className="bg-white py-14 border-t border-b border-[#E2E8F0]">
@@ -301,7 +299,7 @@ function AppContent() {
                   System Stack & Specifications
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mt-2">
-                  CrowdIQ Engineering Stack
+                  CrowdIQ Technical Specifications & Architecture
                 </h1>
                 <p className="text-sm text-[#64748B] mt-1 max-w-3xl leading-relaxed">
                   Built on industry-standard computer vision, spatial mathematics, and real-time state machines designed for low-latency operational environments.
