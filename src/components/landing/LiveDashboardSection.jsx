@@ -32,7 +32,8 @@ export function LiveDashboardSection() {
     totalPeople,
     averageDensity,
     activeAlertsCount,
-    currentTime
+    currentTime,
+    stage = 'NORMAL'
   } = useSimulation();
 
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'heatmap' | 'cameras' | 'alerts'
@@ -127,7 +128,7 @@ export function LiveDashboardSection() {
           <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5">
             <span className="text-[11px] font-bold uppercase text-[#64748B]">Risk Score</span>
             <div className="text-xl font-extrabold font-mono text-[#0F172A] mt-1">
-              {stage === 'CRITICAL' ? '92' : stage === 'WARNING' ? '74' : '38'}<span className="text-xs text-[#64748B]">/100</span>
+              {(stage === 'CRITICAL' || averageDensity > 80) ? '92' : (stage === 'WARNING' || averageDensity > 60) ? '74' : '38'}<span className="text-xs text-[#64748B]">/100</span>
             </div>
             <span className="text-[10px] text-[#64748B]">Composite index</span>
           </div>
