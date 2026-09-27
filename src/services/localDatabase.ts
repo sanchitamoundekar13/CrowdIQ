@@ -242,6 +242,77 @@ class LocalDatabase {
     this.safeSet(STORAGE_KEYS.AUDIT_LOGS, [newEntry, ...logs.slice(0, 49)]);
   }
 
+  // --- REAL-TIME LIVE DATA STREAMING METHODS ---
+  public recordRealtimeIngress(attendeeName: string, gateId = 'gate-b', tier = 'General Admission'): TicketRecord {
+    const gateNames: Record<string, string> = {
+      'gate-a': 'Gate A (North Plaza)',
+      'gate-b': 'Gate B (Main Concourse)',
+      'gate-c': 'Gate C (West Plaza)',
+      'gate-vip': 'Gate VIP (Concourse East)'
+    };
+    const gateName = gateNames[gateId] || gateId;
+    const nowTime = new Date().toLocaleTimeString();
+    const ticketId = `TKT-${Math.floor(1000 + Math.random() * 9000)}-${tier.slice(0, 3).toUpperCase()}`;
+
+    const newTicket: TicketRecord = {
+      id: ticketId,
+      attendee: attendeeName || `Attendee #${Math.floor(10000 + Math.random() * 90000)}`,
+      tier,
+      zone: gateName,
+      gate: gateName,
+      valid: true,
+      used: true,
+      timestamp: nowTime,
+    };
+
+    const currentTickets = this.getTickets();
+    this.saveTickets([newTicket, ...currentTickets.slice(0, 99)]);
+    this.addAuditLog('REALTIME_INGRESS_SCAN', `Turnstile scan: ${newTicket.attendee} [${ticketId}] admitted via ${gateName}`, 'OPTICAL_BARCODE_NODE', 'INFO');
+    return newTicket;
+  }
+
+  public recordBatchIngress(count: number, gateId = 'gate-b'): void {
+    const nowTime = new Date().toLocaleTimeString();
+    const newRecords: TicketRecord[] = [];
+    const sampleNames = ['Rohan V.', 'Priya S.', 'Liam N.', 'Aarav K.', 'Chloe M.', 'Jin W.', 'Sofia G.', 'Tariq A.', 'Kavita D.', 'Leo B.'];
+
+    for (let i = 0; i < count; i++) {
+      const name = sampleNames[i % sampleNames.length] + ' ' + (Math.floor(Math.random() * 89) + 10);
+      newRecords.push({
+        id: `TKT-${Math.floor(10000 + Math.random() * 90000)}-BATCH`,
+        attendee: name,
+        tier: i % 5 === 0 ? 'VIP Access' : 'General Admission',
+        zone: gateId,
+        gate: gateId,
+        valid: true,
+        used: true,
+        timestamp: nowTime,
+      });
+    }
+
+    const currentTickets = this.getTickets();
+    this.saveTickets([...newRecords, ...currentTickets.slice(0, 150)]);
+    this.addAuditLog('BATCH_INGRESS_ADMISSION', `Rapid turnstile batch ingress: +${count} attendees recorded into database`, 'TURNSTILE_AUTOMATION', 'INFO');
+  }
+
+  public recordRealtimeDetection(cameraId: string, peopleCount: number, density: number, flowDirection: string, riskLevel: string): void {
+    const feeds = this.getCameraFeeds();
+    const updated = feeds.map(feed => {
+      if (feed.id === cameraId || feed.camNumber === cameraId) {
+        return {
+          ...feed,
+          simulatedDetections: peopleCount,
+          density,
+          flowDirection,
+          riskLevel: riskLevel as any,
+          lastAnomalyTime: riskLevel === 'CRITICAL' ? new Date().toLocaleTimeString() : feed.lastAnomalyTime
+        };
+      }
+      return feed;
+    });
+    this.saveCameraFeeds(updated);
+  }
+
   // --- METADATA & TELEMETRY ---
   public getMetadata(): DatabaseMetadata {
     return this.safeGet<DatabaseMetadata>(STORAGE_KEYS.METADATA, {

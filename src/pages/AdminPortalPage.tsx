@@ -31,11 +31,49 @@ import {
   PlusCircle,
   Zap,
   Sparkles,
-  Maximize2
+  Maximize2,
+  Video,
+  Key,
+  Shield,
+  Server,
+  Settings,
+  Cpu,
+  Save,
+  Trash2,
+  Check,
+  Play,
+  Pause,
+  Copy,
+  Wifi,
+  Ticket,
+  Cloud,
+  Link2,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useSimulation } from '../context/SimulationContext';
 import { localDatabase, TicketRecord } from '../services/localDatabase';
+
+// Initial Users List
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Incident Commander' | 'Chief Security Officer' | 'Zone Operator' | 'Tactical Dispatcher' | 'Read-only Analyst';
+  department: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  lastLogin: string;
+  twoFactor: boolean;
+}
+
+const INITIAL_USERS: AdminUser[] = [
+  { id: 'USR-01', name: 'Cmdr. Marcus Vance', email: 'vance.m@arena.security.gov', role: 'Incident Commander', department: 'Executive Tactical Command', status: 'ACTIVE', lastLogin: 'Just now', twoFactor: true },
+  { id: 'USR-02', name: 'Capt. Sarah Jenkins', email: 'jenkins.s@arena.security.gov', role: 'Chief Security Officer', department: 'Surveillance Operations', status: 'ACTIVE', lastLogin: '18 mins ago', twoFactor: true },
+  { id: 'USR-03', name: 'Officer David Kross', email: 'kross.d@arena.security.gov', role: 'Tactical Dispatcher', department: 'Rapid Unit Response', status: 'ACTIVE', lastLogin: '42 mins ago', twoFactor: true },
+  { id: 'USR-04', name: 'Elena Rostova', email: 'rostova.e@arena.security.gov', role: 'Zone Operator', department: 'Gate B & Ingress Monitoring', status: 'ACTIVE', lastLogin: '2 hours ago', twoFactor: false },
+  { id: 'USR-05', name: 'Alex Morales', email: 'morales.a@arena.analytics.io', role: 'Read-only Analyst', department: 'Data Intelligence', status: 'ACTIVE', lastLogin: 'Yesterday', twoFactor: true },
+];
 
 export const AdminPortalPage: React.FC = () => {
   const { 
@@ -50,187 +88,209 @@ export const AdminPortalPage: React.FC = () => {
     emergencyMode, 
     playAlertSound, 
     openDatabaseModal,
-    currentTime
+    currentTime,
+    isRealtimeActive,
+    toggleRealtimeStream,
+    injectRealtimeIngress,
+    injectBatchIngress,
+    isBackendConnected,
+    backendInfo,
+    backendLatency,
+    isBackendWsConnected,
+    testBackendConnection,
+    syncAllToBackend,
+    supabaseStatus,
+    syncAllToSupabase,
+    testSupabaseConnection,
+    saveSupabaseConfig,
+    getSupabaseSqlSchema
   } = useSimulation();
 
-  // Authentication State (Admin Access Lock)
+  // Authentication State
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(true);
   const [passcode, setPasscode] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Active Tab in the Records Section
-  const [activeLedgerTab, setActiveLedgerTab] = useState<'tickets' | 'alerts' | 'audit' | 'teams'>('tickets');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-
-  // Attendance & Gate State
-  const [attendance, setAttendance] = useState(localDatabase.getAttendanceStats());
-  const [gateStatuses, setGateStatuses] = useState(localDatabase.getGateStatuses());
-  const [dbStats, setDbStats] = useState(localDatabase.getDatabaseStats());
-  const [tickets, setTickets] = useState(localDatabase.getTickets());
+  // Admin Console Top Navigation Tab
+  // User spec: Users, Roles & permissions, Cameras, Events, Zones, System health, Audit logs, Settings
+  const [adminSubTab, setAdminSubTab] = useState<'users' | 'roles' | 'cameras' | 'events' | 'zones' | 'health' | 'audit' | 'settings'>('users');
+  
+  // Local Database records & state
+  const [users, setUsers] = useState<AdminUser[]>(INITIAL_USERS);
   const [auditLogs, setAuditLogs] = useState(localDatabase.getAuditLogs());
+  const [dbStats, setDbStats] = useState(localDatabase.getDatabaseStats());
+  const [gateStatuses, setGateStatuses] = useState(localDatabase.getGateStatuses());
+  const [liveTickets, setLiveTickets] = useState<TicketRecord[]>(() => localDatabase.getTickets());
+  const [activeCollectionTab, setActiveCollectionTab] = useState<'zones' | 'cameras' | 'tickets' | 'alerts' | 'teams' | 'audit'>('tickets');
+  const [copiedNotification, setCopiedNotification] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [auditSeverityFilter, setAuditSeverityFilter] = useState<string>('ALL');
 
-  // Active CCTV Feed Selector for live monitoring
-  const [selectedCamId, setSelectedCamId] = useState<string>('cam-01');
+  // Supabase Cloud Link State
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [supabaseForm, setSupabaseForm] = useState({
+    url: supabaseStatus.url || '',
+    anonKey: '',
+    autoSync: supabaseStatus.autoSync ?? true,
+    realtimeEnabled: supabaseStatus.realtimeEnabled ?? true,
+  });
+  const [supabaseTestResult, setSupabaseTestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
+  const [isTestingSupabase, setIsTestingSupabase] = useState(false);
+  const [isSyncingSupabase, setIsSyncingSupabase] = useState(false);
+  const [isSchemaModalOpen, setIsSchemaModalOpen] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
-  // Ingress Record Simulation Form State
-  const [newAttendeeName, setNewAttendeeName] = useState<string>('');
-  const [newAttendeeTier, setNewAttendeeTier] = useState<string>('General Admission');
-  const [newAttendeeGate, setNewAttendeeGate] = useState<string>('gate-b');
-  const [ingressNotification, setIngressNotification] = useState<string | null>(null);
+  useEffect(() => {
+    if (supabaseStatus.url) {
+      setSupabaseForm(prev => ({ ...prev, url: supabaseStatus.url }));
+    }
+  }, [supabaseStatus.url]);
 
-  // Manual Dispatch State
-  const [selectedTeamToDispatch, setSelectedTeamToDispatch] = useState<string>('team-01');
-  const [targetZoneToDispatch, setTargetZoneToDispatch] = useState<string>('gate-b');
+  const handleTestSupabase = async () => {
+    setIsTestingSupabase(true);
+    setSupabaseTestResult(null);
+    const res = await testSupabaseConnection(supabaseForm.url, supabaseForm.anonKey);
+    setSupabaseTestResult(res);
+    setIsTestingSupabase(false);
+  };
 
-  // Sync with localDatabase subscriptions
-  const refreshAllAdminData = () => {
-    setAttendance(localDatabase.getAttendanceStats());
-    setGateStatuses(localDatabase.getGateStatuses());
-    setDbStats(localDatabase.getDatabaseStats());
-    setTickets(localDatabase.getTickets());
+  const handleSaveSupabaseConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveSupabaseConfig({
+      url: supabaseForm.url.trim(),
+      anonKey: supabaseForm.anonKey.trim(),
+      autoSync: supabaseForm.autoSync,
+      realtimeEnabled: supabaseForm.realtimeEnabled,
+    });
+    playAlertSound('success');
+  };
+
+  const handleSyncAllSupabase = async () => {
+    setIsSyncingSupabase(true);
+    await syncAllToSupabase();
+    setIsSyncingSupabase(false);
+    playAlertSound('success');
+  };
+
+  // Real-time Attendance & Inflow Metrics
+  const attendanceStats = useMemo(() => localDatabase.getAttendanceStats(), [zones, liveTickets]);
+
+  // Modals state
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'Zone Operator' as AdminUser['role'],
+    department: 'Concourse Operations'
+  });
+
+  // Settings form state
+  const [configSettings, setConfigSettings] = useState({
+    eventName: settings.eventName || 'World Championship Finals 2026',
+    venueCapacity: settings.venueCapacity || 25000,
+    criticalDensityThreshold: settings.criticalDensityThreshold || 85,
+    warningDensityThreshold: settings.warningDensityThreshold || 70,
+    autoDispatchEnabled: true,
+    alarmVolume: 80,
+    logRetentionDays: 90,
+    webhookEndpoint: 'https://security-api.arena.lan/v1/telemetry'
+  });
+  const [isSettingsSaved, setIsSettingsSaved] = useState(false);
+
+  // Roles & Permissions Matrix
+  const [rolePermissions, setRolePermissions] = useState<Record<string, Record<string, boolean>>>({
+    'Incident Commander': { feeds: true, ptz: true, emergency: true, dispatch: true, events: true, audit: true, database: true },
+    'Chief Security Officer': { feeds: true, ptz: true, emergency: true, dispatch: true, events: true, audit: true, database: false },
+    'Zone Operator': { feeds: true, ptz: true, emergency: false, dispatch: false, events: false, audit: false, database: false },
+    'Tactical Dispatcher': { feeds: true, ptz: false, emergency: true, dispatch: true, events: false, audit: true, database: false },
+    'Read-only Analyst': { feeds: true, ptz: false, emergency: false, dispatch: false, events: false, audit: true, database: false },
+  });
+
+  // Sync audit logs, tickets, and stats
+  const refreshAdminData = () => {
     setAuditLogs(localDatabase.getAuditLogs());
+    setDbStats(localDatabase.getDatabaseStats());
+    setGateStatuses(localDatabase.getGateStatuses());
+    setLiveTickets(localDatabase.getTickets());
   };
 
   useEffect(() => {
-    refreshAllAdminData();
-    const unsub = localDatabase.subscribe(refreshAllAdminData);
+    refreshAdminData();
+    const unsub = localDatabase.subscribe(refreshAdminData);
     return () => unsub();
-  }, [zones, alerts, securityTeams, cameraFeeds]);
+  }, [zones, alerts, cameraFeeds]);
 
-  // Hourly influx demo curve (Real-world accumulation projection)
-  const hourlyInflowData = useMemo(() => [
-    { time: '14:00', entrants: 1200, exits: 150, inside: 1050 },
-    { time: '15:00', entrants: 2800, exits: 320, inside: 3530 },
-    { time: '16:00', entrants: 4900, exits: 680, inside: 7750 },
-    { time: '17:00', entrants: 7600, exits: 1100, inside: 14250 },
-    { time: '18:00', entrants: 8900, exits: 1650, inside: 17500 },
-    { time: '19:00', entrants: 6200, exits: 2200, inside: 18492 },
-    { time: '20:00 (Est)', entrants: 3100, exits: 3100, inside: 18492 },
-    { time: '21:00 (Est)', entrants: 1400, exits: 4500, inside: 15392 },
-  ], []);
+  // Log single optical frame detection
+  const handleLogCctvFrame = () => {
+    if (cameraFeeds.length === 0) return;
+    const randomFeed = cameraFeeds[Math.floor(Math.random() * cameraFeeds.length)];
+    const people = Math.floor(Math.random() * 45) + 30;
+    const density = Math.min(100, Math.floor(people * 1.2));
+    localDatabase.recordRealtimeDetection(randomFeed.id, people, density, 'Southward Inflow', density > 80 ? 'CRITICAL' : 'MODERATE');
+    localDatabase.addAuditLog('CCTV_FRAME_INSPECTED', `Neural vision frame analyzed for ${randomFeed.camNumber} (${randomFeed.locationName}): ${people} pax, density ${density}%`, 'YOLO_SORT_ENGINE', density > 80 ? 'WARNING' : 'INFO');
+    playAlertSound('info');
+  };
 
-  // Filtered tickets
-  const filteredTickets = useMemo(() => {
-    if (!searchQuery.trim()) return tickets;
-    const q = searchQuery.toLowerCase();
-    return tickets.filter(t => 
-      t.id.toLowerCase().includes(q) ||
-      t.attendee.toLowerCase().includes(q) ||
-      t.tier.toLowerCase().includes(q) ||
-      t.gate.toLowerCase().includes(q)
-    );
-  }, [tickets, searchQuery]);
+  // Auth unlock handler
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcode.trim() === 'ADMIN-2026' || passcode.trim() === 'admin' || passcode.trim() === '1234') {
+      setIsAdminUnlocked(true);
+      setAuthError(null);
+      localDatabase.addAuditLog('ADMIN_AUTHENTICATED', 'Operator authenticated with Master Commander credentials', 'CMDR_VANCE', 'SUCCESS');
+    } else {
+      setAuthError('Invalid Security Passcode. Default master passcode is ADMIN-2026');
+    }
+  };
 
-  // Filtered audit logs
-  const filteredAuditLogs = useMemo(() => {
-    if (!searchQuery.trim()) return auditLogs;
-    const q = searchQuery.toLowerCase();
-    return auditLogs.filter(l => 
-      l.action.toLowerCase().includes(q) ||
-      l.details.toLowerCase().includes(q) ||
-      l.operator.toLowerCase().includes(q) ||
-      l.severity.toLowerCase().includes(q)
-    );
-  }, [auditLogs, searchQuery]);
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.name.trim() || !newUser.email.trim()) return;
+    const added: AdminUser = {
+      id: `USR-0${users.length + 1}`,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      department: newUser.department,
+      status: 'ACTIVE',
+      lastLogin: 'Never',
+      twoFactor: false
+    };
+    setUsers([...users, added]);
+    setIsAddUserModalOpen(false);
+    setNewUser({ name: '', email: '', role: 'Zone Operator', department: 'Concourse Operations' });
+    localDatabase.addAuditLog('USER_CREATED', `Registered new operator ${added.name} with role ${added.role}`, 'CMDR_VANCE', 'SUCCESS');
+    playAlertSound('info');
+  };
 
-  // Gate actuation handler
-  const handleGateActuation = (gateId: string, status: 'OPEN' | 'RESTRICTED' | 'EVACUATION' | 'LOCKED') => {
-    localDatabase.setGateStatus(gateId, status, 'CMDR_VANCE');
-    refreshAllAdminData();
+  const toggleUserStatus = (id: string) => {
+    setUsers(users.map(u => u.id === id ? { ...u, status: u.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' } : u));
     playAlertSound('warning');
   };
 
-  // Direct Squad Dispatch handler
-  const handleDispatchSquad = (e: React.FormEvent) => {
+  const togglePermission = (role: string, permKey: string) => {
+    setRolePermissions(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        [permKey]: !prev[role][permKey]
+      }
+    }));
+    playAlertSound('info');
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatchSecurityTeam(selectedTeamToDispatch, targetZoneToDispatch);
-    const teamObj = securityTeams.find(t => t.id === selectedTeamToDispatch);
-    const zoneObj = zones.find(z => z.id === targetZoneToDispatch);
-    localDatabase.addAuditLog(
-      'DIRECT_DISPATCH',
-      `Admin dispatched ${teamObj?.name || selectedTeamToDispatch} to sector ${zoneObj?.name || targetZoneToDispatch}`,
-      'CMDR_VANCE',
-      'WARNING'
-    );
-    refreshAllAdminData();
-  };
-
-  // Manual Ingress Admission & Real-time Record (People coming in)
-  const handleManualAdmitAttendee = (overrideName?: string) => {
-    const attendeeName = overrideName || (newAttendeeName.trim() ? newAttendeeName.trim() : `Visitor-${Math.floor(1000 + Math.random() * 9000)}`);
-    const newTktId = `TKT-${Math.floor(1000 + Math.random() * 9000)}-${newAttendeeTier.slice(0, 3).toUpperCase()}`;
-    const targetGateObj = attendance.gates.find(g => g.id === newAttendeeGate) || attendance.gates[0];
-
-    const newTicket: TicketRecord = {
-      id: newTktId,
-      attendee: attendeeName,
-      tier: newAttendeeTier,
-      zone: newAttendeeGate === 'gate-a' ? 'North Plaza Gate' : newAttendeeGate === 'gate-b' ? 'West Concourse' : newAttendeeGate === 'gate-c' ? 'East Plaza' : 'Arena Main Bowl',
-      gate: targetGateObj.name,
-      valid: true,
-      used: true,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    localDatabase.saveTickets([newTicket, ...tickets]);
-    localDatabase.addAuditLog(
-      'INGRESS_VERIFIED',
-      `Optical turnstile scanned and admitted attendee "${attendeeName}" (${newAttendeeTier}) via ${targetGateObj.name}`,
-      'TURNSTILE_OPTICAL',
-      'SUCCESS'
-    );
-    setNewAttendeeName('');
-    setIngressNotification(`Recorded ingress for ${attendeeName} at ${targetGateObj.name}`);
-    setTimeout(() => setIngressNotification(null), 4000);
+    updateSettings({
+      eventName: configSettings.eventName,
+      venueCapacity: configSettings.venueCapacity,
+      criticalDensityThreshold: configSettings.criticalDensityThreshold,
+      warningDensityThreshold: configSettings.warningDensityThreshold,
+    });
+    setIsSettingsSaved(true);
+    localDatabase.addAuditLog('PLATFORM_SETTINGS_UPDATED', 'Updated global safety thresholds and emergency configurations', 'CMDR_VANCE', 'INFO');
     playAlertSound('info');
-    refreshAllAdminData();
-  };
-
-  const handleBatchAdmitAttendees = (count = 5) => {
-    const sampleNames = ['Rohan Verma', 'Ananya Deshmukh', 'Kevin O\'Connor', 'Fatima Zahra', 'Liam Vance', 'Carlos Mendez', 'Yuki Tanaka', 'Zara Al-Mansoor', 'Dmitri Petrov', 'Priya Sharma'];
-    const newRecords: TicketRecord[] = [];
-    const nowTime = new Date().toLocaleTimeString();
-
-    for (let i = 0; i < count; i++) {
-      const randomName = sampleNames[Math.floor(Math.random() * sampleNames.length)] + ` #${Math.floor(100 + Math.random() * 900)}`;
-      const randomGate = attendance.gates[Math.floor(Math.random() * attendance.gates.length)];
-      newRecords.push({
-        id: `TKT-${Math.floor(1000 + Math.random() * 9000)}-GEN`,
-        attendee: randomName,
-        tier: 'General Admission',
-        zone: randomGate.name,
-        gate: randomGate.name,
-        valid: true,
-        used: true,
-        timestamp: nowTime,
-      });
-    }
-
-    localDatabase.saveTickets([...newRecords, ...tickets]);
-    localDatabase.addAuditLog(
-      'BATCH_INGRESS_ADMISSION',
-      `High-speed turnstile batch admission recorded +${count} attendees entering venue concourses`,
-      'TURNSTILE_AUTOMATION',
-      'INFO'
-    );
-    setIngressNotification(`Batch admission recorded +${count} entrants in persistent database ledger`);
-    setTimeout(() => setIngressNotification(null), 4000);
-    playAlertSound('info');
-    refreshAllAdminData();
-  };
-
-  const handleRecordCCTVSnapshot = () => {
-    const cam = cameraFeeds.find(c => c.id === selectedCamId) || cameraFeeds[0];
-    localDatabase.addAuditLog(
-      'CCTV_SURVEILLANCE_RECORD',
-      `AI Neural Vision logged frame analysis on ${cam.name} (${cam.camNumber}): Density ${cam.density}%, FPS ${cam.fps}, Flow ${cam.flowDirection}, Detections: ${cam.simulatedDetections} persons`,
-      'EDGE_YOLO_NODE',
-      cam.riskLevel === 'CRITICAL' ? 'CRITICAL' : cam.riskLevel === 'WATCH' ? 'WARNING' : 'INFO'
-    );
-    setIngressNotification(`Recorded CCTV telemetry frame for ${cam.camNumber} into immutable audit database`);
-    setTimeout(() => setIngressNotification(null), 4000);
-    playAlertSound('info');
-    refreshAllAdminData();
+    setTimeout(() => setIsSettingsSaved(false), 3000);
   };
 
   // Export handlers
@@ -258,34 +318,34 @@ export const AdminPortalPage: React.FC = () => {
     localDatabase.addAuditLog('DATABASE_EXPORT', 'Exported full JSON database dump', 'CMDR_VANCE', 'INFO');
   };
 
-  // Authentication unlock verification
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode.trim() === 'ADMIN-2026' || passcode.trim() === 'admin' || passcode.trim() === '1234') {
-      setIsAdminUnlocked(true);
-      setAuthError(null);
-      localDatabase.addAuditLog('ADMIN_AUTHENTICATED', 'Operator authenticated with Master Commander credentials', 'CMDR_VANCE', 'SUCCESS');
-    } else {
-      setAuthError('Invalid Security Passcode. Default master passcode is ADMIN-2026');
-    }
-  };
+  const filteredAuditLogs = useMemo(() => {
+    return auditLogs.filter(log => {
+      const matchesFilter = auditSeverityFilter === 'ALL' ? true : log.severity === auditSeverityFilter;
+      const matchesSearch = 
+        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.operator.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [auditLogs, auditSeverityFilter, searchQuery]);
 
+  // Auth lock screen
   if (!isAdminUnlocked) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xl p-8 space-y-6 text-center">
           <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
-            <Lock className="w-8 h-8" />
+            <Lock className="w-8 h-8 text-amber-500" />
           </div>
           <div>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded border border-rose-200">
               RESTRICTED COMMAND CLEARANCE
             </span>
             <h2 className="text-2xl font-extrabold text-slate-900 mt-2">
-              CrowdIQ Admin Console
+              CrowdIQ Admin Console 🔐
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Privileged access reserved for Incident Commanders, Chief Security Officers, and Venue Operations Directors.
+            <p className="text-xs text-slate-500 mt-1 font-mono">
+              Authentication required to access Users, Roles, Cameras, Events, Zones, Health & Audit Logs.
             </p>
           </div>
 
@@ -308,8 +368,8 @@ export const AdminPortalPage: React.FC = () => {
                 className="w-full p-3 rounded-xl border border-slate-300 bg-slate-50 text-sm font-mono text-slate-900 focus:outline-hidden focus:border-blue-500"
                 autoFocus
               />
-              <span className="text-[10px] text-slate-400 block mt-1">
-                Tip: Press Enter or use <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-600 font-bold">ADMIN-2026</code>
+              <span className="text-[10px] text-slate-400 block mt-1 font-mono">
+                Tip: Default master passcode is <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-600 font-bold">ADMIN-2026</code>
               </span>
             </div>
 
@@ -318,32 +378,28 @@ export const AdminPortalPage: React.FC = () => {
               className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-bold tracking-wider transition shadow-md cursor-pointer flex items-center justify-center gap-2"
             >
               <Unlock className="w-4 h-4" />
-              <span>AUTHENTICATE & ENTER ADMIN CONSOLE</span>
+              <span>AUTHENTICATE & ENTER CONSOLE</span>
             </button>
           </form>
-
-          <div className="pt-2 text-xs text-slate-400 font-mono">
-            Audited & Recorded by LocalStorage Engine • TLS 1.3
-          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fadeIn">
       
       {/* 1. TOP ADMIN IDENTITY & MASTER OPERATIONS BAR */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 rounded-2xl border border-slate-800 p-6 shadow-xl text-white">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="p-3.5 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 shadow-inner">
-              <ShieldAlert className="w-7 h-7" />
+              <ShieldAlert className="w-7 h-7 text-amber-400" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                  LEVEL 5 MASTER ADMIN
+                  MASTER ADMIN CONSOLE 🔐
                 </span>
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -354,12 +410,12 @@ export const AdminPortalPage: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1.5">
-                CrowdIQ Master Operations & Attendance Console
+                CrowdIQ Administrative Command Center
               </h1>
               <p className="text-xs text-slate-300 font-mono mt-0.5 flex flex-wrap items-center gap-2">
                 <span>Commander: <strong>Cmdr. Marcus Vance</strong></span>
                 <span>•</span>
-                <span>Venue: <strong>{settings.eventName}</strong></span>
+                <span>Role: <strong>Level 5 SuperAdmin</strong></span>
                 <span>•</span>
                 <span>Master Clock: <strong>{currentTime} IST</strong></span>
               </p>
@@ -368,6 +424,19 @@ export const AdminPortalPage: React.FC = () => {
 
           {/* Quick Master Controls */}
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => setIsSupabaseModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition shadow-md cursor-pointer ${
+                supabaseStatus.isConnected
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                  : 'bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-500/40'
+              }`}
+              title="Configure Supabase PostgreSQL link and realtime replication"
+            >
+              <Cloud className="w-4 h-4 text-emerald-300" />
+              <span>Supabase {supabaseStatus.isConnected ? 'Linked 🟢' : 'Link DB ⚡'}</span>
+            </button>
+
             <button
               onClick={openDatabaseModal}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono font-bold transition shadow-md cursor-pointer"
@@ -379,893 +448,1164 @@ export const AdminPortalPage: React.FC = () => {
             <button
               onClick={handleExportCSV}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-mono font-bold transition cursor-pointer"
-              title="Download full operational audit CSV"
             >
               <Download className="w-4 h-4 text-emerald-400" />
               <span>Audit CSV</span>
             </button>
 
             <button
-              onClick={handleExportJSON}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-mono font-bold transition cursor-pointer"
-              title="Download entire database JSON snapshot"
-            >
-              <FileText className="w-4 h-4 text-indigo-400" />
-              <span>JSON Dump</span>
-            </button>
-
-            <button
               onClick={() => setIsAdminUnlocked(false)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono font-semibold transition cursor-pointer"
-              title="Lock Admin Console"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono font-semibold transition cursor-pointer"
             >
-              <Lock className="w-4 h-4" />
-              <span>Lock</span>
+              <Lock className="w-4 h-4 text-amber-400" />
+              <span>Lock Console</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. ATTENDANCE & INFLOW TELEMETRY CARDS */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h2 className="text-sm font-bold font-mono uppercase tracking-wider text-slate-900">
-              Live Attendance & Turnstile Inflow Metrics
-            </h2>
+      {/* 1.5 REAL-TIME TELEMETRY & DATABASE STREAM ENGINE */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl border border-indigo-500/20 p-5 shadow-lg text-white space-y-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl border ${isRealtimeActive ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/20 border-amber-500/30 text-amber-400'}`}>
+              <Radio className={`w-5 h-5 ${isRealtimeActive ? 'animate-pulse' : ''}`} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                  isRealtimeActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeActive ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+                  {isRealtimeActive ? 'REAL-TIME DB STREAM: LIVE' : 'STREAM: PAUSED'}
+                </span>
+                <span className="text-[11px] font-mono text-indigo-300">
+                  Storage Adapter: HTML5 LocalStorage + Supabase Cloud Engine
+                </span>
+              </div>
+              <h2 className="text-base font-extrabold text-white mt-1">
+                Real-Time Telemetry & Database Ingress Controller
+              </h2>
+            </div>
           </div>
-          <span className="text-xs font-mono text-slate-500">
-            Auto-recording every optical scan & gate ingress
-          </span>
+
+          {/* Quick Real-Time Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleSyncAllSupabase}
+              disabled={isSyncingSupabase}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-mono font-bold transition shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Push all live records to Supabase PostgreSQL database tables"
+            >
+              <Cloud className={`w-3.5 h-3.5 text-teal-200 ${isSyncingSupabase ? 'animate-spin' : ''}`} />
+              <span>{isSyncingSupabase ? 'Syncing...' : 'Sync to Supabase'}</span>
+            </button>
+
+            <button
+              onClick={() => injectRealtimeIngress('Walk-in ' + Math.floor(Math.random() * 900 + 100), 'gate-b', 'General Admission')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-bold transition shadow-sm cursor-pointer active:scale-95"
+              title="Record single turnstile attendee barcode scan into database"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <span>+1 Scan Attendee</span>
+            </button>
+
+            <button
+              onClick={() => injectBatchIngress(25, 'gate-b')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono font-bold transition shadow-sm cursor-pointer active:scale-95"
+              title="Simulate rapid turnstile wave of 25 attendees"
+            >
+              <Users className="w-3.5 h-3.5 text-blue-200" />
+              <span>+25 Batch Ingress</span>
+            </button>
+
+            <button
+              onClick={handleLogCctvFrame}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-bold transition shadow-sm cursor-pointer active:scale-95"
+              title="Record neural YOLO detection telemetry frame into camera feed database"
+            >
+              <Camera className="w-3.5 h-3.5 text-purple-200" />
+              <span>Log CCTV Detection</span>
+            </button>
+
+            <button
+              onClick={toggleRealtimeStream}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition shadow-sm cursor-pointer ${
+                isRealtimeActive 
+                  ? 'bg-amber-600/30 hover:bg-amber-600/50 text-amber-200 border border-amber-500/30' 
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              }`}
+            >
+              {isRealtimeActive ? (
+                <>
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>Pause Stream</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Resume Stream</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Ingress Notification Toast */}
-        {ingressNotification && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-bold flex items-center justify-between animate-fadeIn">
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>{ingressNotification}</span>
-            </span>
-            <span className="text-[10px] text-emerald-600 uppercase font-semibold bg-emerald-100 px-2 py-0.5 rounded">
-              DB Synced
+        {/* Live Metrics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-mono">
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Admitted</span>
+            <div className="text-lg font-extrabold text-white mt-0.5">{attendanceStats.totalAdmitted.toLocaleString()}</div>
+            <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> Live admissions
             </span>
           </div>
-        )}
 
-        {/* Turnstile Admission & People Ingress Recorder Bar */}
-        <div className="bg-white rounded-2xl border border-blue-200/80 p-4 mb-4 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-100">
-            <div>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                Admin Turnstile Controller
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Inside Venue</span>
+            <div className="text-lg font-extrabold text-blue-400 mt-0.5">{attendanceStats.currentlyInside.toLocaleString()}</div>
+            <span className="text-[10px] text-slate-400">{attendanceStats.occupancyPercentage}% capacity</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Inflow Velocity</span>
+            <div className="text-lg font-extrabold text-amber-400 mt-0.5">{attendanceStats.currentInflowPerMinute}/min</div>
+            <span className="text-[10px] text-slate-400">All turnstiles</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">DB Transactions</span>
+            <div className="text-lg font-extrabold text-indigo-400 mt-0.5">{dbStats.transactionCount}</div>
+            <span className="text-[10px] text-slate-400">Atomic commits</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Storage Size</span>
+            <div className="text-lg font-extrabold text-slate-200 mt-0.5">{dbStats.sizeKB} KB</div>
+            <span className="text-[10px] text-emerald-400">LocalStorage DB</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Ambient Ingestion</span>
+            <div className="text-lg font-extrabold text-emerald-400 mt-0.5">2.5s Sync</div>
+            <span className="text-[10px] text-slate-400">Neural + Gates</span>
+          </div>
+        </div>
+
+        {/* Real-Time Turnstile Admissions Live Ticker */}
+        <div className="bg-black/30 rounded-xl border border-white/10 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Ticket className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-[11px] font-mono font-bold text-white uppercase tracking-wider">
+                Live Turnstile Ingress Stream ({liveTickets.length} recorded)
               </span>
-              <h3 className="text-xs font-mono font-bold text-slate-900 mt-1">
-                Record Attendee Ingress & Live Concourse Arrival
-              </h3>
-              <p className="text-[11px] text-slate-500 font-mono">
-                Log turnstile gate scans directly into persistent storage to update live crowd tallies
+            </div>
+            <span className="text-[10px] font-mono text-slate-400">Auto-streaming to database ledger</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {liveTickets.slice(0, 4).map((ticket, idx) => (
+              <div 
+                key={ticket.id + '-' + idx} 
+                className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center justify-between text-[11px] font-mono hover:bg-white/10 transition"
+              >
+                <div>
+                  <div className="font-bold text-white truncate max-w-[130px]">{ticket.attendee}</div>
+                  <div className="text-[10px] text-slate-400">{ticket.id} • {ticket.gate}</div>
+                </div>
+                <div className="text-right">
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                    ticket.tier.includes('VIP') ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  }`}>
+                    {ticket.tier}
+                  </span>
+                  <div className="text-[9px] text-emerald-400 mt-0.5">{ticket.timestamp || currentTime}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. ADMIN CONSOLE SUB-MODULE NAVIGATION TABS */}
+      {/* Users | Roles & permissions | Cameras | Events | Zones | System health | Audit logs | Settings */}
+      <div className="bg-white rounded-2xl border border-[#CBD5E1] p-1.5 shadow-xs overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
+          {[
+            { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
+            { id: 'roles', label: 'Roles & Permissions', icon: <Key className="w-4 h-4" /> },
+            { id: 'cameras', label: 'Cameras', icon: <Video className="w-4 h-4" /> },
+            { id: 'events', label: 'Events', icon: <Clock className="w-4 h-4" /> },
+            { id: 'zones', label: 'Zones', icon: <Layers className="w-4 h-4" /> },
+            { id: 'health', label: 'System Health', icon: <Server className="w-4 h-4" /> },
+            { id: 'audit', label: 'Audit Logs', icon: <FileText className="w-4 h-4" /> },
+            { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+          ].map((tab) => {
+            const isActive = adminSubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setAdminSubTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
+                  isActive
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. SUB-MODULE VIEWS */}
+
+      {/* SUBMODULE A: USERS */}
+      {adminSubTab === 'users' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0F172A]">Operator & User Management</h2>
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Authorized security operators, access clearance levels, and two-factor enforcement
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAddUserModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-mono font-bold transition cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add User</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase text-[10px]">
+                <tr>
+                  <th className="p-3">User</th>
+                  <th className="p-3">Department</th>
+                  <th className="p-3">Role & Clearance</th>
+                  <th className="p-3">2FA</th>
+                  <th className="p-3">Last Active</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F5F9]">
+                {users.map(u => (
+                  <tr key={u.id} className="hover:bg-[#F8FAFC] transition">
+                    <td className="p-3">
+                      <div className="font-bold text-[#0F172A]">{u.name}</div>
+                      <div className="text-[10px] text-[#64748B]">{u.email}</div>
+                    </td>
+                    <td className="p-3 text-[#475569]">{u.department}</td>
+                    <td className="p-3 font-semibold text-[#2563EB]">{u.role}</td>
+                    <td className="p-3">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${u.twoFactor ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {u.twoFactor ? 'ENABLED' : 'DISABLED'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-[#64748B]">{u.lastLogin}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'ACTIVE' ? 'bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0]' : 'bg-[#FEF2F2] text-[#DC2626] border border-[#FCA5A5]'}`}>
+                        {u.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => toggleUserStatus(u.id)}
+                        className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono transition cursor-pointer ${
+                          u.status === 'ACTIVE' 
+                            ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' 
+                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        }`}
+                      >
+                        {u.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE B: ROLES & PERMISSIONS */}
+      {adminSubTab === 'roles' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="pb-3 border-b border-[#E2E8F0]">
+            <h2 className="text-base font-extrabold text-[#0F172A]">Roles & Permissions Matrix</h2>
+            <p className="text-xs text-[#64748B] font-mono mt-0.5">
+              Granular role-based capability enforcement for video streams, emergency klaxon, unit dispatching, and audit ledgers
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase text-[10px]">
+                <tr>
+                  <th className="p-3">Role Name</th>
+                  <th className="p-3 text-center">Video Feeds</th>
+                  <th className="p-3 text-center">PTZ Controls</th>
+                  <th className="p-3 text-center">Emergency PA</th>
+                  <th className="p-3 text-center">Tactical Dispatch</th>
+                  <th className="p-3 text-center">Manage Events</th>
+                  <th className="p-3 text-center">Audit Logs</th>
+                  <th className="p-3 text-center">Database Reset</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F5F9]">
+                {Object.entries(rolePermissions).map(([roleName, perms]) => (
+                  <tr key={roleName} className="hover:bg-[#F8FAFC] transition">
+                    <td className="p-3 font-bold text-[#0F172A]">{roleName}</td>
+                    {(['feeds', 'ptz', 'emergency', 'dispatch', 'events', 'audit', 'database'] as const).map(key => (
+                      <td key={key} className="p-3 text-center">
+                        <button
+                          onClick={() => togglePermission(roleName, key)}
+                          className={`w-6 h-6 rounded-md inline-flex items-center justify-center transition cursor-pointer ${
+                            perms[key] 
+                              ? 'bg-emerald-500 text-white shadow-2xs' 
+                              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                          }`}
+                        >
+                          {perms[key] ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '—'}
+                        </button>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE C: CAMERAS */}
+      {adminSubTab === 'cameras' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0F172A]">CCTV Camera Infrastructure Nodes</h2>
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Surveillance camera edge endpoints, RTSP protocols, resolution tiers, and link status
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+              8 Nodes Registered
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { id: 'CAM-01', name: 'Main Gate Ingress A', zone: 'Gate A', ip: '192.168.10.101', fps: 30, res: '1080p', status: 'ONLINE' },
+              { id: 'CAM-02', name: 'Gate 2 Turnstiles', zone: 'Gate B', ip: '192.168.10.102', fps: 30, res: '4K UHD', status: 'ONLINE' },
+              { id: 'CAM-03', name: 'North Emergency Exit', zone: 'North Exit', ip: '192.168.10.103', fps: 0, res: '1080p', status: 'OFFLINE' },
+              { id: 'CAM-04', name: 'Central Arena Plaza', zone: 'Core', ip: '192.168.10.104', fps: 28, res: '4K UHD', status: 'ONLINE' },
+              { id: 'CAM-05', name: 'South Concourse & Food', zone: 'South Wing', ip: '192.168.10.105', fps: 30, res: '1080p', status: 'ONLINE' },
+              { id: 'CAM-06', name: 'VIP Lounge Mezzanine', zone: 'VIP', ip: '192.168.10.106', fps: 30, res: '4K UHD', status: 'ONLINE' },
+              { id: 'CAM-07', name: 'Emergency Stairwell B', zone: 'Stairwell', ip: '192.168.10.107', fps: 20, res: '720p', status: 'ONLINE' },
+              { id: 'CAM-08', name: 'West Gate Turnstiles', zone: 'Gate C', ip: '192.168.10.108', fps: 30, res: '1080p', status: 'ONLINE' },
+            ].map(cam => (
+              <div key={cam.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2 font-mono text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-600">{cam.id}</span>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${cam.status === 'ONLINE' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                    {cam.status}
+                  </span>
+                </div>
+                <div className="font-bold text-slate-900 truncate">{cam.name}</div>
+                <div className="text-[10px] text-slate-500">Zone: {cam.zone} • IP: {cam.ip}</div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[10px] text-slate-600">
+                  <span>{cam.res}</span>
+                  <span className="font-bold text-emerald-600">{cam.fps} FPS</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE D: EVENTS */}
+      {adminSubTab === 'events' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0F172A]">Event Schedule & Capacity Operations</h2>
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Current active venue event parameters, attendance allowances, and turnstile concourse allocations
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 font-mono text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold">Active Hosted Event</span>
+                <div className="text-base font-bold text-slate-900">{settings.eventName}</div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                PRODUCTION LIVE
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase block">Venue Capacity</span>
+                <span className="text-slate-900 font-bold">{settings.venueCapacity.toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase block">Critical Threshold</span>
+                <span className="text-rose-600 font-bold">{settings.criticalDensityThreshold}%</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase block">Warning Threshold</span>
+                <span className="text-amber-600 font-bold">{settings.warningDensityThreshold}%</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase block">Security Squads</span>
+                <span className="text-blue-600 font-bold">{securityTeams.length} Active Squads</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE E: ZONES */}
+      {adminSubTab === 'zones' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="pb-3 border-b border-[#E2E8F0]">
+            <h2 className="text-base font-extrabold text-[#0F172A]">Venue Zones & Sector Safety Limits</h2>
+            <p className="text-xs text-[#64748B] font-mono mt-0.5">
+              Sector capacity ceilings, real-time saturation load, flow vectors, and gate door statuses
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {zones.map(z => (
+              <div key={z.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">{z.name}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    z.density >= 85 ? 'bg-rose-100 text-rose-800' :
+                    z.density >= 70 ? 'bg-amber-100 text-amber-800' :
+                    'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {z.density}% Load
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Occupancy: {z.currentPeople} / {z.maxCapacity} cap
+                </div>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${z.density >= 85 ? 'bg-rose-500' : z.density >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${z.density}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+                  <span>In: {z.inflow}/m</span>
+                  <span>Out: {z.outflow}/m</span>
+                  <span className="text-blue-600 font-bold">{z.flowDirection}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE F: SYSTEM HEALTH */}
+      {adminSubTab === 'health' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-[#E2E8F0] flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-extrabold text-[#0F172A]">Edge Node & Neural Inference Health</h2>
+                <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                  YOLOv8 Computer Vision pipeline metrics, WebSocket latency, dropped frames, and GPU compute
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                ALL SYSTEMS OPERATIONAL
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] text-slate-500 uppercase block font-bold">Edge CV Inference</span>
+                <div className="text-2xl font-extrabold text-slate-900 mt-1">29.8 FPS</div>
+                <span className="text-[10px] text-emerald-600 font-bold">YOLOv8x on TensorRT</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] text-slate-500 uppercase block font-bold">Inference Latency</span>
+                <div className="text-2xl font-extrabold text-blue-600 mt-1">16.4 ms</div>
+                <span className="text-[10px] text-slate-500">Under 33ms target</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] text-slate-500 uppercase block font-bold">GPU Memory VRAM</span>
+                <div className="text-2xl font-extrabold text-slate-900 mt-1">4.2 / 16 GB</div>
+                <span className="text-[10px] text-emerald-600 font-bold">26% Utilization</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] text-slate-500 uppercase block font-bold">Dropped Frame Rate</span>
+                <div className="text-2xl font-extrabold text-emerald-600 mt-1">0.00%</div>
+                <span className="text-[10px] text-slate-500">Zero packet drops</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs font-mono space-y-2">
+                <div className="font-bold text-blue-900 flex items-center justify-between">
+                  <span>Local Engine: HTML5 Storage</span>
+                  <span className="text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">ACTIVE</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-slate-600 text-[11px]">
+                  <span>Key: <code className="bg-white px-1.5 py-0.5 rounded border">CROWDGUARD_MASTER_DB_V2</code></span>
+                  <span>Size: <strong>{dbStats.sizeKB} KB</strong></span>
+                  <span>Tx: <strong>{dbStats.transactionCount} entries</strong></span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-mono space-y-2">
+                <div className="font-bold text-indigo-900 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Terminal className="w-4 h-4 text-indigo-600" />
+                    Python FastAPI + PyTorch AI
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    isBackendConnected ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {isBackendConnected ? 'ONLINE 🟢' : 'STANDBY ⚡'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 text-[11px]">
+                  <span>Target: <strong>http://127.0.0.1:8000</strong> ({backendLatency ? `${backendLatency}ms` : 'Local'})</span>
+                  <button
+                    onClick={openDatabaseModal}
+                    className="text-indigo-700 hover:text-indigo-900 font-bold underline cursor-pointer"
+                  >
+                    Inspect Engine →
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-mono space-y-2">
+                <div className="font-bold text-emerald-900 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Cloud className="w-4 h-4 text-emerald-600" />
+                    Cloud Engine: Supabase Realtime
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    supabaseStatus.isConnected ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {supabaseStatus.isConnected ? 'LINKED 🟢' : 'STANDBY ⚡'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 text-[11px]">
+                  <span>Target: <strong>{supabaseStatus.url ? (supabaseStatus.url.replace(/^https?:\/\//, '').split('/')[0]) : 'Local Fallback'}</strong></span>
+                  <button
+                    onClick={() => setIsSupabaseModalOpen(true)}
+                    className="text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer"
+                  >
+                    Configure Link →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* REAL-TIME DATABASE COLLECTIONS INSPECTOR */}
+          <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-extrabold text-[#0F172A] flex items-center gap-2">
+                  <Database className="w-4 h-4 text-blue-600" />
+                  Live Database Collections & Real-Time Data Store
+                </h2>
+                <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                  Inspect live database entities currently held in memory and synchronized with persistent storage
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    let dataToCopy: any = [];
+                    if (activeCollectionTab === 'tickets') dataToCopy = liveTickets;
+                    else if (activeCollectionTab === 'zones') dataToCopy = zones;
+                    else if (activeCollectionTab === 'cameras') dataToCopy = cameraFeeds;
+                    else if (activeCollectionTab === 'alerts') dataToCopy = alerts;
+                    else if (activeCollectionTab === 'teams') dataToCopy = securityTeams;
+                    else if (activeCollectionTab === 'audit') dataToCopy = auditLogs;
+                    navigator.clipboard.writeText(JSON.stringify(dataToCopy, null, 2));
+                    setCopiedNotification(true);
+                    setTimeout(() => setCopiedNotification(false), 2500);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-bold transition cursor-pointer"
+                >
+                  {copiedNotification ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Collection JSON</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={openDatabaseModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-bold transition cursor-pointer shadow-xs"
+                >
+                  <Server className="w-3.5 h-3.5" />
+                  <span>Full DB Backup / Restore</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Collection Tab Selectors */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs font-mono">
+              {[
+                { id: 'tickets', label: `Turnstile Tickets (${liveTickets.length})` },
+                { id: 'zones', label: `Zones Telemetry (${zones.length})` },
+                { id: 'cameras', label: `CCTV Feeds (${cameraFeeds.length})` },
+                { id: 'alerts', label: `Incident Alerts (${alerts.length})` },
+                { id: 'teams', label: `Security Squads (${securityTeams.length})` },
+                { id: 'audit', label: `Audit Trail (${auditLogs.length})` },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveCollectionTab(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap cursor-pointer ${
+                    activeCollectionTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Live Collection Inspector View */}
+            <div className="bg-slate-950 text-slate-200 rounded-xl p-4 font-mono text-xs overflow-x-auto max-h-[360px] border border-slate-800 shadow-inner">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pb-2 mb-2 border-b border-slate-800">
+                <span>COLLECTION: <strong>{activeCollectionTab.toUpperCase()}</strong></span>
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  LIVE UPDATING
+                </span>
+              </div>
+              <pre className="text-[11px] leading-relaxed text-emerald-300">
+                {JSON.stringify(
+                  activeCollectionTab === 'tickets' ? liveTickets.slice(0, 10) :
+                  activeCollectionTab === 'zones' ? zones :
+                  activeCollectionTab === 'cameras' ? cameraFeeds :
+                  activeCollectionTab === 'alerts' ? alerts :
+                  activeCollectionTab === 'teams' ? securityTeams :
+                  auditLogs.slice(0, 15),
+                  null,
+                  2
+                )}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBMODULE G: AUDIT LOGS */}
+      {adminSubTab === 'audit' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0F172A]">Security Audit Ledger ({filteredAuditLogs.length})</h2>
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Chronological immutable ledger of security interventions, camera changes, alarms, and admissions
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleManualAdmitAttendee()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
-                title="Admit 1 person"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Record Ingress (+1)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleBatchAdmitAttendees(5)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
-                title="Batch admit 5 people across turnstiles"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Batch Ingress (+5)</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-            <div className="sm:col-span-5">
-              <label className="text-[10px] font-mono font-bold text-slate-500 block mb-1">
-                Attendee Name / Badge (Optional)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. David Vance, VIP-04..."
-                value={newAttendeeName}
-                onChange={(e) => setNewAttendeeName(e.target.value)}
-                className="w-full text-xs font-mono p-2 rounded-lg border border-slate-300 bg-slate-50 focus:outline-hidden focus:border-blue-500"
-              />
-            </div>
-
-            <div className="sm:col-span-3">
-              <label className="text-[10px] font-mono font-bold text-slate-500 block mb-1">
-                Pass Classification
-              </label>
-              <select
-                value={newAttendeeTier}
-                onChange={(e) => setNewAttendeeTier(e.target.value)}
-                className="w-full text-xs font-mono p-2 rounded-lg border border-slate-300 bg-slate-50 focus:outline-hidden focus:border-blue-500"
-              >
-                <option value="General Admission">General Admission</option>
-                <option value="VIP Access">VIP Access</option>
-                <option value="Security / Staff">Security / Staff</option>
-                <option value="Press / Media">Press / Media</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-4">
-              <label className="text-[10px] font-mono font-bold text-slate-500 block mb-1">
-                Entry Gate Concourse
-              </label>
-              <select
-                value={newAttendeeGate}
-                onChange={(e) => setNewAttendeeGate(e.target.value)}
-                className="w-full text-xs font-mono p-2 rounded-lg border border-slate-300 bg-slate-50 focus:outline-hidden focus:border-blue-500"
-              >
-                {attendance.gates.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name} ({g.status})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* Card 1: Total Entrants Recorded */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider font-mono">Total Entrants Admitted</span>
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                <UserCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold font-mono text-slate-900">
-                {attendance.totalAdmitted.toLocaleString()}
-              </span>
-              <span className="text-xs font-mono text-emerald-600 font-bold">+184 / 5min</span>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-2 font-mono">
-              Recorded across all 4 entry concourses
-            </p>
-          </div>
-
-          {/* Card 2: Currently Inside Venue */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider font-mono">Currently Inside Arena</span>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                <Activity className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold font-mono text-slate-900">
-                {attendance.currentlyInside.toLocaleString()}
-              </span>
-              <span className="text-xs font-mono text-slate-500">
-                / {attendance.capacityCeiling.toLocaleString()} cap
-              </span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all ${
-                  attendance.occupancyPercentage > 85 ? 'bg-rose-500' :
-                  attendance.occupancyPercentage > 70 ? 'bg-amber-500' : 'bg-blue-600'
-                }`}
-                style={{ width: `${attendance.occupancyPercentage}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mt-1.5">
-              <span>{attendance.occupancyPercentage}% Occupancy</span>
-              <span>{attendance.capacityCeiling - attendance.currentlyInside} Seats Free</span>
-            </div>
-          </div>
-
-          {/* Card 3: Inflow Velocity */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider font-mono">Inflow Velocity</span>
-              <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold font-mono text-slate-900">
-                {attendance.currentInflowPerMinute}
-              </span>
-              <span className="text-xs font-mono text-slate-500">people / min</span>
-            </div>
-            <div className="mt-2.5 flex items-center justify-between text-[11px] font-mono text-slate-600">
-              <span>Outflow: <strong>{attendance.currentOutflowPerMinute}/min</strong></span>
-              <span className="text-purple-600 font-bold">Net Influx +{attendance.currentInflowPerMinute - attendance.currentOutflowPerMinute}</span>
-            </div>
-          </div>
-
-          {/* Card 4: Peak Expected Interval */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider font-mono">Forecast Surge Interval</span>
-              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-lg font-extrabold font-mono text-slate-900 mt-1">
-              {attendance.peakHourExpected}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-2 font-mono">
-              LSTM neural model anticipating +4,200 entrants during main headline
-            </p>
-          </div>
-
-        </div>
-      </div>
-
-      {/* 3. INFLOW GRAPH & DYNAMIC GATE ACTUATION TABLE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left: 8-Hour Admission Curve (7 Cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-100">
-            <div>
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900">
-                Cumulative Attendance & Ingress Velocity Timeline
-              </h3>
-              <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                Real-time optical turnstile counts plotted against hourly exit telemetry
-              </p>
-            </div>
-            <span className="text-[11px] font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200 self-start">
-              1-Minute Granularity
-            </span>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={hourlyInflowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="adminColorInside" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0}/>
-                  </linearGradient>
-                  <linearGradient id="adminColorEntrants" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="time" stroke="#64748B" fontSize={11} fontStyle="bold" />
-                <YAxis stroke="#64748B" fontSize={11} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '12px', color: '#F8FAFC', fontSize: '11px' }}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search audit trail..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-xs font-mono focus:outline-hidden focus:border-blue-500 w-44"
                 />
-                <Area type="monotone" dataKey="inside" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#adminColorInside)" name="Inside Venue" />
-                <Area type="monotone" dataKey="entrants" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#adminColorEntrants)" name="Hourly Entrants" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Right: Turnstile Gates Actuation & Control (5 Cols) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <DoorOpen className="w-4 h-4 text-blue-600" />
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900">
-                Gate Flow & Inflow Actuation
-              </h3>
-            </div>
-            <span className="text-[10px] font-mono text-slate-500 uppercase font-bold">
-              Admin Override
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {attendance.gates.map((g) => {
-              const currentStatus = gateStatuses[g.id] || 'OPEN';
-
-              return (
-                <div key={g.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-xs text-slate-900 block">{g.name}</span>
-                      <span className="text-[10px] font-mono text-slate-500">
-                        Inflow: <strong>{g.inflow} people/min</strong> • Total: <strong>{g.total.toLocaleString()}</strong>
-                      </span>
-                    </div>
-
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                      currentStatus === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      currentStatus === 'RESTRICTED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      currentStatus === 'EVACUATION' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      'bg-rose-50 text-rose-700 border-rose-200'
-                    }`}>
-                      {currentStatus}
-                    </span>
-                  </div>
-
-                  {/* Actuation Control Buttons */}
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <button
-                      onClick={() => handleGateActuation(g.id, 'OPEN')}
-                      className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                        currentStatus === 'OPEN' 
-                          ? 'bg-emerald-600 text-white shadow-2xs' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
-                      }`}
-                    >
-                      OPEN
-                    </button>
-                    <button
-                      onClick={() => handleGateActuation(g.id, 'RESTRICTED')}
-                      className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                        currentStatus === 'RESTRICTED' 
-                          ? 'bg-amber-600 text-white shadow-2xs' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-amber-50 hover:text-amber-700'
-                      }`}
-                    >
-                      RESTRICT
-                    </button>
-                    <button
-                      onClick={() => handleGateActuation(g.id, 'EVACUATION')}
-                      className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                        currentStatus === 'EVACUATION' 
-                          ? 'bg-blue-600 text-white shadow-2xs' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-700'
-                      }`}
-                    >
-                      EGRESS
-                    </button>
-                    <button
-                      onClick={() => handleGateActuation(g.id, 'LOCKED')}
-                      className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                        currentStatus === 'LOCKED' 
-                          ? 'bg-rose-600 text-white shadow-2xs' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-700'
-                      }`}
-                    >
-                      LOCK
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-      </div>
-
-      {/* 4. CCTV NEURAL VISION MONITORING & RAPID SQUAD DISPATCH */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left: 4 Edge CCTV Streams Telemetry + Active Monitor (8 Cols) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4 text-blue-600" />
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900">
-                Connected Neural CCTV Feeds & Detection Telemetry
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold text-emerald-600 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                All 4 Optical Nodes Active
-              </span>
-              <button
-                type="button"
-                onClick={handleRecordCCTVSnapshot}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-mono font-bold transition cursor-pointer"
-                title="Log current CCTV detections directly into audit ledger"
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Log Frame to DB</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Active CCTV Camera Live HUD Monitor */}
-          {(() => {
-            const activeCam = cameraFeeds.find(c => c.id === selectedCamId) || cameraFeeds[0];
-
-            return (
-              <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 text-white space-y-3 shadow-inner">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                      LIVE STREAM • {activeCam.camNumber}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-white">
-                      {activeCam.name}
-                    </span>
-                  </div>
-
-                  {/* Switch Active Camera */}
-                  <div className="flex items-center gap-1">
-                    {cameraFeeds.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => setSelectedCamId(c.id)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                          selectedCamId === c.id
-                            ? 'bg-blue-600 text-white shadow-xs'
-                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        }`}
-                      >
-                        {c.camNumber}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Simulated Neural Vision Overlay Canvas */}
-                <div className="relative h-48 w-full bg-slate-900/90 rounded-lg border border-slate-800 overflow-hidden flex flex-col justify-between p-3 select-none">
-                  {/* Top HUD Stats */}
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 z-10">
-                    <div className="flex items-center gap-2">
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        REC
-                      </span>
-                      <span>RTSP://edge-node-{activeCam.id}.lan:554/live</span>
-                    </div>
-                    <span>{currentTime} IST • 1920x1080 @ {activeCam.fps} FPS</span>
-                  </div>
-
-                  {/* Simulated Bounding Boxes */}
-                  <div className="absolute inset-0 pointer-events-none p-4 flex items-center justify-center">
-                    {/* Bounding box 1 */}
-                    <div className="absolute left-[20%] top-[30%] w-20 h-28 border border-emerald-400/80 rounded bg-emerald-500/10 flex flex-col justify-between p-1 text-[9px] font-mono text-emerald-300">
-                      <span>#1042 PERSON</span>
-                      <span className="self-end">96% • 1.2m/s</span>
-                    </div>
-                    {/* Bounding box 2 */}
-                    <div className="absolute left-[45%] top-[25%] w-24 h-32 border border-blue-400/80 rounded bg-blue-500/10 flex flex-col justify-between p-1 text-[9px] font-mono text-blue-300">
-                      <span>#1043 PERSON</span>
-                      <span className="self-end">98% • 1.4m/s</span>
-                    </div>
-                    {/* Bounding box 3 */}
-                    <div className={`absolute right-[22%] top-[35%] w-22 h-26 border rounded flex flex-col justify-between p-1 text-[9px] font-mono ${
-                      activeCam.riskLevel === 'CRITICAL' ? 'border-rose-500/90 bg-rose-500/20 text-rose-300 animate-pulse' :
-                      activeCam.riskLevel === 'WATCH' ? 'border-amber-400/80 bg-amber-500/10 text-amber-300' :
-                      'border-emerald-400/80 bg-emerald-500/10 text-emerald-300'
-                    }`}>
-                      <span>#1044 DENSITY_CLUSTER</span>
-                      <span className="self-end">{activeCam.density}%</span>
-                    </div>
-                    {/* Crosshair Center */}
-                    <div className="w-6 h-6 border-t border-l border-white/30 absolute"></div>
-                    <div className="w-6 h-6 border-b border-r border-white/30 absolute"></div>
-                  </div>
-
-                  {/* Bottom Telemetry HUD */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono z-10 bg-slate-950/80 p-2 rounded border border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <span>Detections: <strong className="text-white">{activeCam.simulatedDetections} persons</strong></span>
-                      <span>Density: <strong className="text-white">{activeCam.density}%</strong></span>
-                      <span>Flow: <strong className="text-white">{activeCam.flowDirection}</strong></span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded font-bold border ${
-                      activeCam.riskLevel === 'SAFE' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                      activeCam.riskLevel === 'WATCH' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                      'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                    }`}>
-                      {activeCam.riskLevel} STATUS
-                    </span>
-                  </div>
-                </div>
               </div>
-            );
-          })()}
 
-          {/* 4 Camera Cards with Click-to-Select */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {cameraFeeds.map((cam) => {
-              const isSelected = selectedCamId === cam.id;
-
-              return (
-                <div 
-                  key={cam.id} 
-                  onClick={() => setSelectedCamId(cam.id)}
-                  className={`p-3.5 rounded-xl border transition space-y-2 cursor-pointer ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50/40 shadow-xs'
-                      : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
-                        isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {cam.camNumber}
-                      </span>
-                      <span className="font-bold text-xs text-slate-900">{cam.name}</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                      cam.riskLevel === 'SAFE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      cam.riskLevel === 'WATCH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      'bg-rose-50 text-rose-700 border-rose-200'
-                    }`}>
-                      {cam.riskLevel}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
-                    <div>
-                      <span className="text-slate-400 block">Density</span>
-                      <span className="font-bold text-slate-900">{cam.density}%</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Frame Rate</span>
-                      <span className="font-bold text-slate-900">{cam.fps} FPS</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Detections</span>
-                      <span className="font-bold text-blue-600">{cam.simulatedDetections}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5">
-                    <span>Res: {cam.resolution}</span>
-                    <span>Flow: {cam.flowDirection}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: Direct Security Squad Dispatcher (4 Cols) */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900">
-                Direct Squad Dispatch
-              </h3>
-            </div>
-            <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-              Commander Override
-            </span>
-          </div>
-
-          <form onSubmit={handleDispatchSquad} className="space-y-3">
-            <div>
-              <label className="text-xs font-mono font-bold text-slate-700 block mb-1">Select Security Squad</label>
-              <select
-                value={selectedTeamToDispatch}
-                onChange={(e) => setSelectedTeamToDispatch(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:outline-hidden focus:border-blue-500 font-mono"
-              >
-                {securityTeams.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.status}) • {t.membersCount} officers
-                  </option>
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-mono">
+                {['ALL', 'INFO', 'WARNING', 'CRITICAL', 'SUCCESS'].map(st => (
+                  <button
+                    key={st}
+                    onClick={() => setAuditSeverityFilter(st)}
+                    className={`px-2.5 py-1 rounded text-[11px] font-mono font-bold transition cursor-pointer ${
+                      auditSeverityFilter === st ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {st}
+                  </button>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-mono font-bold text-slate-700 block mb-1">Target Sector / Gate</label>
-              <select
-                value={targetZoneToDispatch}
-                onChange={(e) => setTargetZoneToDispatch(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:outline-hidden focus:border-blue-500 font-mono"
-              >
-                {zones.map(z => (
-                  <option key={z.id} value={z.id}>
-                    {z.name} (Density: {z.density}%)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-bold tracking-wider transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>DISPATCH SQUAD IMMEDIATELY</span>
-            </button>
-          </form>
-
-          {/* Emergency PA & Klaxon Trigger */}
-          <div className="pt-2 border-t border-slate-100">
-            <button
-              onClick={() => {
-                toggleEmergencyMode();
-                playAlertSound('critical');
-                localDatabase.addAuditLog('EMERGENCY_BROADCAST', 'Commander manually engaged full venue Emergency Evacuation mode', 'CMDR_VANCE', 'CRITICAL');
-                refreshAllAdminData();
-              }}
-              className={`w-full py-2.5 rounded-xl text-xs font-mono font-bold tracking-wider transition cursor-pointer flex items-center justify-center gap-2 border ${
-                emergencyMode 
-                  ? 'bg-rose-600 text-white border-rose-700 shadow-md animate-pulse'
-                  : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
-              }`}
-            >
-              <Volume2 className="w-4 h-4" />
-              <span>{emergencyMode ? 'HALT EMERGENCY BROADCAST' : 'ACTIVATE VENUE KLAXON & PA'}</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 5. MASTER DATA LEDGER & COMPLETE RECORDINGS */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        
-        {/* Ledger Header & Search */}
-        <div className="p-5 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-900">
-                Master Data Ledger (Recorded History & Telemetry)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
-              Persistent storage recording every ticket verification, incident alarm, and operator action
-            </p>
-          </div>
-
-          {/* Ledger Tab Switcher */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search records..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono focus:outline-hidden focus:border-blue-500 w-44"
-              />
-            </div>
-
-            <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-300">
-              <button
-                onClick={() => setActiveLedgerTab('tickets')}
-                className={`px-3 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
-                  activeLedgerTab === 'tickets' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Turnstile Passes ({filteredTickets.length})
-              </button>
-              <button
-                onClick={() => setActiveLedgerTab('alerts')}
-                className={`px-3 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
-                  activeLedgerTab === 'alerts' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Incidents ({alerts.length})
-              </button>
-              <button
-                onClick={() => setActiveLedgerTab('audit')}
-                className={`px-3 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
-                  activeLedgerTab === 'audit' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Audit Trail ({filteredAuditLogs.length})
-              </button>
-              <button
-                onClick={() => setActiveLedgerTab('teams')}
-                className={`px-3 py-1 rounded text-xs font-mono font-bold transition cursor-pointer ${
-                  activeLedgerTab === 'teams' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Security Squads ({securityTeams.length})
-              </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Tab 1: Turnstile Passes */}
-        {activeLedgerTab === 'tickets' && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[500px]">
             <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase text-[10px] sticky top-0">
                 <tr>
-                  <th className="p-3.5">Ticket ID</th>
-                  <th className="p-3.5">Attendee Name</th>
-                  <th className="p-3.5">Pass Tier</th>
-                  <th className="p-3.5">Assigned Concourse</th>
-                  <th className="p-3.5">Ingress Gate</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5">Scan Timestamp</th>
-                  <th className="p-3.5 text-right">Admin Action</th>
+                  <th className="p-3">Timestamp</th>
+                  <th className="p-3">Action Type</th>
+                  <th className="p-3">Event Details</th>
+                  <th className="p-3">Operator</th>
+                  <th className="p-3 text-right">Severity</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredTickets.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50 transition">
-                    <td className="p-3.5 font-bold text-blue-600">{t.id}</td>
-                    <td className="p-3.5 font-semibold text-slate-900">{t.attendee}</td>
-                    <td className="p-3.5">
-                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold">
-                        {t.tier}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-slate-600">{t.zone}</td>
-                    <td className="p-3.5 text-slate-600">{t.gate}</td>
-                    <td className="p-3.5">
-                      {t.used ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" />
-                          ADMITTED
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          ISSUED / UNUSED
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-slate-500">{t.timestamp || 'Pending Arrival'}</td>
-                    <td className="p-3.5 text-right">
-                      {!t.used ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = tickets.map(item => 
-                              item.id === t.id 
-                                ? { ...item, used: true, timestamp: new Date().toLocaleTimeString() } 
-                                : item
-                            );
-                            localDatabase.saveTickets(updated);
-                            localDatabase.addAuditLog('MANUAL_INGRESS_OVERRIDE', `Admin commander verified and admitted attendee ${t.attendee} (${t.id})`, 'CMDR_VANCE', 'SUCCESS');
-                            playAlertSound('info');
-                            refreshAllAdminData();
-                          }}
-                          className="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-mono font-bold transition cursor-pointer shadow-2xs"
-                        >
-                          Admit Now
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-mono">Recorded</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 2: Incident Alerts */}
-        {activeLedgerTab === 'alerts' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
-                <tr>
-                  <th className="p-3.5">Time</th>
-                  <th className="p-3.5">Severity</th>
-                  <th className="p-3.5">Sector</th>
-                  <th className="p-3.5">Incident Title</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5">Action Taken</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {alerts.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-50 transition">
-                    <td className="p-3.5 text-slate-500 font-semibold">{a.timeFormatted}</td>
-                    <td className="p-3.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        a.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                        a.severity === 'WARNING' || a.severity === 'HIGH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {a.severity}
-                      </span>
-                    </td>
-                    <td className="p-3.5 font-bold text-slate-900">{a.zoneName}</td>
-                    <td className="p-3.5 font-medium text-slate-800">{a.title}</td>
-                    <td className="p-3.5">
+              <tbody className="divide-y divide-[#F1F5F9]">
+                {filteredAuditLogs.map(log => (
+                  <tr key={log.id} className="hover:bg-[#F8FAFC] transition">
+                    <td className="p-3 text-slate-500 whitespace-nowrap">{log.timestamp}</td>
+                    <td className="p-3 font-bold text-blue-700">{log.action}</td>
+                    <td className="p-3 text-slate-800 max-w-md truncate">{log.details}</td>
+                    <td className="p-3 text-slate-600 font-semibold">{log.operator}</td>
+                    <td className="p-3 text-right">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        a.status === 'ACTIVE' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-slate-500">{a.actionTaken || a.description}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 3: Immutable Audit Trail */}
-        {activeLedgerTab === 'audit' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
-                <tr>
-                  <th className="p-3.5">Log ID</th>
-                  <th className="p-3.5">Timestamp</th>
-                  <th className="p-3.5">Operator</th>
-                  <th className="p-3.5">Action Code</th>
-                  <th className="p-3.5">Severity</th>
-                  <th className="p-3.5">Event Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredAuditLogs.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-50 transition">
-                    <td className="p-3.5 text-slate-400">{l.id}</td>
-                    <td className="p-3.5 text-slate-500">{l.timestamp}</td>
-                    <td className="p-3.5 font-bold text-blue-700">{l.operator}</td>
-                    <td className="p-3.5 font-semibold text-slate-900">{l.action}</td>
-                    <td className="p-3.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        l.severity === 'CRITICAL' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                        l.severity === 'WARNING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        l.severity === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}>
-                        {l.severity}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-slate-600">{l.details}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Tab 4: Security Teams */}
-        {activeLedgerTab === 'teams' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px]">
-                <tr>
-                  <th className="p-3.5">Squad Name</th>
-                  <th className="p-3.5">Team Leader</th>
-                  <th className="p-3.5">Assigned Sector</th>
-                  <th className="p-3.5">Personnel Count</th>
-                  <th className="p-3.5">Operational Status</th>
-                  <th className="p-3.5">ETA / Distance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {securityTeams.map((tm) => (
-                  <tr key={tm.id} className="hover:bg-slate-50 transition">
-                    <td className="p-3.5 font-bold text-slate-900">{tm.name}</td>
-                    <td className="p-3.5 text-slate-700">{tm.leader}</td>
-                    <td className="p-3.5 font-semibold text-blue-600">{tm.assignedZone}</td>
-                    <td className="p-3.5 text-slate-600">{tm.membersCount} officers</td>
-                    <td className="p-3.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        tm.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-800' :
-                        tm.status === 'DISPATCHED' ? 'bg-rose-100 text-rose-800' :
+                        log.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-800' :
+                        log.severity === 'WARNING' ? 'bg-amber-100 text-amber-800' :
+                        log.severity === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' :
                         'bg-blue-100 text-blue-800'
                       }`}>
-                        {tm.status}
+                        {log.severity}
                       </span>
-                    </td>
-                    <td className="p-3.5 text-slate-500">
-                      {tm.status === 'DISPATCHED' ? `${tm.etaSeconds}s (${tm.distanceMeters}m)` : 'On Station'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
+      {/* SUBMODULE H: SETTINGS */}
+      {adminSubTab === 'settings' && (
+        <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0F172A]">Platform Security Policies & Settings</h2>
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Global density limits, automated incident triage rules, and webhook telemetry integrations
+              </p>
+            </div>
+            {isSettingsSaved && (
+              <span className="text-xs font-mono font-bold text-emerald-600 flex items-center gap-1.5 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4" />
+                Settings Successfully Saved
+              </span>
+            )}
+          </div>
+
+          <form onSubmit={handleSaveSettings} className="space-y-4 text-xs font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Venue Event Name</label>
+                <input
+                  type="text"
+                  value={configSettings.eventName}
+                  onChange={(e) => setConfigSettings({ ...configSettings, eventName: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Venue Capacity Quota</label>
+                <input
+                  type="number"
+                  value={configSettings.venueCapacity}
+                  onChange={(e) => setConfigSettings({ ...configSettings, venueCapacity: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Critical Density Threshold (%)</label>
+                <input
+                  type="number"
+                  value={configSettings.criticalDensityThreshold}
+                  onChange={(e) => setConfigSettings({ ...configSettings, criticalDensityThreshold: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Warning Density Threshold (%)</label>
+                <input
+                  type="number"
+                  value={configSettings.warningDensityThreshold}
+                  onChange={(e) => setConfigSettings({ ...configSettings, warningDensityThreshold: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 uppercase mb-1">Security Webhook Endpoint</label>
+              <input
+                type="text"
+                value={configSettings.webhookEndpoint}
+                onChange={(e) => setConfigSettings({ ...configSettings, webhookEndpoint: e.target.value })}
+                className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end">
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold tracking-wider transition cursor-pointer flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>SAVE PLATFORM CONFIGURATION</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="font-extrabold text-[#0F172A] text-base">Register New Operator</h3>
+              </div>
+              <button 
+                onClick={() => setIsAddUserModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUser} className="space-y-3.5 text-xs font-mono">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Full Name & Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Officer Rachel Cruz"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Official Security Email</label>
+                <input
+                  type="email"
+                  placeholder="cruz.r@arena.security.gov"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Role & Clearance</label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
+                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                  >
+                    <option value="Incident Commander">Incident Commander</option>
+                    <option value="Chief Security Officer">Chief Security Officer</option>
+                    <option value="Zone Operator">Zone Operator</option>
+                    <option value="Tactical Dispatcher">Tactical Dispatcher</option>
+                    <option value="Read-only Analyst">Read-only Analyst</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Department</label>
+                  <input
+                    type="text"
+                    value={newUser.department}
+                    onChange={(e) => setNewUser({ ...newUser, department: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                >
+                  Save & Authorize User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Supabase Cloud Link Modal */}
+      {isSupabaseModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                  <Cloud className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-[#0F172A] text-base flex items-center gap-2">
+                    Supabase PostgreSQL Cloud Link
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                      supabaseStatus.isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {supabaseStatus.isConnected ? 'CONNECTED' : 'STANDBY'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Bidirectional real-time replication between CrowdIQ and Supabase
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSupabaseModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Test result banner if available */}
+            {supabaseTestResult && (
+              <div className={`p-3 rounded-xl border text-xs font-mono flex items-start gap-2.5 ${
+                supabaseTestResult.success 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                  : 'bg-rose-50 border-rose-200 text-rose-900'
+              }`}>
+                {supabaseTestResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="font-bold">{supabaseTestResult.success ? 'Connection Successful!' : 'Connection Error'}</div>
+                  <div className="text-[11px] mt-0.5">{supabaseTestResult.message}</div>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveSupabaseConfig} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  Supabase Project URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://afadfyatmxszxrebpcmb.supabase.co"
+                  value={supabaseForm.url}
+                  onChange={(e) => setSupabaseForm({ ...supabaseForm, url: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-emerald-500 font-mono"
+                  required
+                />
+                <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                  <span>Targeting Project: <strong>afadfyatmxszxrebpcmb</strong></span>
+                  <a 
+                    href="https://supabase.com/dashboard/project/afadfyatmxszxrebpcmb/settings/api" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-emerald-600 hover:text-emerald-700 underline flex items-center gap-1 font-bold"
+                  >
+                    Open API Settings <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1 flex items-center justify-between">
+                  <span>Supabase Public / Anon API Key</span>
+                  <a 
+                    href="https://supabase.com/dashboard/project/afadfyatmxszxrebpcmb/settings/api" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-emerald-600 hover:text-emerald-700 underline flex items-center gap-1 font-bold normal-case text-[10px]"
+                  >
+                    Copy anon key <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </label>
+                <input
+                  type="password"
+                  placeholder="Paste your anon public key (eyJhbGci...)"
+                  value={supabaseForm.anonKey}
+                  onChange={(e) => setSupabaseForm({ ...supabaseForm, anonKey: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-emerald-500 font-mono"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {supabaseStatus.anonKeyMasked ? `Currently registered: ${supabaseStatus.anonKeyMasked}` : 'Paste your anon key from your Supabase Dashboard to complete the link.'}
+                </span>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={supabaseForm.autoSync}
+                    onChange={(e) => setSupabaseForm({ ...supabaseForm, autoSync: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-slate-800 font-bold">Auto-Push Live Admissions & Ingress to Cloud</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={supabaseForm.realtimeEnabled}
+                    onChange={(e) => setSupabaseForm({ ...supabaseForm, realtimeEnabled: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-slate-800 font-bold">Subscribe to Supabase Realtime Channels (PostgreSQL WAL)</span>
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTestSupabase}
+                    disabled={isTestingSupabase}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isTestingSupabase ? 'animate-spin' : ''}`} />
+                    <span>{isTestingSupabase ? 'Testing Ping...' : 'Test Connection'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSchemaModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold transition cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>SQL Migration Schema</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncAllSupabase}
+                    disabled={isSyncingSupabase}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Cloud className={`w-3.5 h-3.5 ${isSyncingSupabase ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingSupabase ? 'Syncing...' : 'Sync All Live Data'}</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Credentials</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Supabase PostgreSQL Migration SQL Schema Modal */}
+      {isSchemaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-scaleUp text-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <Database className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <h3 className="font-extrabold text-white text-base">
+                    Supabase PostgreSQL Real-Time Migration Script
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    Copy and run in your Supabase Dashboard: <strong>SQL Editor → New query</strong>
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSchemaModalOpen(false)}
+                className="text-slate-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs max-h-[380px] overflow-y-auto text-emerald-300 select-all">
+              <pre>{getSupabaseSqlSchema()}</pre>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs font-mono">
+              <span className="text-slate-400 text-[11px]">
+                Enables UUID, RLS policies, and PostgreSQL Realtime Publications
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSchemaModalOpen(false)}
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getSupabaseSqlSchema());
+                    setCopiedSql(true);
+                    setTimeout(() => setCopiedSql(false), 2500);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition cursor-pointer"
+                >
+                  {copiedSql ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy SQL Migration</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

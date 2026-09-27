@@ -18,6 +18,8 @@ import {
   computeRiskBreakdown 
 } from '../data/initialData';
 import { localDatabase } from '../services/localDatabase';
+import { supabaseService, SupabaseConfig } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 
 export interface ToastNotification {
   id: string;
@@ -48,9 +50,23 @@ interface SimulationContextType {
   activeAlertsCount: number;
   highRiskZonesCount: number;
   averageDensity: number;
-  responseTime: string;
   isDatabaseConnected: boolean;
   isDatabaseModalOpen: boolean;
+  isRealtimeActive: boolean;
+  isBackendConnected: boolean;
+  backendInfo: any;
+  backendLatency: number | null;
+  isBackendWsConnected: boolean;
+  testBackendConnection: (url?: string) => Promise<{ success: boolean; latencyMs?: number; message: string; data?: any }>;
+  syncAllToBackend: () => Promise<{ success: boolean; message: string }>;
+  supabaseStatus: ReturnType<typeof supabaseService.getStatus>;
+  syncAllToSupabase: () => Promise<{ success: boolean; message: string; syncedCount: number }>;
+  testSupabaseConnection: (url?: string, key?: string) => Promise<{ success: boolean; message: string; latencyMs?: number }>;
+  saveSupabaseConfig: (config: SupabaseConfig) => void;
+  getSupabaseSqlSchema: () => string;
+  toggleRealtimeStream: () => void;
+  injectRealtimeIngress: (name?: string, gateId?: string, tier?: string) => void;
+  injectBatchIngress: (count: number, gateId?: string) => void;
   openDatabaseModal: () => void;
   closeDatabaseModal: () => void;
   exportDatabaseBackup: () => string;
@@ -126,9 +142,14 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [recommendationApproved, setRecommendationApproved] = useState<boolean>(false);
-  const [recommendationDismissed, setRecommendationDismissed] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('09:45:00');
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState<boolean>(false);
+
+  // Python FastAPI Backend & PyTorch AI Integration States
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
+  const [backendInfo, setBackendInfo] = useState<any>(null);
+  const [backendLatency, setBackendLatency] = useState<number | null>(null);
+  const [isBackendWsConnected, setIsBackendWsConnected] = useState<boolean>(false);
 
   // Synchronize state with persistent LocalStorage database
   useEffect(() => {
@@ -175,6 +196,18 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [soundEnabled]);
 
+  const [isRealtimeActive, setIsRealtimeActive] = useState<boolean>(true);
+  const [supabaseStatus, setSupabaseStatus] = useState(() => supabaseService.getStatus());
+  const realtimeTickCount = useRef<number>(0);
+
+  // Subscribe to Supabase Service state updates
+  useEffect(() => {
+    const unsub = supabaseService.subscribe(() => {
+      setSupabaseStatus(supabaseService.getStatus());
+    });
+    return () => unsub();
+  }, []);
+
   // Real-time clock tick
   useEffect(() => {
     const clockInterval = setInterval(() => {
@@ -186,6 +219,231 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, 1000);
     return () => clearInterval(clockInterval);
   }, []);
+
+  // FASTAPI & PYTORCH BACKEND CONTINUOUS CONNECTION & WEBSOCKET ENGINE
+  useEffect(() => {
+    let wsInstance: any = null;
+    let isMounted = true;
+
+    const connectToFastAPI = async () => {
+      try {
+        const health = await apiService.checkHealth();
+        if (!isMounted) return;
+
+        if (health && health.status === 'ONLINE') {
+          setIsBackendConnected(true);
+          setBackendInfo(health);
+          setBackendLatency(health.latencyMs || 10);
+
+          // Initial state sync with backend
+          try {
+            const [serverZones, serverTeams, serverAlerts] = await Promise.all([
+              apiService.getZones(),
+              apiService.getSecurityTeams(),
+              apiService.getAlerts()
+            ]);
+            if (!isMounted) return;
+
+            if (serverZones && Array.isArray(serverZones) && serverZones.length > 0) {
+              setZones(prev => {
+                const sMap = new Map(serverZones.map((sz: any) => [sz.id, sz]));
+                return prev.map(p => sMap.has(p.id) ? { ...p, ...sMap.get(p.id) } : p);
+              });
+            }
+            if (serverTeams && Array.isArray(serverTeams) && serverTeams.length > 0) {
+              setSecurityTeams(serverTeams);
+            }
+            if (serverAlerts && Array.isArray(serverAlerts) && serverAlerts.length > 0) {
+              setAlerts(serverAlerts);
+            }
+          } catch (e) {
+            console.warn('[CrowdIQ API] Initial sync warning:', e);
+          }
+
+          // Connect to FastAPI WebSocket stream
+          wsInstance = apiService.connectWebSocket(
+            (telemetry: any) => {
+              if (!isMounted) return;
+              setIsBackendWsConnected(true);
+              if (telemetry && telemetry.type === 'TELEMETRY_TICK') {
+                if (telemetry.zones && Array.isArray(telemetry.zones)) {
+                  setZones(prev => {
+                    const zMap = new Map(telemetry.zones.map((tz: any) => [tz.id, tz]));
+                    return prev.map(p => {
+                      if (zMap.has(p.id)) {
+                        const updated = zMap.get(p.id);
+                        return {
+                          ...p,
+                          currentPeople: updated.currentPeople ?? p.currentPeople,
+                          density: updated.density ?? p.density,
+                          riskLevel: updated.riskLevel ?? p.riskLevel,
+                          riskScore: updated.riskScore ?? p.riskScore
+                        };
+                      }
+                      return p;
+                    });
+                  });
+                }
+              }
+            },
+            () => {
+              if (isMounted) setIsBackendWsConnected(false);
+            },
+            () => {
+              if (isMounted) setIsBackendWsConnected(true);
+            },
+            () => {
+              if (isMounted) setIsBackendWsConnected(false);
+            }
+          );
+        } else {
+          setIsBackendConnected(false);
+          setIsBackendWsConnected(false);
+        }
+      } catch {
+        if (isMounted) {
+          setIsBackendConnected(false);
+          setIsBackendWsConnected(false);
+        }
+      }
+    };
+
+    connectToFastAPI();
+
+    // Heartbeat check every 8 seconds
+    const pingInterval = setInterval(async () => {
+      try {
+        const health = await apiService.checkHealth();
+        if (!isMounted) return;
+        if (health && health.status === 'ONLINE') {
+          setIsBackendConnected(true);
+          setBackendInfo(health);
+          setBackendLatency(health.latencyMs || 8);
+        } else {
+          setIsBackendConnected(false);
+        }
+      } catch {
+        if (isMounted) setIsBackendConnected(false);
+      }
+    }, 8000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pingInterval);
+      if (wsInstance) {
+        try { wsInstance.close(); } catch {}
+      }
+    };
+  }, []);
+
+  // CONTINUOUS LIVE REAL-TIME TELEMETRY ENGINE
+  // Automatically updates crowd movement, arrivals, and feeds every 2.5s and syncs directly with localDatabase & Supabase
+  useEffect(() => {
+    if (!isRealtimeActive) return;
+
+    const interval = setInterval(() => {
+      // Don't interfere if an active drill/surge test is executing
+      if (isSimulating) return;
+
+      realtimeTickCount.current++;
+      const tick = realtimeTickCount.current;
+
+      // Realistic ambient crowd fluctuation across zones
+      setZones(prev => prev.map(zone => {
+        const delta = Math.floor(Math.random() * 5) - 2; // -2 to +2
+        const updatedPeople = Math.max(50, Math.min(zone.maxCapacity, zone.currentPeople + delta));
+        const updatedDensity = Math.min(100, Math.round((updatedPeople / zone.maxCapacity) * 100));
+        return {
+          ...zone,
+          currentPeople: updatedPeople,
+          density: updatedDensity,
+          inflow: Math.max(5, zone.inflow + (Math.floor(Math.random() * 3) - 1)),
+          outflow: Math.max(5, zone.outflow + (Math.floor(Math.random() * 3) - 1)),
+        };
+      }));
+
+      // Camera detections fluctuation
+      setCameraFeeds(prev => prev.map(feed => {
+        const detectionDelta = Math.floor(Math.random() * 3) - 1;
+        const newDetections = Math.max(12, feed.simulatedDetections + detectionDelta);
+        const fpsJitter = 29 + Math.floor(Math.random() * 2);
+        return {
+          ...feed,
+          simulatedDetections: newDetections,
+          fps: fpsJitter,
+        };
+      }));
+
+      // Every 4 ticks (~10s), automatically record a live turnstile ingress into localDatabase and Supabase
+      if (tick % 4 === 0) {
+        const gates = ['gate-a', 'gate-b', 'gate-c', 'gate-vip'];
+        const randomGate = gates[Math.floor(Math.random() * gates.length)];
+        const tkt = localDatabase.recordRealtimeIngress('', randomGate);
+        supabaseService.pushTicketScan(tkt);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [isRealtimeActive, isSimulating]);
+
+  const toggleRealtimeStream = useCallback(() => {
+    setIsRealtimeActive(prev => {
+      const next = !prev;
+      addToast('info', next ? 'Real-Time Stream Resumed' : 'Real-Time Stream Paused', 
+        next ? 'Live telemetry pipeline is continuously feeding the database.' : 'Live data ingestion paused.');
+      return next;
+    });
+  }, [addToast]);
+
+  const syncAllToSupabase = useCallback(async () => {
+    const res = await supabaseService.syncAllToSupabase({
+      zones,
+      cameraFeeds,
+      tickets: localDatabase.getTickets(),
+      alerts,
+      auditLogs: localDatabase.getAuditLogs(),
+    });
+    if (res.success) {
+      addToast('success', 'Supabase Cloud Synced', res.message);
+    } else {
+      addToast('warning', 'Supabase Notice', res.message);
+    }
+    return res;
+  }, [zones, cameraFeeds, alerts, addToast]);
+
+  const testSupabaseConnection = useCallback(async (url?: string, key?: string) => {
+    const res = await supabaseService.testConnection(url, key);
+    if (res.success) {
+      addToast('success', 'Supabase Connected', res.message);
+    } else {
+      addToast('error', 'Supabase Connection Notice', res.message);
+    }
+    return res;
+  }, [addToast]);
+
+  const saveSupabaseConfig = useCallback((config: SupabaseConfig) => {
+    supabaseService.saveConfig(config);
+    addToast('info', 'Supabase Config Saved', 'Credentials successfully updated.');
+  }, [addToast]);
+
+  const getSupabaseSqlSchema = useCallback(() => {
+    return supabaseService.getSqlSchema();
+  }, []);
+
+  const injectRealtimeIngress = useCallback((name?: string, gateId = 'gate-b', tier = 'General Admission') => {
+    const tkt = localDatabase.recordRealtimeIngress(name || '', gateId, tier);
+    supabaseService.pushTicketScan(tkt);
+    setZones(prev => prev.map(z => z.id === gateId ? { ...z, currentPeople: z.currentPeople + 1 } : z));
+    addToast('success', 'Real-Time Ingress Recorded', `${tkt.attendee} checked in via ${tkt.gate}`);
+    playAlertSound('success');
+  }, [addToast, playAlertSound]);
+
+  const injectBatchIngress = useCallback((count: number, gateId = 'gate-b') => {
+    localDatabase.recordBatchIngress(count, gateId);
+    setZones(prev => prev.map(z => z.id === gateId ? { ...z, currentPeople: z.currentPeople + count } : z));
+    addToast('success', 'Batch Telemetry Ingested', `+${count} entrants recorded directly into database ledger.`);
+    playAlertSound('success');
+  }, [addToast, playAlertSound]);
 
   // Sync selected zone
   const selectedZone = zones.find(z => z.id === selectedZoneId) || zones[1] || zones[0];
@@ -337,7 +595,8 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         ...prev,
       ]);
 
-      addToast('error', 'CRITICAL EARLY WARNING', 'Potential congestion in ~4 minutes at Gate B! Decision support ready.');
+      // Forward surge trigger to FastAPI & PyTorch engine
+      apiService.simulateSurge('surge', 2.4).catch(() => {});
       setIsSimulating(false);
     }, 6000);
   }, [isSimulating, addToast, playAlertSound]);
@@ -376,6 +635,9 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     ]);
 
     addToast('info', 'Team 04 Dispatched', `Squad moving to ${target}. ETA: 01:24.`);
+
+    // Notify FastAPI backend
+    apiService.dispatchSecurityTeam(teamId, targetZoneId).catch(() => {});
 
     // Countdown ETA & Transition to Arrived
     if (teamTimerRef.current) clearInterval(teamTimerRef.current);
@@ -591,6 +853,24 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const exportDatabaseBackup = useCallback(() => localDatabase.exportDatabaseJSON(), []);
   const importDatabaseBackup = useCallback((jsonStr: string) => localDatabase.importDatabaseJSON(jsonStr), []);
 
+  const testBackendConnection = useCallback(async (url?: string) => {
+    return await apiService.testConnection(url);
+  }, []);
+
+  const syncAllToBackend = useCallback(async () => {
+    try {
+      const res = await apiService.updateZones(zones);
+      if (res && res.status === 'SUCCESS') {
+        addToast('success', 'Backend Synchronized', 'All operational zones synchronized to Python FastAPI.');
+        return { success: true, message: 'All zones & states synchronized with FastAPI backend' };
+      }
+      throw new Error('Sync returned unexpected response');
+    } catch (err: any) {
+      addToast('error', 'Sync Failed', err.message || 'FastAPI offline');
+      return { success: false, message: err.message || 'Sync failed' };
+    }
+  }, [zones, addToast]);
+
   // Aggregated dynamic metrics
   const totalPeople = zones.reduce((acc, z) => acc + z.currentPeople, 0);
   const activeAlertsCount = alerts.filter(a => a.status === 'ACTIVE').length;
@@ -624,6 +904,21 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         responseTime,
         isDatabaseConnected: true,
         isDatabaseModalOpen,
+        isRealtimeActive,
+        isBackendConnected,
+        backendInfo,
+        backendLatency,
+        isBackendWsConnected,
+        testBackendConnection,
+        syncAllToBackend,
+        supabaseStatus,
+        syncAllToSupabase,
+        testSupabaseConnection,
+        saveSupabaseConfig,
+        getSupabaseSqlSchema,
+        toggleRealtimeStream,
+        injectRealtimeIngress,
+        injectBatchIngress,
         openDatabaseModal,
         closeDatabaseModal,
         exportDatabaseBackup,

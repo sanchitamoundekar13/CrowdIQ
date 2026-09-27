@@ -11,9 +11,11 @@ import { CrowdIQNavbar } from './components/landing/CrowdIQNavbar';
 import { CrowdIQFooter } from './components/landing/CrowdIQFooter';
 
 // Operational Platform Pages
+import { LandingPage } from './pages/LandingPage.tsx';
 import { CommandCenterPage } from './pages/CommandCenterPage.tsx';
 import { LiveDashboardSection } from './components/landing/LiveDashboardSection';
 import { LiveCamerasPage } from './pages/LiveCamerasPage.tsx';
+import { CamerasPage } from './pages/CamerasPage.tsx';
 import { EventsPage } from './pages/EventsPage.tsx';
 import { VenueMapPage } from './pages/VenueMapPage.tsx';
 import { AnalyticsPage } from './pages/AnalyticsPage.tsx';
@@ -27,8 +29,9 @@ function AppContent() {
   // Synchronize route with URL hash for seamless direct navigation & bookmarking
   const getRouteFromHash = () => {
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-    if (['admin', 'admin-portal'].includes(hash)) return 'admin';
-    if (['monitoring', 'live-monitor', 'cameras'].includes(hash)) return 'monitoring';
+    if (['admin', 'admin-portal', 'admin-console'].includes(hash)) return 'admin';
+    if (['monitoring', 'live-monitor'].includes(hash)) return 'monitoring';
+    if (['cameras', 'camera', 'cctv'].includes(hash)) return 'cameras';
     if (['events', 'event', 'schedule'].includes(hash)) return 'events';
     if (['zones', 'sectors', 'map'].includes(hash)) return 'zones';
     if (['analytics', 'trends', 'flow'].includes(hash)) return 'analytics';
@@ -36,7 +39,8 @@ function AppContent() {
     if (['incidents', 'incident', 'dispatch', 'response'].includes(hash)) return 'incidents';
     if (['reports', 'report'].includes(hash)) return 'reports';
     if (['about', 'info'].includes(hash)) return 'about';
-    return 'dashboard'; // Direct operational landing
+    if (['dashboard'].includes(hash)) return 'dashboard';
+    return 'home'; // Default landing experience
   };
 
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash);
@@ -69,12 +73,18 @@ function AppContent() {
         activeRoute={activeRoute}
         onNavigate={handleNavigate}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenDatabase={openDatabaseModal}
       />
 
       {/* ===================================================================
           MAIN OPERATIONAL VIEWPORT
           =================================================================== */}
       <main className="flex-1">
+        {/* LANDING PAGE EXPERIENCE */}
+        {activeRoute === 'home' && (
+          <LandingPage onNavigate={handleNavigate} />
+        )}
+
         {/* MODULE 1: DASHBOARD */}
         {activeRoute === 'dashboard' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -156,6 +166,13 @@ function AppContent() {
         {activeRoute === 'zones' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <VenueMapPage />
+          </div>
+        )}
+
+        {/* MODULE: CAMERAS */}
+        {activeRoute === 'cameras' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <CamerasPage />
           </div>
         )}
 

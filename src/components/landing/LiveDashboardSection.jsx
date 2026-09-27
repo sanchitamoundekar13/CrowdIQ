@@ -20,6 +20,7 @@ import {
   Bell,
   Database
 } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useSimulation } from '../../context/SimulationContext';
 
 export function LiveDashboardSection() {
@@ -187,6 +188,62 @@ export function LiveDashboardSection() {
             <span className="text-[11px] font-bold uppercase text-[#64748B]">Active Alerts</span>
             <div className="text-xl font-extrabold font-mono text-[#DC2626] mt-1">{activeAlertsCount}</div>
             <span className="text-[10px] text-[#DC2626] font-medium">Triage queue</span>
+          </div>
+        </div>
+
+        {/* Real-time Crowd Trend & Inflow Progression */}
+        <div className="bg-white border border-[#CBD5E1] rounded-xl p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-[#E2E8F0]">
+            <div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-[#0F172A]">
+                  Real-Time Crowd Trend & Influx Velocity
+                </h3>
+              </div>
+              <p className="text-[11px] text-[#64748B] font-mono mt-0.5">
+                Venue headcount trajectory • 30-minute interval telemetry vs capacity thresholds
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-mono">
+              <span className="flex items-center gap-1.5 text-[#2563EB] font-bold">
+                <span className="w-2.5 h-2.5 rounded bg-[#2563EB]"></span>
+                Total Count: {totalPeople.toLocaleString()}
+              </span>
+              <span className="flex items-center gap-1.5 text-[#D97706] font-bold">
+                <span className="w-2.5 h-2.5 rounded bg-[#D97706]"></span>
+                Avg Density: {averageDensity}%
+              </span>
+            </div>
+          </div>
+
+          <div className="h-44 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={[
+                  { time: '17:00', count: Math.round(totalPeople * 0.45), density: Math.round(averageDensity * 0.48) },
+                  { time: '17:30', count: Math.round(totalPeople * 0.62), density: Math.round(averageDensity * 0.65) },
+                  { time: '18:00', count: Math.round(totalPeople * 0.78), density: Math.round(averageDensity * 0.8) },
+                  { time: '18:30', count: Math.round(totalPeople * 0.89), density: Math.round(averageDensity * 0.9) },
+                  { time: '19:00', count: Math.round(totalPeople * 0.96), density: Math.round(averageDensity * 0.95) },
+                  { time: 'Live Now', count: totalPeople, density: averageDensity },
+                ]}
+                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="time" stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: '#FFFFFF', borderColor: '#CBD5E1', borderRadius: '8px', fontSize: '11px', color: '#0F172A' }}
+                />
+                <Area type="monotone" dataKey="count" name="Crowd Count" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#trendGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
