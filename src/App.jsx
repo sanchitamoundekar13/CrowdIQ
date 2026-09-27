@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { PlatformProvider } from './context/PlatformContext';
+import { CrowdDataProvider } from './context/CrowdDataContext';
 import { SimulationProvider, useSimulation } from './context/SimulationContext';
 import { ToastContainer } from './components/common/ToastContainer.tsx';
 import { EmergencyOverlay } from './components/emergency/EmergencyOverlay.tsx';
@@ -25,12 +28,15 @@ import { ReportsPage } from './pages/ReportsPage.tsx';
 import { AboutPage } from './pages/AboutPage.tsx';
 import { AdminPortalPage } from './pages/AdminPortalPage.tsx';
 import { MobileCameraNodePage } from './pages/MobileCameraNodePage.tsx';
+import { NotificationsPage } from './pages/NotificationsPage.tsx';
+
 
 function AppContent() {
   // Synchronize route with URL hash for seamless direct navigation & bookmarking
   const getRouteFromHash = () => {
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
     if (['mobile-camera', 'mobile-cctv', 'cctv-node'].some(k => hash.includes(k))) return 'mobile-camera';
+    if (['notifications', 'notification'].includes(hash)) return 'notifications';
     if (['admin', 'admin-portal', 'admin-console'].includes(hash)) return 'admin';
     if (['monitoring', 'live-monitor'].includes(hash)) return 'monitoring';
     if (['cameras', 'camera', 'cctv'].includes(hash)) return 'cameras';
@@ -223,6 +229,13 @@ function AppContent() {
         {activeRoute === 'admin' && (
           <AdminPortalPage />
         )}
+
+        {/* NOTIFICATIONS DISPATCH */}
+        {activeRoute === 'notifications' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <NotificationsPage onNavigate={handleNavigate} />
+          </div>
+        )}
       </main>
 
       {/* OPERATIONAL FOOTER */}
@@ -253,10 +266,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SimulationProvider>
-        <AppContent />
-      </SimulationProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <PlatformProvider>
+          <CrowdDataProvider>
+            <SimulationProvider>
+              <AppContent />
+            </SimulationProvider>
+          </CrowdDataProvider>
+        </PlatformProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
-}
+}
