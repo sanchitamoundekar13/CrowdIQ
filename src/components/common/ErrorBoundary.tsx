@@ -27,18 +27,29 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReload = () => {
-    window.location.hash = '';
-    window.location.reload();
+    try {
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch (_) {}
+    window.location.href = `${window.location.origin}${window.location.pathname}?v=${Date.now()}`;
   };
 
   private handleResetStorage = () => {
     try {
       localStorage.clear();
       sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
     } catch (e) {
       console.error('Failed to clear storage:', e);
     }
-    window.location.reload();
+    window.location.href = `${window.location.origin}${window.location.pathname}?v=${Date.now()}`;
   };
 
   public render() {
@@ -77,13 +88,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleReload}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm transition cursor-pointer shadow-lg shadow-blue-500/20"
               >
-                🔄 Reload Operations App
+                🔄 Reload Latest Live Bundle
               </button>
               <button
                 onClick={this.handleResetStorage}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#334155] hover:bg-[#475569] text-[#94A3B8] hover:text-white font-semibold text-sm transition cursor-pointer"
               >
-                🧹 Reset Local State & Reload
+                🧹 Reset Local State & Cache
               </button>
             </div>
 
