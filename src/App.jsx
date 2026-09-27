@@ -24,11 +24,13 @@ import { IncidentsPage } from './pages/IncidentsPage.tsx';
 import { ReportsPage } from './pages/ReportsPage.tsx';
 import { AboutPage } from './pages/AboutPage.tsx';
 import { AdminPortalPage } from './pages/AdminPortalPage.tsx';
+import { MobileCameraNodePage } from './pages/MobileCameraNodePage.tsx';
 
 function AppContent() {
   // Synchronize route with URL hash for seamless direct navigation & bookmarking
   const getRouteFromHash = () => {
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    if (['mobile-camera', 'mobile-cctv', 'cctv-node'].some(k => hash.includes(k))) return 'mobile-camera';
     if (['admin', 'admin-portal', 'admin-console'].includes(hash)) return 'admin';
     if (['monitoring', 'live-monitor'].includes(hash)) return 'monitoring';
     if (['cameras', 'camera', 'cctv'].includes(hash)) return 'cameras';
@@ -42,6 +44,7 @@ function AppContent() {
     if (['dashboard'].includes(hash)) return 'dashboard';
     return 'home'; // Default landing experience
   };
+
 
   const [activeRoute, setActiveRoute] = useState(getRouteFromHash);
   const [dashboardSubTab, setDashboardSubTab] = useState('overview'); // 'overview' | 'command'
@@ -62,7 +65,12 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (activeRoute === 'mobile-camera') {
+    return <MobileCameraNodePage onNavigate={handleNavigate} />;
+  }
+
   return (
+
     <div className="min-h-screen bg-[#F7F9FC] text-[#0F172A] font-sans antialiased flex flex-col">
       {/* ===================================================================
           STREAMLINED PLATFORM NAVIGATION BAR

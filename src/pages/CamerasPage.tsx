@@ -21,10 +21,14 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Smartphone,
 } from 'lucide-react';
 
+import { MobileCctvHubModal } from '../components/live/MobileCctvHubModal';
+
 interface CameraNode {
+
   id: string;
   name: string;
   zone: string;
@@ -61,7 +65,9 @@ export const CamerasPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [layoutMode, setLayoutMode] = useState<'2x2' | '4x4' | 'single'>('2x2');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isMobileHubOpen, setIsMobileHubOpen] = useState(false);
   const [showOverlays, setShowOverlays] = useState(true);
+
   const [ptzZoom, setPtzZoom] = useState(1);
   const [rebootMessage, setRebootMessage] = useState<string | null>(null);
 
@@ -140,6 +146,13 @@ export const CamerasPage: React.FC = () => {
 
         <div className="flex items-center gap-2.5">
           <button
+            onClick={() => setIsMobileHubOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
+          >
+            <Smartphone className="w-4 h-4" />
+            <span>📱 Connect 4x Mobile CCTV</span>
+          </button>
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
           >
@@ -148,6 +161,7 @@ export const CamerasPage: React.FC = () => {
           </button>
         </div>
       </div>
+
 
       {rebootMessage && (
         <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-mono font-bold flex items-center justify-between animate-fadeIn">
@@ -572,6 +586,16 @@ export const CamerasPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 4x Mobile Phone CCTV Control Hub Modal */}
+      <MobileCctvHubModal
+        isOpen={isMobileHubOpen}
+        onClose={() => setIsMobileHubOpen(false)}
+        onNavigateMobileCamera={(camId) => {
+          window.location.hash = `#/mobile-camera?camId=${camId}`;
+        }}
+      />
     </div>
   );
 };
+
