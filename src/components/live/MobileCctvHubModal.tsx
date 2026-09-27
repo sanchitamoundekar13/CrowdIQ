@@ -168,9 +168,10 @@ export function MobileCctvHubModal({ isOpen, onClose, onNavigateMobileCamera }: 
                 {/* Telemetry Metrics Bar */}
                 <div className="bg-[#0F172A] rounded-xl p-3 border border-[#334155] flex items-center justify-between text-xs font-mono">
                   <div>
-                    <span className="text-[#94A3B8] text-[10px] block uppercase">Headcount</span>
-                    <span className="text-base font-extrabold text-[#00F0FF]">{cam.peopleCount} Persons</span>
+                    <span className="text-[#94A3B8] text-[10px] block uppercase">Detected Bodies</span>
+                    <span className="text-base font-extrabold text-[#00F0FF]">{cam.peopleCount} Bodies</span>
                   </div>
+
 
                   <div>
                     <span className="text-[#94A3B8] text-[10px] block uppercase">Density</span>

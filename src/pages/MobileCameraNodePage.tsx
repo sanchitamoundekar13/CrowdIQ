@@ -219,17 +219,31 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
                          calculatedRisk === 'HIGH' ? '#F97316' :
                          calculatedRisk === 'MODERATE' ? '#F59E0B' : '#00F0FF';
 
-        // 4. Render Neon AI Human Body Bounding Boxes
+        // 4. Render Human Body Rectangle & Below "DETECTED BODY" Badge
         realPersons.forEach((person, index) => {
-          const [x, y, w, h] = person.bbox;
+          let [x, y, w, h] = person.bbox;
 
-          // Bounding Box
+          // Ensure vertical human body rectangular proportions (height should properly frame the body)
+          if (h < w * 1.3) {
+            const adjustedH = Math.max(h, w * 1.45);
+            const deltaH = adjustedH - h;
+            y = Math.max(0, y - deltaH * 0.2);
+            h = Math.min(canvas.height - y - 28, adjustedH);
+          }
+
+          // Subtle glowing translucent body fill inside rectangle
+          ctx.fillStyle = calculatedRisk === 'CRITICAL' ? 'rgba(239, 68, 68, 0.08)' :
+                          calculatedRisk === 'HIGH' ? 'rgba(249, 115, 22, 0.08)' :
+                          'rgba(0, 240, 255, 0.08)';
+          ctx.fillRect(x, y, w, h);
+
+          // Human Body Bounding Rectangle
           ctx.strokeStyle = hudColor;
           ctx.lineWidth = 2.5;
           ctx.strokeRect(x, y, w, h);
 
-          // Corner brackets
-          const cornerLen = Math.min(18, w * 0.2);
+          // High-contrast corner brackets on the rectangle
+          const cornerLen = Math.min(20, w * 0.25, h * 0.15);
           ctx.strokeStyle = '#FFFFFF';
           ctx.lineWidth = 3;
 
@@ -263,23 +277,37 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
 
           // Center Torso Tracking Reticle
           const centerX = x + w / 2;
-          const centerY = y + h * 0.35;
+          const centerY = y + h * 0.38;
           ctx.fillStyle = hudColor;
           ctx.beginPath();
           ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
           ctx.fill();
 
-          // Identification Tag
+          // -----------------------------------------------------------------
+          // BELOW THE RECTANGLE: "DETECTED BODY" BADGE
+          // -----------------------------------------------------------------
           const scorePct = Math.round(person.score * 100);
-          const tagText = `HUMAN #${index + 1} (${scorePct}%)`;
+          const badgeText = `🟢 DETECTED BODY: Person #${index + 1} (${scorePct}%)`;
 
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-          ctx.fillRect(x, Math.max(0, y - 24), tagText.length * 7.5 + 10, 20);
+          const badgeY = Math.min(canvas.height - 24, y + h + 6);
+          const badgeW = badgeText.length * 7.5 + 16;
+          const badgeX = Math.max(4, Math.min(canvas.width - badgeW - 4, x + (w / 2) - (badgeW / 2)));
 
-          ctx.fillStyle = hudColor;
+          // Badge Background
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+          ctx.fillRect(badgeX, badgeY, badgeW, 22);
+
+          // Badge Border
+          ctx.strokeStyle = hudColor;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(badgeX, badgeY, badgeW, 22);
+
+          // Badge Text
+          ctx.fillStyle = '#FFFFFF';
           ctx.font = 'bold 11px monospace';
-          ctx.fillText(tagText, x + 5, Math.max(14, y - 9));
+          ctx.fillText(badgeText, badgeX + 8, badgeY + 15);
         });
+
 
         // 5. Render Top Neural HUD Overlay Banner
         ctx.fillStyle = 'rgba(11, 15, 25, 0.85)';
@@ -470,7 +498,7 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
         <div className="absolute bottom-4 left-4 right-4 bg-[#0F172A]/90 backdrop-blur-md border border-[#1E293B] rounded-2xl p-4 shadow-2xl flex items-center justify-between gap-3 z-10">
           <div>
             <div className="text-[10px] font-mono uppercase text-[#94A3B8] tracking-wider flex items-center gap-1">
-              <Users className="w-3 h-3 text-[#00F0FF]" /> People Count
+              <Users className="w-3 h-3 text-[#00F0FF]" /> Detected Bodies
             </div>
             <div className="text-2xl font-black font-mono text-[#00F0FF]">
               {peopleCount} <span className="text-xs font-normal text-[#64748B]">Bodies</span>
@@ -510,6 +538,48 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
           </div>
         </div>
       </main>
+
+      {/* Real-time DETECTED BODIES Live Tray Below Camera */}
+      <section className="bg-[#0B0F19] border-t border-[#1E293B] px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${peopleCount > 0 ? 'bg-[#10B981] animate-ping' : 'bg-slate-500'}`} />
+            <span className="text-xs font-mono font-bold uppercase text-white tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[#00F0FF]" />
+              DETECTED BODIES: <span className="text-base text-[#00F0FF]">{peopleCount}</span>
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-[#94A3B8]">
+            {peopleCount > 0 ? 'Human body recognition active' : 'Waiting for person to enter frame...'}
+          </span>
+        </div>
+
+        {/* Live Detected Body Cards */}
+        {detectedPersons.length > 0 ? (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {detectedPersons.map((p, idx) => (
+              <div 
+                key={idx} 
+                className="shrink-0 bg-[#1E293B] border border-[#00F0FF]/40 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs font-mono shadow-sm"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="font-bold text-white">Body #{idx + 1}</span>
+                <span className="text-[10px] text-[#00F0FF] bg-[#0F172A] px-1.5 py-0.5 rounded border border-[#00F0FF]/20">
+                  {Math.round(p.score * 100)}% match
+                </span>
+                <span className="text-[10px] text-[#94A3B8]">
+                  [W: {Math.round(p.bbox[2])}px × H: {Math.round(p.bbox[3])}px]
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[11px] font-mono text-slate-500 italic py-1 flex items-center gap-2">
+            <span>⚪ 0 Human Bodies detected. Stand in front of camera to detect body.</span>
+          </div>
+        )}
+      </section>
+
 
       {/* Bottom Share Link Bar */}
       <footer className="bg-[#0F172A] border-t border-[#1E293B] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
