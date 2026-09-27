@@ -19,8 +19,10 @@ import {
   MapPin,
   ChevronRight,
   TrendingUp,
-  Cpu
+  Cpu,
+  ShieldCheck,
 } from 'lucide-react';
+
 
 interface LandingPageProps {
   onNavigate: (routeId: string) => void;
