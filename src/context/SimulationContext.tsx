@@ -159,7 +159,9 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [recommendationApproved, setRecommendationApproved] = useState<boolean>(false);
+  const [recommendationDismissed, setRecommendationDismissed] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('09:45:00');
+
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState<boolean>(false);
 
   // Python FastAPI Backend & PyTorch AI Integration States
