@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import { 
   Video, 
@@ -32,7 +32,8 @@ import {
   ArrowUpRight,
   Check,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Camera
 } from 'lucide-react';
 
 import { MobileCctvHubModal } from '../components/live/MobileCctvHubModal';
@@ -47,7 +48,7 @@ export interface CameraNode {
   mountHeight: string;
   fov: string;
   perspectiveType: 'Overhead' | 'Wide' | 'Corridor' | 'Panoramic' | 'Isometric' | 'Downward' | 'Low-Angle' | 'Mobile';
-  previewImg: string;
+  videoUrl: string;
   ip: string;
   rtspUrl: string;
   resolution: string;
@@ -77,7 +78,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '6.5m Gate Arch',
     fov: '95° Downward Inflow',
     perspectiveType: 'Overhead',
-    previewImg: './assets/crowd_detection_cctv.jpg',
+    videoUrl: './assets/cctv_crowd_stream_1.webm',
     ip: '192.168.10.101', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam01', 
     resolution: '1080p FHD', 
@@ -90,9 +91,9 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 38, 
     risk: 'LOW',
     detectedBodies: [
-      { id: 'b1', box: { top: '24%', left: '32%', width: '9%', height: '28%' }, score: 96, label: 'Person #1' },
-      { id: 'b2', box: { top: '28%', left: '44%', width: '8%', height: '26%' }, score: 93, label: 'Person #2' },
-      { id: 'b3', box: { top: '35%', left: '58%', width: '10%', height: '30%' }, score: 91, label: 'Person #3' },
+      { id: 'b1', box: { top: '24%', left: '32%', width: '10%', height: '30%' }, score: 96, label: 'Person #1' },
+      { id: 'b2', box: { top: '28%', left: '46%', width: '9%', height: '28%' }, score: 93, label: 'Person #2' },
+      { id: 'b3', box: { top: '35%', left: '60%', width: '11%', height: '32%' }, score: 91, label: 'Person #3' },
     ]
   },
   { 
@@ -104,7 +105,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '4.2m East Wall Bracket',
     fov: '120° Panoramic Wide',
     perspectiveType: 'Wide',
-    previewImg: './assets/corporate_events.jpg',
+    videoUrl: './assets/cctv_crowd_stream_2.webm',
     ip: '192.168.10.102', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam02', 
     resolution: '4K UHD', 
@@ -117,9 +118,9 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 59, 
     risk: 'MODERATE',
     detectedBodies: [
-      { id: 'b1', box: { top: '30%', left: '22%', width: '10%', height: '28%' }, score: 95, label: 'Person #1' },
-      { id: 'b2', box: { top: '32%', left: '38%', width: '9%', height: '25%' }, score: 89, label: 'Person #2' },
-      { id: 'b3', box: { top: '26%', left: '68%', width: '11%', height: '32%' }, score: 94, label: 'Person #3' },
+      { id: 'b1', box: { top: '30%', left: '22%', width: '11%', height: '30%' }, score: 95, label: 'Person #1' },
+      { id: 'b2', box: { top: '32%', left: '42%', width: '10%', height: '28%' }, score: 89, label: 'Person #2' },
+      { id: 'b3', box: { top: '26%', left: '68%', width: '12%', height: '34%' }, score: 94, label: 'Person #3' },
     ]
   },
   { 
@@ -131,7 +132,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '3.5m Ceiling Center',
     fov: '45° Telephoto Corridor',
     perspectiveType: 'Corridor',
-    previewImg: './assets/hero_ballroom.jpg',
+    videoUrl: './assets/cctv_crowd_stream_3.webm',
     ip: '192.168.10.103', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam03', 
     resolution: '1080p FHD', 
@@ -154,7 +155,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '12.0m Central Truss',
     fov: '360° Fisheye Center',
     perspectiveType: 'Panoramic',
-    previewImg: './assets/crowd_festival_aerial.jpg',
+    videoUrl: './assets/cctv_crowd_stream_2.webm',
     ip: '192.168.10.104', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam04', 
     resolution: '4K UHD', 
@@ -167,10 +168,10 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 82, 
     risk: 'HIGH',
     detectedBodies: [
-      { id: 'b1', box: { top: '35%', left: '40%', width: '8%', height: '22%' }, score: 98, label: 'Person #1' },
-      { id: 'b2', box: { top: '38%', left: '52%', width: '9%', height: '24%' }, score: 92, label: 'Person #2' },
-      { id: 'b3', box: { top: '42%', left: '62%', width: '8%', height: '23%' }, score: 96, label: 'Person #3' },
-      { id: 'b4', box: { top: '48%', left: '30%', width: '10%', height: '26%' }, score: 90, label: 'Person #4' },
+      { id: 'b1', box: { top: '35%', left: '38%', width: '9%', height: '24%' }, score: 98, label: 'Person #1' },
+      { id: 'b2', box: { top: '38%', left: '50%', width: '10%', height: '26%' }, score: 92, label: 'Person #2' },
+      { id: 'b3', box: { top: '42%', left: '62%', width: '9%', height: '25%' }, score: 96, label: 'Person #3' },
+      { id: 'b4', box: { top: '48%', left: '28%', width: '11%', height: '28%' }, score: 90, label: 'Person #4' },
     ]
   },
   { 
@@ -182,7 +183,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '5.0m South Structural Pillar',
     fov: '75° Oblique Diagonal',
     perspectiveType: 'Isometric',
-    previewImg: './assets/crowd_detection_cctv.jpg',
+    videoUrl: './assets/cctv_crowd_stream_1.webm',
     ip: '192.168.10.105', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam05', 
     resolution: '1080p FHD', 
@@ -195,8 +196,8 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 55, 
     risk: 'MODERATE',
     detectedBodies: [
-      { id: 'b1', box: { top: '22%', left: '40%', width: '9%', height: '27%' }, score: 91, label: 'Person #1' },
-      { id: 'b2', box: { top: '26%', left: '55%', width: '9%', height: '26%' }, score: 88, label: 'Person #2' },
+      { id: 'b1', box: { top: '24%', left: '42%', width: '10%', height: '28%' }, score: 91, label: 'Person #1' },
+      { id: 'b2', box: { top: '28%', left: '56%', width: '10%', height: '28%' }, score: 88, label: 'Person #2' },
     ]
   },
   { 
@@ -208,7 +209,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '8.0m Mezzanine Railing',
     fov: '60° Downward Elevated',
     perspectiveType: 'Downward',
-    previewImg: './assets/luxury_weddings.jpg',
+    videoUrl: './assets/cctv_crowd_stream_3.webm',
     ip: '192.168.10.106', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam06', 
     resolution: '4K UHD', 
@@ -221,8 +222,8 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 21, 
     risk: 'LOW',
     detectedBodies: [
-      { id: 'b1', box: { top: '34%', left: '44%', width: '8%', height: '25%' }, score: 94, label: 'Person #1' },
-      { id: 'b2', box: { top: '36%', left: '58%', width: '7%', height: '23%' }, score: 97, label: 'Person #2' },
+      { id: 'b1', box: { top: '34%', left: '42%', width: '9%', height: '26%' }, score: 94, label: 'Person #1' },
+      { id: 'b2', box: { top: '36%', left: '58%', width: '8%', height: '24%' }, score: 97, label: 'Person #2' },
     ]
   },
   { 
@@ -234,7 +235,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '2.5m Landing Wall',
     fov: '90° Stair Chokepoint',
     perspectiveType: 'Low-Angle',
-    previewImg: './assets/hero_ballroom.jpg',
+    videoUrl: './assets/cctv_crowd_stream_1.webm',
     ip: '192.168.10.107', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam07', 
     resolution: '720p HD', 
@@ -247,7 +248,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 14, 
     risk: 'LOW',
     detectedBodies: [
-      { id: 'b1', box: { top: '38%', left: '46%', width: '12%', height: '34%' }, score: 93, label: 'Person #1' },
+      { id: 'b1', box: { top: '38%', left: '46%', width: '13%', height: '36%' }, score: 93, label: 'Person #1' },
     ]
   },
   { 
@@ -259,7 +260,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     mountHeight: '7.0m Perimeter Mast',
     fov: '110° Barrier Converging',
     perspectiveType: 'Wide',
-    previewImg: './assets/security_response_center.jpg',
+    videoUrl: './assets/cctv_crowd_stream_2.webm',
     ip: '192.168.10.108', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam08', 
     resolution: '1080p FHD', 
@@ -272,9 +273,9 @@ const INITIAL_CAMERAS: CameraNode[] = [
     density: 94, 
     risk: 'CRITICAL',
     detectedBodies: [
-      { id: 'b1', box: { top: '26%', left: '28%', width: '10%', height: '30%' }, score: 97, label: 'Person #1' },
-      { id: 'b2', box: { top: '29%', left: '42%', width: '9%', height: '28%' }, score: 95, label: 'Person #2' },
-      { id: 'b3', box: { top: '33%', left: '62%', width: '11%', height: '32%' }, score: 92, label: 'Person #3' },
+      { id: 'b1', box: { top: '26%', left: '28%', width: '11%', height: '32%' }, score: 97, label: 'Person #1' },
+      { id: 'b2', box: { top: '29%', left: '44%', width: '10%', height: '30%' }, score: 95, label: 'Person #2' },
+      { id: 'b3', box: { top: '33%', left: '64%', width: '12%', height: '34%' }, score: 92, label: 'Person #3' },
     ]
   },
 ];
@@ -297,6 +298,11 @@ export const CamerasPage: React.FC = () => {
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
 
+  // Real device webcam stream support
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+  const webcamStreamRef = useRef<MediaStream | null>(null);
+
   // PTZ Control States
   const [ptzZoom, setPtzZoom] = useState(1);
   const [ptzPan, setPtzPan] = useState(0);
@@ -313,6 +319,50 @@ export const CamerasPage: React.FC = () => {
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam09',
     resolution: '1080p FHD',
   });
+
+  // Real Webcam handler
+  const handleToggleWebcam = async () => {
+    if (isWebcamActive) {
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+        webcamStreamRef.current = null;
+      }
+      setIsWebcamActive(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        webcamStreamRef.current = stream;
+        setIsWebcamActive(true);
+        setLayoutMode('single'); // Switch to master monitor to inspect
+        playAlertSound('info');
+        setTimeout(() => {
+          if (webcamVideoRef.current) {
+            webcamVideoRef.current.srcObject = stream;
+          }
+        }, 100);
+      } catch (err) {
+        console.error('Failed to open device camera', err);
+        alert('Could not access device camera. Please check camera permissions in your browser.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isWebcamActive && webcamVideoRef.current && webcamStreamRef.current) {
+      webcamVideoRef.current.srcObject = webcamStreamRef.current;
+    }
+  }, [isWebcamActive, selectedCamId, layoutMode]);
+
+  useEffect(() => {
+    return () => {
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
 
   // Subscribe to Mobile CCTV nodes for real-time body counts and stream snapshots
   useEffect(() => {
@@ -359,7 +409,7 @@ export const CamerasPage: React.FC = () => {
     setRebootMessage(`Restarting RTSP stream & recalibrating angle on ${id}...`);
     playAlertSound('info');
     setTimeout(() => {
-      setRebootMessage(`Camera ${id} successfully recalibrated and streaming at 30 FPS.`);
+      setRebootMessage(`Camera ${id} successfully recalibrated and recording at 30 FPS.`);
       setTimeout(() => setRebootMessage(null), 3000);
     }, 1200);
   };
@@ -377,7 +427,7 @@ export const CamerasPage: React.FC = () => {
       mountHeight: '4.5m Wall Bracket',
       fov: '90° Wide Angle',
       perspectiveType: 'Wide',
-      previewImg: './assets/crowd_detection_cctv.jpg',
+      videoUrl: './assets/cctv_crowd_stream_1.webm',
       ip: newCam.ip,
       rtspUrl: newCam.rtspUrl,
       resolution: newCam.resolution,
@@ -418,11 +468,11 @@ export const CamerasPage: React.FC = () => {
                 </h1>
                 <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
-                  {onlineCamsCount}/8 VENUE CAMERAS ACTIVE
+                  {onlineCamsCount}/8 REAL RECORDINGS STREAMING
                 </span>
               </div>
               <p className="text-xs text-[#94A3B8] font-mono mt-0.5">
-                All 8 camera angles, perspectives & 4 mobile CCTV feeds unified in one operator window
+                Real camera recordings, live continuous pedestrian tracking & 4 mobile CCTV feeds in one window
               </p>
             </div>
           </div>
@@ -430,6 +480,19 @@ export const CamerasPage: React.FC = () => {
 
         {/* Global Action Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Real Device Camera / Webcam Toggle */}
+          <button
+            onClick={handleToggleWebcam}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
+              isWebcamActive
+                ? 'bg-rose-600 text-white border-rose-700 shadow-xs animate-pulse'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-700'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>{isWebcamActive ? '🔴 Stop Real Webcam' : '📹 Use Real Device Camera'}</span>
+          </button>
+
           {/* Mobile CCTV Hub Button */}
           <button
             onClick={() => setIsMobileHubOpen(true)}
@@ -672,15 +735,14 @@ export const CamerasPage: React.FC = () => {
         </div>
 
         {/* ===================================================================
-            VIEWPORT 1: ALL 8 ANGLES GRID (8-UP SOC WALL)
-            The primary request: All different views and angles in one window!
+            VIEWPORT 1: ALL 8 ANGLES GRID (8-UP SOC WALL - REAL VIDEO RECORDINGS)
             =================================================================== */}
         {layoutMode === 'grid8' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-                <span>Active 8-Stream Video Matrix • Synchronized Neural Vision Pipelines</span>
+                <span>Active 8-Stream Video Recording Matrix • Continuous Movement & Body Tracking</span>
               </span>
               <span>Total Detected Bodies: <strong className="text-[#34D399]">{totalDetectedBodies} persons</strong></span>
             </div>
@@ -707,14 +769,14 @@ export const CamerasPage: React.FC = () => {
         )}
 
         {/* ===================================================================
-            VIEWPORT 2: QUAD SPLIT (2x2 LARGE TILES)
+            VIEWPORT 2: QUAD SPLIT (2x2 LARGE REAL RECORDING MONITORS)
             =================================================================== */}
         {layoutMode === 'quad' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse"></span>
-                <span>High-Definition Quad Split (Top 4 Critical Ingress & Plaza Angles)</span>
+                <span>High-Definition Quad Recording Split (Top 4 Critical Ingress & Plaza Angles)</span>
               </span>
               <span>Focusing Priority Zones: <strong className="text-white">Gate A, Gate B, Core Plaza, Gate C</strong></span>
             </div>
@@ -768,7 +830,7 @@ export const CamerasPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {mobileCameras.map((mCam, idx) => {
+              {mobileCameras.map((mCam) => {
                 const isOnline = mCam.status === 'ONLINE';
                 return (
                   <div
@@ -805,13 +867,16 @@ export const CamerasPage: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : isOnline ? (
-                        <div className="w-full h-full relative bg-slate-900 flex flex-col items-center justify-center p-4">
-                          <img
-                            src="./assets/crowd_detection_cctv.jpg"
-                            alt="Mobile Live"
-                            className="w-full h-full object-cover opacity-60"
+                        <div className="w-full h-full relative bg-slate-900 flex flex-col items-center justify-center">
+                          <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            src="./assets/cctv_crowd_stream_1.webm"
+                            className="w-full h-full object-cover opacity-70"
                           />
-                          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-3 text-center">
+                          <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center p-3 text-center">
                             <Smartphone className="w-8 h-8 text-[#34D399] mb-1 animate-pulse" />
                             <span className="text-xs font-mono font-bold text-white">Live Phone Streaming</span>
                             <span className="text-[10px] font-mono text-[#A7F3D0]">{mCam.deviceInfo}</span>
@@ -879,7 +944,7 @@ export const CamerasPage: React.FC = () => {
         )}
 
         {/* ===================================================================
-            VIEWPORT 4: 12-STREAM SUPER WALL (8 VENUE + 4 MOBILE)
+            VIEWPORT 4: 12-STREAM SUPER WALL (8 VENUE + 4 MOBILE REAL RECORDINGS)
             =================================================================== */}
         {layoutMode === 'all12' && (
           <div className="space-y-4">
@@ -916,9 +981,12 @@ export const CamerasPage: React.FC = () => {
                     <span className="text-[10px] text-[#A7F3D0]">{mCam.status}</span>
                   </div>
                   <div className="relative aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
-                    <img
-                      src="./assets/crowd_detection_cctv.jpg"
-                      alt={mCam.name}
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      src="./assets/cctv_crowd_stream_1.webm"
                       className="w-full h-full object-cover opacity-75"
                     />
                     <div className="absolute bottom-1 left-2 text-[10px] font-mono text-[#34D399] font-bold">
@@ -932,7 +1000,7 @@ export const CamerasPage: React.FC = () => {
         )}
 
         {/* ===================================================================
-            VIEWPORT 5: FOCUS MASTER + MULTI-ANGLE FILMSTRIP DOCK
+            VIEWPORT 5: FOCUS MASTER + MULTI-ANGLE FILMSTRIP DOCK (REAL VIDEO)
             =================================================================== */}
         {layoutMode === 'single' && (
           <div className="space-y-4">
@@ -946,15 +1014,15 @@ export const CamerasPage: React.FC = () => {
                 <div className="p-3.5 bg-[#111C35] border-b border-[#1E293B] flex items-center justify-between text-white">
                   <div className="flex items-center gap-2.5">
                     <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#2563EB]/30 text-[#38BDF8] border border-[#2563EB]/40">
-                      {selectedCam.id}
+                      {isWebcamActive ? 'REAL-WEBCAM' : selectedCam.id}
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold font-mono text-white">
-                          {selectedCam.name}
+                          {isWebcamActive ? 'Live Device Camera Feed' : selectedCam.name}
                         </span>
                         <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/30">
-                          📐 {selectedCam.angle}
+                          {isWebcamActive ? '🔴 WEBCAM LIVE' : `📐 ${selectedCam.angle}`}
                         </span>
                       </div>
                       <span className="text-[11px] text-[#94A3B8] font-mono">
@@ -965,6 +1033,16 @@ export const CamerasPage: React.FC = () => {
 
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={handleToggleWebcam}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1 ${
+                        isWebcamActive ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-500'
+                      }`}
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{isWebcamActive ? 'Stop Webcam' : 'Use Webcam'}</span>
+                    </button>
+
+                    <button
                       onClick={() => handleRebootCam(selectedCam.id)}
                       title="Recalibrate stream"
                       className="p-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-[#CBD5E1] transition cursor-pointer"
@@ -974,22 +1052,32 @@ export const CamerasPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Master Canvas with Zoom/Pan */}
+                {/* Master Canvas with Zoom/Pan - Real Video Recording */}
                 <div className="relative aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
-                  <img
-                    src={selectedCam.previewImg}
-                    alt={selectedCam.name}
-                    className="w-full h-full object-cover transition-transform duration-300"
-                    style={{ 
-                      transform: `scale(${ptzZoom}) translate(${ptzPan}px, ${ptzTilt}px)` 
-                    }}
-                    onError={(e) => {
-                      if (!e.currentTarget.dataset.retried) {
-                        e.currentTarget.dataset.retried = 'true';
-                        e.currentTarget.src = './assets/crowd_detection_cctv.jpg';
-                      }
-                    }}
-                  />
+                  {isWebcamActive ? (
+                    <video
+                      ref={webcamVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover transition-transform duration-300"
+                      style={{ 
+                        transform: `scale(${ptzZoom}) translate(${ptzPan}px, ${ptzTilt}px)` 
+                      }}
+                    />
+                  ) : (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      src={selectedCam.videoUrl}
+                      className="w-full h-full object-cover transition-transform duration-300"
+                      style={{ 
+                        transform: `scale(${ptzZoom}) translate(${ptzPan}px, ${ptzTilt}px)` 
+                      }}
+                    />
+                  )}
 
                   {/* AI Bounding Boxes on Master Feed */}
                   {showOverlays && selectedCam.status !== 'OFFLINE' && (
@@ -1032,7 +1120,7 @@ export const CamerasPage: React.FC = () => {
                   <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-mono text-[11px] text-white flex flex-wrap items-center gap-4">
                     <span className="flex items-center gap-1.5 text-[#34D399] font-bold">
                       <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-                      LIVE {selectedCam.fps} FPS
+                      {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE CCTV'} {selectedCam.fps} FPS
                     </span>
                     <span className="text-slate-300">{selectedCam.resolution}</span>
                     <span className="text-slate-300">{selectedCam.bitrate}</span>
@@ -1195,7 +1283,7 @@ export const CamerasPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Filmstrip: All Other 7 Camera Angles in Real-Time */}
+            {/* Bottom Filmstrip: All Other 7 Camera Angles in Real Video Playback */}
             <div className="bg-[#111C35] rounded-2xl border border-[#1E293B] p-4 text-white space-y-2">
               <div className="flex items-center justify-between pb-2 border-b border-[#1E293B]">
                 <div className="flex items-center gap-2">
@@ -1226,16 +1314,13 @@ export const CamerasPage: React.FC = () => {
                       }`}
                     >
                       <div className="relative aspect-[16/9] bg-black overflow-hidden">
-                        <img
-                          src={c.previewImg}
-                          alt={c.name}
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          src={c.videoUrl}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            if (!e.currentTarget.dataset.retried) {
-                              e.currentTarget.dataset.retried = 'true';
-                              e.currentTarget.src = './assets/crowd_detection_cctv.jpg';
-                            }
-                          }}
                         />
                         <div className="absolute top-1 left-1 bg-black/80 px-1 py-0.2 rounded text-[8px] font-mono font-bold text-white">
                           {c.id}
@@ -1384,7 +1469,7 @@ export const CamerasPage: React.FC = () => {
   );
 };
 
-// ── COMPONENT: CAMERA TILE CARD IN VIDEO WALL ──────────────────────────────
+// ── COMPONENT: CAMERA TILE CARD IN VIDEO WALL (REAL VIDEO RECORDING) ────────
 interface CameraTileProps {
   cam: CameraNode;
   isSelected?: boolean;
@@ -1461,19 +1546,24 @@ const CameraTileCard: React.FC<CameraTileProps> = ({
         </span>
       </div>
 
-      {/* Stream Viewport with Body Bounding Rectangles */}
+      {/* Stream Viewport with Real Camera Recording & Body Bounding Rectangles */}
       <div className={`relative ${isLarge ? 'aspect-[16/9]' : 'aspect-[16/10]'} bg-black overflow-hidden flex items-center justify-center`}>
-        <img
-          src={cam.previewImg}
-          alt={cam.name}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-103"
-          onError={(e) => {
-            if (!e.currentTarget.dataset.retried) {
-              e.currentTarget.dataset.retried = 'true';
-              e.currentTarget.src = './assets/crowd_detection_cctv.jpg';
-            }
-          }}
-        />
+        {!isOffline ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            src={cam.videoUrl}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-103"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[#070D19]/90 flex flex-col items-center justify-center p-2 text-center">
+            <WifiOff className="w-6 h-6 text-[#EF4444] mb-1" />
+            <span className="text-[11px] font-mono font-bold text-white">FEED OFFLINE</span>
+            <span className="text-[9px] font-mono text-slate-400">Signal timeout</span>
+          </div>
+        )}
 
         {/* AI Bounding Rectangles on live feed */}
         {showOverlays && !isOffline && cam.detectedBodies && (
@@ -1499,15 +1589,6 @@ const CameraTileCard: React.FC<CameraTileProps> = ({
           </>
         )}
 
-        {/* Offline Overlay */}
-        {isOffline && (
-          <div className="absolute inset-0 bg-[#070D19]/90 flex flex-col items-center justify-center p-2 text-center">
-            <WifiOff className="w-6 h-6 text-[#EF4444] mb-1" />
-            <span className="text-[11px] font-mono font-bold text-white">FEED OFFLINE</span>
-            <span className="text-[9px] font-mono text-slate-400">Signal timeout</span>
-          </div>
-        )}
-
         {/* Live Status Pill & Bodies Detected Counter */}
         <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs px-2 py-1 rounded-lg border border-white/10 flex items-center justify-between text-[10px] font-mono text-white">
           <span className="flex items-center gap-1.5 text-[#34D399] font-bold">
@@ -1520,7 +1601,7 @@ const CameraTileCard: React.FC<CameraTileProps> = ({
         {/* Rec Indicator */}
         <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/75 px-1.5 py-0.5 rounded text-[9px] font-mono text-white">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span>LIVE</span>
+          <span>LIVE CCTV</span>
         </div>
       </div>
 

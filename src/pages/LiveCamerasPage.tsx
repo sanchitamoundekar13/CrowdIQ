@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSimulation } from '../context/SimulationContext';
-import { Wifi, WifiOff, Compass, AlertTriangle, Grid, Maximize2, Cpu, TrendingUp, Activity } from 'lucide-react';
+import { Wifi, WifiOff, Compass, AlertTriangle, Grid, Maximize2, Cpu, TrendingUp, Activity, Layers, Camera, Video } from 'lucide-react';
 
 interface RiskEngine {
   density: number;    // % 0-100
@@ -12,14 +12,14 @@ interface RiskEngine {
 }
 
 const CAMERAS = [
-  { id:'CAM-01', name:'Main Gate',       zone:'Gate A',     location:'North Entrance, Level 0',   status:'ONLINE',  fps:30, res:'1080p',  people:42, density:3.8, direction:'North to Concourse',  risk:'LOW',      re:{ density:38, velocity:22, congestion:30, flowInstability:18, score:27, reason:'Normal inflow at Main Gate. Crowd is moving steadily northward with no opposing flow detected.' } },
-  { id:'CAM-02', name:'Gate 2',          zone:'Gate B',     location:'East Wing, Level 0',         status:'ONLINE',  fps:30, res:'4K UHD', people:67, density:5.4, direction:'East to West',         risk:'MODERATE', re:{ density:59, velocity:48, congestion:54, flowInstability:41, score:51, reason:'Moderate crowd build-up at Gate B. Inflow exceeding outflow by ~8 persons/min. Monitor closely.' } },
-  { id:'CAM-03', name:'North Exit',      zone:'North Exit', location:'Emergency Exit, Level 1',    status:'OFFLINE', fps:0,  res:'N/A',    people:0,  density:0.0, direction:'Signal Loss',           risk:'LOW',      re:{ density:0, velocity:0, congestion:0, flowInstability:0, score:0, reason:'Camera offline. Risk assessment unavailable — physical inspection recommended.' } },
-  { id:'CAM-04', name:'Central Plaza',   zone:'Core',       location:'Central Arena, Level 0',     status:'ONLINE',  fps:25, res:'4K UHD', people:84, density:7.1, direction:'South to Plaza',        risk:'HIGH',     re:{ density:82, velocity:61, congestion:91, flowInstability:73, score:84, reason:'High density + opposing crowd movement detected near Central Plaza. Congestion kernel identified at south entry point. Recommend crowd redirect.' } },
-  { id:'CAM-05', name:'South Concourse', zone:'South Wing', location:'South Concourse, Level 1',   status:'ONLINE',  fps:30, res:'1080p',  people:53, density:4.9, direction:'West to South',         risk:'MODERATE', re:{ density:55, velocity:44, congestion:48, flowInstability:38, score:47, reason:'South Concourse showing moderate congestion. Bidirectional flow observed — slight turbulence near food vendor area.' } },
-  { id:'CAM-06', name:'VIP Lounge',      zone:'VIP',        location:'Premium Level, Level 3',     status:'ONLINE',  fps:30, res:'4K UHD', people:18, density:2.1, direction:'Static Lounge',         risk:'LOW',      re:{ density:21, velocity:8,  congestion:12, flowInstability:9,  score:14, reason:'VIP zone nominal. Crowd density well within safe thresholds. No anomalous movement patterns detected.' } },
-  { id:'CAM-07', name:'Emergency Stair', zone:'Stairwell',  location:'Emergency Stairs, Level 2',  status:'ONLINE',  fps:15, res:'720p',   people:6,  density:1.3, direction:'Upward to Level 2',     risk:'LOW',      re:{ density:14, velocity:19, congestion:8,  flowInstability:11, score:13, reason:'Stairwell usage within normal parameters. Unidirectional upward flow detected — no bottleneck risk.' } },
-  { id:'CAM-08', name:'West Gate',       zone:'Gate C',     location:'West Entrance, Level 0',     status:'ONLINE',  fps:30, res:'1080p',  people:91, density:8.4, direction:'West to Central',       risk:'CRITICAL', re:{ density:94, velocity:78, congestion:96, flowInstability:88, score:92, reason:'CRITICAL: Extreme crowd pressure at West Gate. Density exceeds safe threshold. Opposing flows creating dangerous turbulence. Immediate intervention required.' } },
+  { id:'CAM-01', name:'Main Gate',       zone:'Gate A',     location:'North Entrance, Level 0',   status:'ONLINE',  fps:30, res:'1080p',  people:42, density:3.8, direction:'North to Concourse',  risk:'LOW',      videoUrl: './assets/cctv_crowd_stream_1.webm', re:{ density:38, velocity:22, congestion:30, flowInstability:18, score:27, reason:'Normal inflow at Main Gate. Crowd is moving steadily northward with no opposing flow detected.' } },
+  { id:'CAM-02', name:'Gate 2',          zone:'Gate B',     location:'East Wing, Level 0',         status:'ONLINE',  fps:30, res:'4K UHD', people:67, density:5.4, direction:'East to West',         risk:'MODERATE', videoUrl: './assets/cctv_crowd_stream_2.webm', re:{ density:59, velocity:48, congestion:54, flowInstability:41, score:51, reason:'Moderate crowd build-up at Gate B. Inflow exceeding outflow by ~8 persons/min. Monitor closely.' } },
+  { id:'CAM-03', name:'North Exit',      zone:'North Exit', location:'Emergency Exit, Level 1',    status:'OFFLINE', fps:0,  res:'N/A',    people:0,  density:0.0, direction:'Signal Loss',           risk:'LOW',      videoUrl: './assets/cctv_crowd_stream_3.webm', re:{ density:0, velocity:0, congestion:0, flowInstability:0, score:0, reason:'Camera offline. Risk assessment unavailable — physical inspection recommended.' } },
+  { id:'CAM-04', name:'Central Plaza',   zone:'Core',       location:'Central Arena, Level 0',     status:'ONLINE',  fps:25, res:'4K UHD', people:84, density:7.1, direction:'South to Plaza',        risk:'HIGH',     videoUrl: './assets/cctv_crowd_stream_2.webm', re:{ density:82, velocity:61, congestion:91, flowInstability:73, score:84, reason:'High density + opposing crowd movement detected near Central Plaza. Congestion kernel identified at south entry point. Recommend crowd redirect.' } },
+  { id:'CAM-05', name:'South Concourse', zone:'South Wing', location:'South Concourse, Level 1',   status:'ONLINE',  fps:30, res:'1080p',  people:53, density:4.9, direction:'West to South',         risk:'MODERATE', videoUrl: './assets/cctv_crowd_stream_1.webm', re:{ density:55, velocity:44, congestion:48, flowInstability:38, score:47, reason:'South Concourse showing moderate congestion. Bidirectional flow observed — slight turbulence near food vendor area.' } },
+  { id:'CAM-06', name:'VIP Lounge',      zone:'VIP',        location:'Premium Level, Level 3',     status:'ONLINE',  fps:30, res:'4K UHD', people:18, density:2.1, direction:'Static Lounge',         risk:'LOW',      videoUrl: './assets/cctv_crowd_stream_3.webm', re:{ density:21, velocity:8,  congestion:12, flowInstability:9,  score:14, reason:'VIP zone nominal. Crowd density well within safe thresholds. No anomalous movement patterns detected.' } },
+  { id:'CAM-07', name:'Emergency Stair', zone:'Stairwell',  location:'Emergency Stairs, Level 2',  status:'ONLINE',  fps:15, res:'720p',   people:6,  density:1.3, direction:'Upward to Level 2',     risk:'LOW',      videoUrl: './assets/cctv_crowd_stream_1.webm', re:{ density:14, velocity:19, congestion:8,  flowInstability:11, score:13, reason:'Stairwell usage within normal parameters. Unidirectional upward flow detected — no bottleneck risk.' } },
+  { id:'CAM-08', name:'West Gate',       zone:'Gate C',     location:'West Entrance, Level 0',     status:'ONLINE',  fps:30, res:'1080p',  people:91, density:8.4, direction:'West to Central',       risk:'CRITICAL', videoUrl: './assets/cctv_crowd_stream_2.webm', re:{ density:94, velocity:78, congestion:96, flowInstability:88, score:92, reason:'CRITICAL: Extreme crowd pressure at West Gate. Density exceeds safe threshold. Opposing flows creating dangerous turbulence. Immediate intervention required.' } },
 ];
 
 const RISK: Record<string,{color:string;bg:string;border:string;emoji:string}> = {
@@ -153,7 +153,18 @@ function RiskEnginePanel({ cam }: { cam: typeof CAMERAS[0] }) {
   );
 }
 
-function Feed({ cam, tall }: { cam: typeof CAMERAS[0]; tall: boolean }) {
+// ── REAL VIDEO RECORDING FEED COMPONENT (NO STATIC IMAGES) ─────────────────
+function Feed({ 
+  cam, 
+  tall, 
+  isWebcamActive, 
+  webcamRef 
+}: { 
+  cam: typeof CAMERAS[0]; 
+  tall: boolean;
+  isWebcamActive?: boolean;
+  webcamRef?: React.RefObject<HTMLVideoElement | null>;
+}) {
   const [ts, setTs] = useState(new Date().toLocaleTimeString());
   useEffect(() => {
     const t = setInterval(() => setTs(new Date().toLocaleTimeString()), 1000);
@@ -162,10 +173,10 @@ function Feed({ cam, tall }: { cam: typeof CAMERAS[0]; tall: boolean }) {
 
   if (cam.status === 'OFFLINE') {
     return (
-      <div className={`bg-[#060C1A] ${tall ? 'h-56' : 'h-36'} flex flex-col items-center justify-center gap-2`}>
-        <WifiOff className="w-7 h-7 text-slate-600" />
-        <span className="text-slate-500 text-xs font-mono font-bold">FEED OFFLINE</span>
-        <span className="text-slate-600 text-[10px] font-mono">{cam.id}</span>
+      <div className={`bg-[#060C1A] ${tall ? 'h-64 sm:h-80' : 'h-44'} flex flex-col items-center justify-center gap-2 border border-slate-800`}>
+        <WifiOff className="w-8 h-8 text-rose-500 mb-1" />
+        <span className="text-slate-400 text-xs font-mono font-bold">RTSP SIGNAL LOSS / FEED OFFLINE</span>
+        <span className="text-slate-600 text-[10px] font-mono">{cam.id} • {cam.location}</span>
       </div>
     );
   }
@@ -174,43 +185,79 @@ function Feed({ cam, tall }: { cam: typeof CAMERAS[0]; tall: boolean }) {
   const barColor = cam.density > 7 ? '#DC2626' : cam.density > 5 ? '#D97706' : cam.density > 3 ? '#EAB308' : '#16A34A';
 
   return (
-    <div
-      className={`relative overflow-hidden ${tall ? 'h-56' : 'h-36'} bg-[#060C1A]`}
-      style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 21px,rgba(37,99,235,0.06) 22px),repeating-linear-gradient(90deg,transparent,transparent 21px,rgba(37,99,235,0.06) 22px)' }}
-    >
-      <div
-        className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-400/25 to-transparent animate-bounce"
-        style={{ top: '45%', animationDuration: '3.5s' }}
-      />
-      {Array.from({ length: Math.min(cam.people, 16) }).map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-2.5 h-2.5 rounded-full border border-blue-400/40 bg-blue-500/15"
-          style={{ left: `${8 + ((i * 71) % 80)}%`, top: `${10 + ((i * 53) % 70)}%` }}
+    <div className={`relative overflow-hidden ${tall ? 'h-64 sm:h-80' : 'h-44'} bg-black border border-slate-800 group`}>
+      {/* Real Video Playback - Live Camera Recording */}
+      {isWebcamActive && webcamRef ? (
+        <video
+          ref={webcamRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
         />
-      ))}
-      <div className="absolute top-2 left-2 flex items-center gap-1.5">
-        <span className="bg-black/80 text-[10px] font-mono font-bold text-white px-2 py-0.5 rounded flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          REC {cam.fps}fps
-        </span>
-        <span className="bg-black/80 text-[10px] font-mono text-blue-300 px-2 py-0.5 rounded">{cam.res}</span>
+      ) : (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          src={cam.videoUrl}
+          className="w-full h-full object-cover"
+        />
+      )}
+
+      {/* Real-time Simulated YOLO Body Detection Bounding Rectangles */}
+      <div className="absolute top-[28%] left-[34%] w-[12%] h-[34%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs pointer-events-none transition-all duration-300">
+        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[7px] font-bold px-1 rounded-2xs border border-emerald-500/60 shadow-xs flex items-center gap-0.5">
+          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Person #1 (96%)</span>
+        </div>
       </div>
-      <div className="absolute top-2 right-2">
+      
+      <div className="absolute top-[32%] left-[55%] w-[11%] h-[32%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs pointer-events-none transition-all duration-300">
+        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[7px] font-bold px-1 rounded-2xs border border-emerald-500/60 shadow-xs flex items-center gap-0.5">
+          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Person #2 (94%)</span>
+        </div>
+      </div>
+
+      {cam.risk === 'CRITICAL' && (
+        <div className="absolute top-[30%] left-[72%] w-[13%] h-[36%] border-2 border-rose-500 bg-rose-500/20 rounded-xs pointer-events-none animate-pulse">
+          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-rose-600 text-white font-mono text-[7px] font-bold px-1 rounded-2xs">
+            SURGE CRITICAL
+          </div>
+        </div>
+      )}
+
+      {/* Top HUD */}
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+        <span className="bg-black/85 text-[10px] font-mono font-bold text-white px-2 py-0.5 rounded flex items-center gap-1.5 border border-white/10 shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE CCTV'} {cam.fps} FPS
+        </span>
+        <span className="bg-black/85 text-[10px] font-mono text-blue-300 px-2 py-0.5 rounded border border-white/10">{cam.res}</span>
+      </div>
+
+      <div className="absolute top-2 right-2 z-10">
         <span
           style={{ background: RISK[cam.risk]?.bg, color: RISK[cam.risk]?.color, borderColor: RISK[cam.risk]?.border }}
-          className="text-[10px] font-bold px-1.5 py-0.5 rounded border font-mono"
+          className="text-[10px] font-bold px-2 py-0.5 rounded border font-mono shadow-xs"
         >
-          {cam.risk}
+          {RISK[cam.risk]?.emoji} {cam.risk}
         </span>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 bg-black/85 px-2.5 py-1.5">
-        <div className="flex justify-between text-[10px] font-mono mb-1">
-          <span className="text-blue-300 font-bold">{cam.people} persons detected</span>
-          <span className="text-slate-400">{ts}</span>
+
+      {/* Bottom HUD */}
+      <div className="absolute bottom-0 left-0 right-0 bg-black/85 backdrop-blur-xs px-3 py-1.5 border-t border-white/10 z-10">
+        <div className="flex justify-between items-center text-[10px] font-mono mb-1 text-white">
+          <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            🎯 {cam.people} bodies detected
+          </span>
+          <span className="text-slate-300">{ts}</span>
         </div>
-        <div className="h-1 rounded-full bg-slate-700 overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${barW}%`, background: barColor }} />
+        <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${barW}%`, background: barColor }} />
         </div>
       </div>
     </div>
@@ -223,9 +270,57 @@ export function LiveCamerasPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [filterRisk, setFilterRisk] = useState('ALL');
   const [ts, setTs] = useState(new Date().toLocaleTimeString());
+  
+  // Real device webcam stream support
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const webcamRef = useRef<HTMLVideoElement | null>(null);
+  const webcamStreamRef = useRef<MediaStream | null>(null);
+
   useEffect(() => {
     const t = setInterval(() => setTs(new Date().toLocaleTimeString()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  const handleToggleWebcam = async () => {
+    if (isWebcamActive) {
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+        webcamStreamRef.current = null;
+      }
+      setIsWebcamActive(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        webcamStreamRef.current = stream;
+        setIsWebcamActive(true);
+        setViewMode('detail');
+        setTimeout(() => {
+          if (webcamRef.current) {
+            webcamRef.current.srcObject = stream;
+          }
+        }, 100);
+      } catch (err) {
+        console.error('Failed to open webcam', err);
+        alert('Could not access device camera. Please check camera permissions in your browser.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isWebcamActive && webcamRef.current && webcamStreamRef.current) {
+      webcamRef.current.srcObject = webcamStreamRef.current;
+    }
+  }, [isWebcamActive, selectedId, viewMode]);
+
+  useEffect(() => {
+    return () => {
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
   }, []);
 
   const selected = CAMERAS.find(c => c.id === selectedId) || CAMERAS[3];
@@ -257,7 +352,7 @@ export function LiveCamerasPage() {
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded">Live Monitor</span>
             <span className="text-[11px] font-semibold text-[#059669] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />STREAMING
+              <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />REAL CAMERA RECORDING
             </span>
             {hiRisk > 0 && (
               <span className="text-[11px] font-semibold text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded border border-[#FCA5A5] flex items-center gap-1">
@@ -266,12 +361,27 @@ export function LiveCamerasPage() {
             )}
           </div>
           <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">CCTV Surveillance &amp; Crowd Monitor</h1>
-          <p className="text-xs text-[#64748B] mt-0.5 font-mono">Real-time feeds — person detection, density, movement vectors • {ts}</p>
+          <p className="text-xs text-[#64748B] mt-0.5 font-mono">Real-time CCTV recordings — continuous pedestrian movement, body tracking, density • {ts}</p>
         </div>
+        
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Webcam Live Toggle */}
+          <button
+            onClick={handleToggleWebcam}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
+              isWebcamActive
+                ? 'bg-rose-600 text-white border-rose-700 shadow-xs animate-pulse'
+                : 'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-700'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>{isWebcamActive ? '🔴 Stop Real Webcam' : '📹 Use Real Device Camera'}</span>
+          </button>
+
           <span className="text-xs font-mono text-[#64748B] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             <Wifi className="w-3.5 h-3.5 text-green-500" />{online}/{CAMERAS.length} active
           </span>
+          
           <button
             onClick={() => setViewMode(v => v === 'grid' ? 'detail' : 'grid')}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#2563EB] text-white cursor-pointer hover:bg-[#1D4ED8] transition font-mono"
@@ -280,13 +390,14 @@ export function LiveCamerasPage() {
               ? <><Maximize2 className="w-3.5 h-3.5" />Detail View</>
               : <><Grid className="w-3.5 h-3.5" />Grid View</>}
           </button>
+          
           <button
             onClick={() => {
               window.location.hash = '#/cameras';
             }}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#0F172A] text-white hover:bg-slate-800 transition cursor-pointer font-mono"
           >
-            <Grid className="w-3.5 h-3.5 text-blue-400" />
+            <Layers className="w-3.5 h-3.5 text-blue-400" />
             <span>🪟 All Angles Video Wall</span>
           </button>
         </div>
@@ -295,10 +406,10 @@ export function LiveCamerasPage() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Online Cameras', value: `${online}/${CAMERAS.length}`, sub: 'streams active',   color: '#059669', bg: '#F0FDF4' },
-          { label: 'Total Detected', value: totalDet,                       sub: 'persons in frame',  color: '#2563EB', bg: '#EFF6FF' },
-          { label: 'High Risk',      value: hiRisk,                          sub: 'cameras flagged',  color: '#DC2626', bg: '#FEF2F2' },
-          { label: 'Avg Density',    value: `${avgD}/m²`,                   sub: 'venue average',    color: '#D97706', bg: '#FFFBEB' },
+          { label: 'Online Cameras', value: `${online}/${CAMERAS.length}`, sub: 'recordings streaming', color: '#059669', bg: '#F0FDF4' },
+          { label: 'Total Detected', value: totalDet,                       sub: 'persons in frame',    color: '#2563EB', bg: '#EFF6FF' },
+          { label: 'High Risk',      value: hiRisk,                          sub: 'cameras flagged',    color: '#DC2626', bg: '#FEF2F2' },
+          { label: 'Avg Density',    value: `${avgD}/m²`,                   sub: 'venue average',      color: '#D97706', bg: '#FFFBEB' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 shadow-xs">
             <div className="text-[10px] font-semibold uppercase tracking-wide text-[#64748B] mb-1">{s.label}</div>
@@ -311,21 +422,33 @@ export function LiveCamerasPage() {
       {/* ── Risk Engine Panel ── always visible, tracks selected or highest-risk camera ── */}
       <RiskEnginePanel cam={viewMode === 'detail' ? selected : (CAMERAS.filter(c => c.status === 'ONLINE').sort((a,b) => b.re.score - a.re.score)[0] || CAMERAS[7])} />
 
-      {/* ── Detail View ── */}
+      {/* ── Detail View with Real Camera Recording ── */}
       {viewMode === 'detail' && (
         <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden">
           <div className="bg-[#060C1A] px-4 py-2.5 flex items-center gap-3 border-b border-slate-800">
             <span className="text-[11px] font-mono font-bold text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">{selected.id}</span>
             <span className="text-white text-sm font-bold">{selected.name}</span>
             <span className="text-slate-400 text-[11px] font-mono truncate">{selected.location}</span>
-            <div className="ml-auto shrink-0">
+            <div className="ml-auto shrink-0 flex items-center gap-2">
+              {isWebcamActive && (
+                <span className="text-[10px] font-mono font-bold bg-rose-600/30 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded animate-pulse">
+                  ● DEVICE WEBCAM ACTIVE
+                </span>
+              )}
               {selected.status === 'ONLINE'
-                ? <span className="text-[11px] text-green-400 font-mono flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />LIVE</span>
+                ? <span className="text-[11px] text-green-400 font-mono flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />REAL VIDEO LIVE</span>
                 : <span className="text-[11px] text-red-400 font-mono">OFFLINE</span>}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3">
-            <div className="lg:col-span-2"><Feed cam={selected} tall={true} /></div>
+            <div className="lg:col-span-2">
+              <Feed 
+                cam={selected} 
+                tall={true} 
+                isWebcamActive={isWebcamActive} 
+                webcamRef={webcamRef} 
+              />
+            </div>
             <div className="border-t lg:border-t-0 lg:border-l border-[#E2E8F0] p-5 overflow-y-auto" style={{ maxHeight: 370 }}>
               <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] mb-3">Live Telemetry</h3>
               {tele.map((row, i) => (
@@ -351,69 +474,48 @@ export function LiveCamerasPage() {
         </div>
       )}
 
-      {/* ── Grid View ── */}
+      {/* ── Grid View with Real Camera Recordings ── */}
       {viewMode === 'grid' && (
         <>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-[#64748B]">Filter by risk:</span>
             {['ALL', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL'].map(r => (
               <button key={r} onClick={() => setFilterRisk(r)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer
-                  ${filterRisk === r ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'}`}>
-                {r === 'ALL' ? 'All Cameras' : `${RISK[r]?.emoji || ''} ${r}`}
+                className={`text-xs font-semibold px-2.5 py-1 rounded-md transition cursor-pointer
+                  ${filterRisk === r ? 'bg-[#2563EB] text-white' : 'bg-white border border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC]'}`}>
+                {r}
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {filtered.map(cam => {
-              const cfg = RISK[cam.risk] || RISK.LOW;
-              const isSel = selectedId === cam.id;
-              return (
-                <div key={cam.id}
-                  onClick={() => { if (cam.status === 'ONLINE') { setSelectedId(cam.id); setViewMode('detail'); } }}
-                  className={`bg-white rounded-xl border overflow-hidden transition-all duration-150
-                    ${cam.status === 'ONLINE' ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-60'}
-                    ${isSel ? 'border-[#2563EB] ring-2 ring-[#2563EB]/20 shadow-md' : 'border-[#E2E8F0] hover:border-[#CBD5E1]'}`}>
-                  <Feed cam={cam} tall={false} />
-                  <div className="p-3.5">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <div>
-                        <div className="text-xs font-bold font-mono text-[#2563EB]">{cam.id}</div>
-                        <h4 className="text-sm font-bold text-[#0F172A]">{cam.name}</h4>
-                      </div>
-                      {cam.status === 'ONLINE'
-                        ? <span className="text-[10px] font-bold text-[#059669] bg-[#F0FDF4] px-2 py-0.5 rounded-full border border-[#BBF7D0] flex items-center gap-1 mt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />ONLINE
-                          </span>
-                        : <span className="text-[10px] font-bold text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded-full border border-[#FCA5A5] mt-0.5">OFFLINE</span>}
-                    </div>
-                    <p className="text-[10px] text-[#64748B] font-mono mb-2.5 truncate">{cam.location}</p>
-                    <div className="grid grid-cols-2 gap-1.5 mb-2.5">
-                      {[
-                        { label: 'People',  val: `${cam.people}`,     hi: cam.people > 70 },
-                        { label: 'Density', val: `${cam.density}/m²`, hi: cam.density > 6 },
-                        { label: 'FPS',     val: `${cam.fps}`,        hi: false },
-                        { label: 'Zone',    val: cam.zone,            hi: false },
-                      ].map((m, i) => (
-                        <div key={i} className="bg-[#F8FAFC] rounded-lg p-2">
-                          <div className="text-[9px] text-[#94A3B8] uppercase tracking-wide">{m.label}</div>
-                          <div className={`text-xs font-bold font-mono mt-0.5 truncate ${m.hi ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{m.val}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Compass className="w-3 h-3 text-[#64748B] shrink-0" />
-                      <span className="text-[10px] font-mono text-[#64748B] truncate">{cam.direction}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-[#F1F5F9]">
-                      <span style={{ color: cfg.color, background: cfg.bg, borderColor: cfg.border }}
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono">{cfg.emoji} {cam.risk}</span>
-                      <span className="text-[10px] font-mono text-[#94A3B8]">{ts}</span>
-                    </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {filtered.map(cam => (
+              <div key={cam.id}
+                onClick={() => { setSelectedId(cam.id); setViewMode('detail'); }}
+                className={`bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden cursor-pointer hover:border-[#2563EB] transition
+                  ${cam.id === selectedId ? 'ring-2 ring-[#2563EB]' : ''}`}>
+                <div className="p-3 bg-[#0B1120] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded">{cam.id}</span>
+                    <span className="text-xs font-bold text-white truncate max-w-[120px]">{cam.name}</span>
                   </div>
+                  <span
+                    style={{ background: RISK[cam.risk]?.bg, color: RISK[cam.risk]?.color, borderColor: RISK[cam.risk]?.border }}
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded border font-mono"
+                  >
+                    {cam.risk}
+                  </span>
                 </div>
-              );
-            })}
+                
+                {/* Real Video Feed in Grid */}
+                <Feed cam={cam} tall={false} />
+                
+                <div className="p-2.5 bg-white text-[10px] font-mono text-[#64748B] flex items-center justify-between border-t border-[#E2E8F0]">
+                  <span>{cam.zone} • {cam.fps} FPS</span>
+                  <span className="text-[#2563EB] font-bold">Inspect Stream →</span>
+                </div>
+              </div>
+            ))}
           </div>
         </>
       )}
