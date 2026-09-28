@@ -9,6 +9,7 @@
         "dev:backend": ".\\.venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000",
         "backend": ".\\.venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000",
         "build": "vite build",
+        "deploy": "vite build && node scripts/deploy-gh-pages.mjs",
         "lint": "oxlint",
         "preview": "vite preview"
     },
