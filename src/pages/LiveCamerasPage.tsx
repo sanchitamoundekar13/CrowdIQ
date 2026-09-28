@@ -274,11 +274,20 @@ export function LiveCamerasPage() {
           </span>
           <button
             onClick={() => setViewMode(v => v === 'grid' ? 'detail' : 'grid')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#2563EB] text-white cursor-pointer hover:bg-[#1D4ED8] transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#2563EB] text-white cursor-pointer hover:bg-[#1D4ED8] transition font-mono"
           >
             {viewMode === 'grid'
               ? <><Maximize2 className="w-3.5 h-3.5" />Detail View</>
               : <><Grid className="w-3.5 h-3.5" />Grid View</>}
+          </button>
+          <button
+            onClick={() => {
+              window.location.hash = '#/cameras';
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#0F172A] text-white hover:bg-slate-800 transition cursor-pointer font-mono"
+          >
+            <Grid className="w-3.5 h-3.5 text-blue-400" />
+            <span>🪟 All Angles Video Wall</span>
           </button>
         </div>
       </div>
