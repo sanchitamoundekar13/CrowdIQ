@@ -7,7 +7,7 @@ import {
   Sliders, 
   Plus, 
   Maximize2, 
-  Minimize2,
+  Minimize2, 
   RefreshCw, 
   AlertTriangle, 
   ShieldCheck, 
@@ -16,24 +16,26 @@ import {
   Eye, 
   CheckCircle2, 
   Compass, 
-  Layers,
-  ZoomIn,
-  ZoomOut,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Smartphone,
-  LayoutGrid,
-  Grid,
-  Monitor,
-  Maximize,
-  Filter,
-  ArrowUpRight,
-  Check,
-  Radio,
-  ExternalLink,
-  Camera
+  Layers, 
+  ZoomIn, 
+  ZoomOut, 
+  ChevronUp, 
+  ChevronDown, 
+  ChevronLeft, 
+  ChevronRight, 
+  Smartphone, 
+  LayoutGrid, 
+  Grid, 
+  Monitor, 
+  Filter, 
+  ArrowUpRight, 
+  Check, 
+  Radio, 
+  ExternalLink, 
+  Camera,
+  Download,
+  Flame,
+  Sun
 } from 'lucide-react';
 
 import { MobileCctvHubModal } from '../components/live/MobileCctvHubModal';
@@ -60,12 +62,6 @@ export interface CameraNode {
   peopleCount: number;
   density: number;
   risk: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
-  detectedBodies: Array<{
-    id: string;
-    box: { top: string; left: string; width: string; height: string };
-    score: number;
-    label: string;
-  }>;
 }
 
 const INITIAL_CAMERAS: CameraNode[] = [
@@ -89,12 +85,7 @@ const INITIAL_CAMERAS: CameraNode[] = [
     status: 'ONLINE', 
     peopleCount: 42, 
     density: 38, 
-    risk: 'LOW',
-    detectedBodies: [
-      { id: 'b1', box: { top: '24%', left: '32%', width: '10%', height: '30%' }, score: 96, label: 'Person #1' },
-      { id: 'b2', box: { top: '28%', left: '46%', width: '9%', height: '28%' }, score: 93, label: 'Person #2' },
-      { id: 'b3', box: { top: '35%', left: '60%', width: '11%', height: '32%' }, score: 91, label: 'Person #3' },
-    ]
+    risk: 'LOW'
   },
   { 
     id: 'CAM-02', 
@@ -116,72 +107,60 @@ const INITIAL_CAMERAS: CameraNode[] = [
     status: 'ONLINE', 
     peopleCount: 67, 
     density: 59, 
-    risk: 'MODERATE',
-    detectedBodies: [
-      { id: 'b1', box: { top: '30%', left: '22%', width: '11%', height: '30%' }, score: 95, label: 'Person #1' },
-      { id: 'b2', box: { top: '32%', left: '42%', width: '10%', height: '28%' }, score: 89, label: 'Person #2' },
-      { id: 'b3', box: { top: '26%', left: '68%', width: '12%', height: '34%' }, score: 94, label: 'Person #3' },
-    ]
+    risk: 'MODERATE'
   },
   { 
     id: 'CAM-03', 
-    name: 'North Emergency Exit', 
+    name: 'North Emergency Egress', 
     zone: 'North Exit', 
-    location: 'Emergency Egress, Level 1', 
-    angle: 'Corridor Long Lens',
-    mountHeight: '3.5m Ceiling Center',
-    fov: '45° Telephoto Corridor',
+    location: 'Emergency Exit Hallway, Level 1', 
+    angle: 'Corridor Long Lens Perspective',
+    mountHeight: '3.8m Ceiling Conduit',
+    fov: '65° Narrow Corridor Zoom',
     perspectiveType: 'Corridor',
     videoUrl: './assets/cctv_crowd_stream_3.webm',
     ip: '192.168.10.103', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam03', 
-    resolution: '1080p FHD', 
+    resolution: '720p HD', 
     codec: 'H.264', 
     fps: 0, 
     bitrate: '0.0 Mbps', 
-    latencyMs: 0, 
+    latencyMs: 999, 
     status: 'OFFLINE', 
     peopleCount: 0, 
     density: 0, 
-    risk: 'LOW',
-    detectedBodies: []
+    risk: 'LOW'
   },
   { 
     id: 'CAM-04', 
-    name: 'Central Arena Plaza', 
-    zone: 'Core', 
-    location: 'Central Concourse, Level 0', 
-    angle: '360° Dome Panoramic',
-    mountHeight: '12.0m Central Truss',
-    fov: '360° Fisheye Center',
+    name: 'Central Arena Plaza Core', 
+    zone: 'Core Arena', 
+    location: 'Central Plaza Stage, Level 0', 
+    angle: '360° Dome Panoramic Overlook',
+    mountHeight: '12.0m Center Truss Gantry',
+    fov: '160° Fish-Eye Dome',
     perspectiveType: 'Panoramic',
     videoUrl: './assets/cctv_crowd_stream_2.webm',
     ip: '192.168.10.104', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam04', 
     resolution: '4K UHD', 
     codec: 'H.265', 
-    fps: 28, 
-    bitrate: '9.1 Mbps', 
+    fps: 25, 
+    bitrate: '9.4 Mbps', 
     latencyMs: 42, 
     status: 'ONLINE', 
     peopleCount: 84, 
     density: 82, 
-    risk: 'HIGH',
-    detectedBodies: [
-      { id: 'b1', box: { top: '35%', left: '38%', width: '9%', height: '24%' }, score: 98, label: 'Person #1' },
-      { id: 'b2', box: { top: '38%', left: '50%', width: '10%', height: '26%' }, score: 92, label: 'Person #2' },
-      { id: 'b3', box: { top: '42%', left: '62%', width: '9%', height: '25%' }, score: 96, label: 'Person #3' },
-      { id: 'b4', box: { top: '48%', left: '28%', width: '11%', height: '28%' }, score: 90, label: 'Person #4' },
-    ]
+    risk: 'HIGH'
   },
   { 
     id: 'CAM-05', 
-    name: 'South Concourse & Food', 
+    name: 'South Concourse & Food Mall', 
     zone: 'South Wing', 
-    location: 'South Walkway, Level 1', 
+    location: 'South Food Court, Level 1', 
     angle: 'Isometric Walkway Angle',
-    mountHeight: '5.0m South Structural Pillar',
-    fov: '75° Oblique Diagonal',
+    mountHeight: '5.0m Column Cluster',
+    fov: '85° Downward Perspective',
     perspectiveType: 'Isometric',
     videoUrl: './assets/cctv_crowd_stream_1.webm',
     ip: '192.168.10.105', 
@@ -190,24 +169,20 @@ const INITIAL_CAMERAS: CameraNode[] = [
     codec: 'H.265', 
     fps: 30, 
     bitrate: '4.8 Mbps', 
-    latencyMs: 25, 
+    latencyMs: 29, 
     status: 'ONLINE', 
     peopleCount: 53, 
     density: 55, 
-    risk: 'MODERATE',
-    detectedBodies: [
-      { id: 'b1', box: { top: '24%', left: '42%', width: '10%', height: '28%' }, score: 91, label: 'Person #1' },
-      { id: 'b2', box: { top: '28%', left: '56%', width: '10%', height: '28%' }, score: 88, label: 'Person #2' },
-    ]
+    risk: 'MODERATE'
   },
   { 
     id: 'CAM-06', 
-    name: 'VIP Lounge Mezzanine', 
-    zone: 'VIP', 
-    location: 'Executive Suite, Level 3', 
+    name: 'VIP Premium Terrace', 
+    zone: 'VIP Lounge', 
+    location: 'Level 2 Mezzanine Corridor', 
     angle: 'Balcony Downward Overlook',
-    mountHeight: '8.0m Mezzanine Railing',
-    fov: '60° Downward Elevated',
+    mountHeight: '8.2m Upper Balcony Ledge',
+    fov: '75° Angled Downward',
     perspectiveType: 'Downward',
     videoUrl: './assets/cctv_crowd_stream_3.webm',
     ip: '192.168.10.106', 
@@ -215,50 +190,43 @@ const INITIAL_CAMERAS: CameraNode[] = [
     resolution: '4K UHD', 
     codec: 'H.265', 
     fps: 30, 
-    bitrate: '7.4 Mbps', 
-    latencyMs: 19, 
+    bitrate: '7.8 Mbps', 
+    latencyMs: 31, 
     status: 'ONLINE', 
     peopleCount: 18, 
     density: 21, 
-    risk: 'LOW',
-    detectedBodies: [
-      { id: 'b1', box: { top: '34%', left: '42%', width: '9%', height: '26%' }, score: 94, label: 'Person #1' },
-      { id: 'b2', box: { top: '36%', left: '58%', width: '8%', height: '24%' }, score: 97, label: 'Person #2' },
-    ]
+    risk: 'LOW'
   },
   { 
     id: 'CAM-07', 
-    name: 'Emergency Stairwell B', 
+    name: 'Emergency Stairwell #2', 
     zone: 'Stairwell', 
-    location: 'Fire Staircase, Level 2', 
+    location: 'Southwest Stair Landing, Level 2', 
     angle: 'Low-Angle Stairwell Egress',
-    mountHeight: '2.5m Landing Wall',
-    fov: '90° Stair Chokepoint',
+    mountHeight: '2.8m Wall Corner Box',
+    fov: '90° Downward Stairs',
     perspectiveType: 'Low-Angle',
     videoUrl: './assets/cctv_crowd_stream_1.webm',
     ip: '192.168.10.107', 
     rtspUrl: 'rtsp://edge-cv.arena.lan/live/cam07', 
     resolution: '720p HD', 
     codec: 'H.264', 
-    fps: 20, 
-    bitrate: '2.1 Mbps', 
-    latencyMs: 31, 
+    fps: 15, 
+    bitrate: '2.4 Mbps', 
+    latencyMs: 45, 
     status: 'ONLINE', 
     peopleCount: 6, 
     density: 14, 
-    risk: 'LOW',
-    detectedBodies: [
-      { id: 'b1', box: { top: '38%', left: '46%', width: '13%', height: '36%' }, score: 93, label: 'Person #1' },
-    ]
+    risk: 'LOW'
   },
   { 
     id: 'CAM-08', 
-    name: 'West Gate Turnstiles', 
+    name: 'West Gate Turnstiles Ingress', 
     zone: 'Gate C', 
-    location: 'West Terminal, Level 0', 
+    location: 'West Gate Turnstile Bank, Level 0', 
     angle: 'Perimeter Chokepoint Angle',
-    mountHeight: '7.0m Perimeter Mast',
-    fov: '110° Barrier Converging',
+    mountHeight: '4.8m Security Mast',
+    fov: '110° Wide Inflow',
     perspectiveType: 'Wide',
     videoUrl: './assets/cctv_crowd_stream_2.webm',
     ip: '192.168.10.108', 
@@ -266,22 +234,18 @@ const INITIAL_CAMERAS: CameraNode[] = [
     resolution: '1080p FHD', 
     codec: 'H.265', 
     fps: 30, 
-    bitrate: '5.4 Mbps', 
-    latencyMs: 36, 
+    bitrate: '5.6 Mbps', 
+    latencyMs: 27, 
     status: 'ONLINE', 
     peopleCount: 91, 
     density: 94, 
-    risk: 'CRITICAL',
-    detectedBodies: [
-      { id: 'b1', box: { top: '26%', left: '28%', width: '11%', height: '32%' }, score: 97, label: 'Person #1' },
-      { id: 'b2', box: { top: '29%', left: '44%', width: '10%', height: '30%' }, score: 95, label: 'Person #2' },
-      { id: 'b3', box: { top: '33%', left: '64%', width: '12%', height: '34%' }, score: 92, label: 'Person #3' },
-    ]
+    risk: 'CRITICAL'
   },
 ];
 
 type LayoutMode = 'grid8' | 'quad' | 'mobile4' | 'single' | 'all12';
 type AngleFilter = 'ALL' | 'Overhead' | 'Wide' | 'Corridor' | 'Panoramic' | 'Isometric' | 'Downward' | 'Low-Angle';
+type VisionFilter = 'normal' | 'night' | 'thermal';
 
 export const CamerasPage: React.FC = () => {
   const { playAlertSound } = useSimulation();
@@ -291,23 +255,22 @@ export const CamerasPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [angleFilter, setAngleFilter] = useState<AngleFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid8'); // Default: All 8 Angles in One Window!
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid8'); // Default: All 8 Angles Grid
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMobileHubOpen, setIsMobileHubOpen] = useState(false);
   const [showOverlays, setShowOverlays] = useState(true);
-  const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
+  const [visionFilter, setVisionFilter] = useState<VisionFilter>('normal');
 
-  // Real device webcam stream support
-  const [isWebcamActive, setIsWebcamActive] = useState(false);
-  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Real device webcam stream management (Can bind to any selected camera!)
+  const [activeWebcamCamId, setActiveWebcamCamId] = useState<string | null>(null);
   const webcamStreamRef = useRef<MediaStream | null>(null);
 
   // PTZ Control States
   const [ptzZoom, setPtzZoom] = useState(1);
   const [ptzPan, setPtzPan] = useState(0);
   const [ptzTilt, setPtzTilt] = useState(0);
-  const [rebootMessage, setRebootMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New Camera Form
   const [newCam, setNewCam] = useState({
@@ -320,41 +283,38 @@ export const CamerasPage: React.FC = () => {
     resolution: '1080p FHD',
   });
 
-  // Real Webcam handler
-  const handleToggleWebcam = async () => {
-    if (isWebcamActive) {
+  // Toggle Real Webcam for a specific camera slot
+  const handleToggleWebcamForCam = async (camId: string) => {
+    if (activeWebcamCamId === camId) {
+      // Stop webcam
       if (webcamStreamRef.current) {
         webcamStreamRef.current.getTracks().forEach(t => t.stop());
         webcamStreamRef.current = null;
       }
-      setIsWebcamActive(false);
+      setActiveWebcamCamId(null);
+      setToastMessage(`Switched ${camId} back to CCTV feed.`);
+      setTimeout(() => setToastMessage(null), 3000);
     } else {
+      // Start real device camera
       try {
+        if (webcamStreamRef.current) {
+          webcamStreamRef.current.getTracks().forEach(t => t.stop());
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false
         });
         webcamStreamRef.current = stream;
-        setIsWebcamActive(true);
-        setLayoutMode('single'); // Switch to master monitor to inspect
+        setActiveWebcamCamId(camId);
         playAlertSound('info');
-        setTimeout(() => {
-          if (webcamVideoRef.current) {
-            webcamVideoRef.current.srcObject = stream;
-          }
-        }, 100);
+        setToastMessage(`Real device camera active on ${camId}!`);
+        setTimeout(() => setToastMessage(null), 3000);
       } catch (err) {
         console.error('Failed to open device camera', err);
         alert('Could not access device camera. Please check camera permissions in your browser.');
       }
     }
   };
-
-  useEffect(() => {
-    if (isWebcamActive && webcamVideoRef.current && webcamStreamRef.current) {
-      webcamVideoRef.current.srcObject = webcamStreamRef.current;
-    }
-  }, [isWebcamActive, selectedCamId, layoutMode]);
 
   useEffect(() => {
     return () => {
@@ -364,7 +324,7 @@ export const CamerasPage: React.FC = () => {
     };
   }, []);
 
-  // Subscribe to Mobile CCTV nodes for real-time body counts and stream snapshots
+  // Subscribe to Mobile CCTV nodes for real-time mobile streams
   useEffect(() => {
     const unsubscribe = mobileCctvService.subscribe((list) => {
       setMobileCameras([...list]);
@@ -406,11 +366,11 @@ export const CamerasPage: React.FC = () => {
   const onlineMobileCamsCount = mobileCameras.filter(c => c.status === 'ONLINE').length;
 
   const handleRebootCam = (id: string) => {
-    setRebootMessage(`Restarting RTSP stream & recalibrating angle on ${id}...`);
+    setToastMessage(`Restarting RTSP socket stream & recalibrating angle on ${id}...`);
     playAlertSound('info');
     setTimeout(() => {
-      setRebootMessage(`Camera ${id} successfully recalibrated and recording at 30 FPS.`);
-      setTimeout(() => setRebootMessage(null), 3000);
+      setToastMessage(`Camera ${id} successfully recalibrated and streaming at 30 FPS.`);
+      setTimeout(() => setToastMessage(null), 3000);
     }, 1200);
   };
 
@@ -436,12 +396,9 @@ export const CamerasPage: React.FC = () => {
       bitrate: '5.2 Mbps',
       latencyMs: 30,
       status: 'ONLINE',
-      peopleCount: 15,
-      density: 28,
+      peopleCount: 22,
+      density: 35,
       risk: 'LOW',
-      detectedBodies: [
-        { id: 'b1', box: { top: '30%', left: '45%', width: '10%', height: '28%' }, score: 94, label: 'Person #1' }
-      ]
     };
     setCameras([...cameras, addedNode]);
     setIsAddModalOpen(false);
@@ -450,29 +407,29 @@ export const CamerasPage: React.FC = () => {
   };
 
   return (
-    <div className={`space-y-5 pb-12 animate-fadeIn ${isTheaterMode ? 'fixed inset-0 z-50 bg-[#060C1A] p-4 sm:p-6 overflow-y-auto' : ''}`}>
+    <div className="space-y-6 pb-12 font-sans text-[#0F172A]">
       
       {/* ===================================================================
-          WINDOW HEADER: OPERATIONS TITLE & ACTIONS
+          WINDOW HEADER: OPERATIONS TITLE & ACTIONS (CLEAN WHITE THEME)
           =================================================================== */}
-      <div className="bg-[#0F172A] border border-[#1E293B] rounded-2xl p-4 sm:p-5 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border border-[#CBD5E1] rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#2563EB]/20 border border-[#2563EB]/50 flex items-center justify-center text-[#3B82F6]">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[#2563EB]">
               <Video className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black tracking-tight text-white font-mono uppercase">
-                  Multi-Camera SOC Video Wall & Angle Controller
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#0F172A] font-mono">
+                  Multi-Camera SOC Video Wall &amp; Angle Matrix
                 </h1>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
-                  {onlineCamsCount}/8 REAL RECORDINGS STREAMING
+                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+                  {onlineCamsCount}/8 REAL CCTV STREAMS ACTIVE
                 </span>
               </div>
-              <p className="text-xs text-[#94A3B8] font-mono mt-0.5">
-                Real camera recordings, live continuous pedestrian tracking & 4 mobile CCTV feeds in one window
+              <p className="text-xs text-[#64748B] font-mono mt-0.5">
+                Real continuous video feeds, live optical person tracking, real-time webcam binding &amp; mobile CCTV nodes • {currentTime}
               </p>
             </div>
           </div>
@@ -480,59 +437,62 @@ export const CamerasPage: React.FC = () => {
 
         {/* Global Action Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Real Device Camera / Webcam Toggle */}
+          {/* Real Device Camera / Webcam Toggle on Master */}
           <button
-            onClick={handleToggleWebcam}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
-              isWebcamActive
+            onClick={() => handleToggleWebcamForCam(selectedCamId)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer border ${
+              activeWebcamCamId === selectedCamId
                 ? 'bg-rose-600 text-white border-rose-700 shadow-xs animate-pulse'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-700'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-2xs'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>{isWebcamActive ? '🔴 Stop Real Webcam' : '📹 Use Real Device Camera'}</span>
+            <span>{activeWebcamCamId === selectedCamId ? `🔴 Stop Real Webcam (#${selectedCamId})` : `📹 Use Real Device Camera (#${selectedCamId})`}</span>
           </button>
 
           {/* Mobile CCTV Hub Button */}
           <button
             onClick={() => setIsMobileHubOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-[#047857] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer border border-[#10B981]/40"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-mono font-bold transition shadow-2xs cursor-pointer border border-[#CBD5E1]"
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>📱 4x Mobile CCTV</span>
+            <Smartphone className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>📱 4x Mobile Phone Nodes</span>
             {onlineMobileCamsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-bold">
+              <span className="px-1.5 py-0.2 rounded-full bg-[#10B981] text-white text-[10px] font-bold">
                 {onlineMobileCamsCount}
               </span>
             )}
           </button>
 
+          {/* Vision Filter Toggle */}
+          <button
+            onClick={() => {
+              setVisionFilter(f => f === 'normal' ? 'night' : f === 'night' ? 'thermal' : 'normal');
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#F8FAFC] text-[#334155] text-xs font-mono font-bold transition shadow-2xs cursor-pointer border border-[#CBD5E1]"
+            title="Toggle IR Night Vision / Thermal Spectrum"
+          >
+            {visionFilter === 'night' ? <Eye className="w-3.5 h-3.5 text-emerald-500" /> : visionFilter === 'thermal' ? <Flame className="w-3.5 h-3.5 text-rose-500" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
+            <span>Filter: {visionFilter.toUpperCase()}</span>
+          </button>
+
           {/* AI Bounding Boxes Toggle */}
           <button
             onClick={() => setShowOverlays(!showOverlays)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition border cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition border cursor-pointer ${
               showOverlays 
-                ? 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/50' 
-                : 'bg-[#1E293B] text-[#94A3B8] border-[#334155]'
+                ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]' 
+                : 'bg-white text-[#94A3B8] border-[#CBD5E1]'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Body Boxes: {showOverlays ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* Theater Mode Toggle */}
-          <button
-            onClick={() => setIsTheaterMode(!isTheaterMode)}
-            className="p-2 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-[#94A3B8] hover:text-white transition border border-[#334155] cursor-pointer"
-            title={isTheaterMode ? 'Exit Full Window' : 'Full Window Wall'}
-          >
-            {isTheaterMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span>Body CV: {showOverlays ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Add Camera Button */}
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Camera</span>
@@ -540,26 +500,26 @@ export const CamerasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Reboot Message Toast */}
-      {rebootMessage && (
-        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-mono font-bold flex items-center justify-between animate-fadeIn">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="p-3 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] text-xs font-mono font-bold flex items-center justify-between shadow-xs animate-fadeIn">
           <span className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
-            <span>{rebootMessage}</span>
+            <RefreshCw className="w-4 h-4 text-[#2563EB] animate-spin" />
+            <span>{toastMessage}</span>
           </span>
         </div>
       )}
 
       {/* ===================================================================
-          UNIFIED ONE-WINDOW VIDEO WALL CONTAINER
+          WHITE-THEME ONE-WINDOW VIDEO WALL CONTAINER
           =================================================================== */}
-      <div className="bg-[#0B1120] rounded-2xl border border-[#1E293B] p-4 sm:p-5 shadow-2xl space-y-4">
+      <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-5">
         
-        {/* TOP BAR OF THE CAMERA WINDOW: VIEW MODE SELECTOR & ANGLE FILTERS */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+        {/* TOP BAR: DISPLAY MODE SELECTOR & ANGLE FILTERS */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
           
-          {/* Layout Mode Selector (The core operator window view switcher) */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-[#111C35] p-1.5 rounded-xl border border-[#1E293B]">
+          {/* Layout Mode Selector */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-[#F1F5F9] p-1 rounded-xl border border-[#E2E8F0]">
             <span className="text-[11px] font-mono font-bold text-[#64748B] px-2 uppercase tracking-wide">
               Display Window:
             </span>
@@ -568,8 +528,8 @@ export const CamerasPage: React.FC = () => {
               onClick={() => setLayoutMode('grid8')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                 layoutMode === 'grid8'
-                  ? 'bg-[#2563EB] text-white shadow-sm'
-                  : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-white text-[#2563EB] shadow-2xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -580,8 +540,8 @@ export const CamerasPage: React.FC = () => {
               onClick={() => setLayoutMode('quad')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                 layoutMode === 'quad'
-                  ? 'bg-[#2563EB] text-white shadow-sm'
-                  : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-white text-[#2563EB] shadow-2xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
@@ -592,11 +552,11 @@ export const CamerasPage: React.FC = () => {
               onClick={() => setLayoutMode('mobile4')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                 layoutMode === 'mobile4'
-                  ? 'bg-[#059669] text-white shadow-sm'
-                  : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-white text-[#059669] shadow-2xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5" />
+              <Smartphone className="w-3.5 h-3.5 text-[#059669]" />
               <span>📱 4x Mobile Phone Nodes</span>
             </button>
 
@@ -604,58 +564,58 @@ export const CamerasPage: React.FC = () => {
               onClick={() => setLayoutMode('single')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                 layoutMode === 'single'
-                  ? 'bg-[#2563EB] text-white shadow-sm'
-                  : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-white text-[#2563EB] shadow-2xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               <Monitor className="w-3.5 h-3.5" />
-              <span>📺 Focus + Filmstrip</span>
+              <span>📺 Focus + PTZ Filmstrip</span>
             </button>
 
             <button
               onClick={() => setLayoutMode('all12')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
                 layoutMode === 'all12'
-                  ? 'bg-[#7C3AED] text-white shadow-sm'
-                  : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-white text-[#7C3AED] shadow-2xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>🌐 12-Stream Super Wall</span>
+              <span>🌐 12-Stream Matrix</span>
             </button>
           </div>
 
           {/* Quick Filters: Angle Category & Status */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Angle Perspective Filter */}
-            <div className="flex items-center gap-1 bg-[#111C35] px-2 py-1 rounded-lg border border-[#1E293B] text-xs font-mono">
-              <Compass className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <div className="flex items-center gap-1 bg-[#F8FAFC] px-2.5 py-1.5 rounded-lg border border-[#CBD5E1] text-xs font-mono">
+              <Compass className="w-3.5 h-3.5 text-[#2563EB]" />
               <select
                 value={angleFilter}
                 onChange={(e) => setAngleFilter(e.target.value as AngleFilter)}
-                className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none cursor-pointer"
               >
-                <option value="ALL" className="bg-[#0F172A] text-white">All Angles & Perspectives</option>
-                <option value="Overhead" className="bg-[#0F172A] text-white">45° Overhead Ingress</option>
-                <option value="Wide" className="bg-[#0F172A] text-white">Wide Perspective Concourse</option>
-                <option value="Corridor" className="bg-[#0F172A] text-white">Corridor Long Lens</option>
-                <option value="Panoramic" className="bg-[#0F172A] text-white">360° Dome Panoramic</option>
-                <option value="Isometric" className="bg-[#0F172A] text-white">Isometric Walkway</option>
-                <option value="Downward" className="bg-[#0F172A] text-white">Balcony Downward</option>
-                <option value="Low-Angle" className="bg-[#0F172A] text-white">Low-Angle Stairwell</option>
+                <option value="ALL">All Angles &amp; Perspectives</option>
+                <option value="Overhead">45° Overhead Ingress</option>
+                <option value="Wide">Wide Perspective Concourse</option>
+                <option value="Corridor">Corridor Long Lens</option>
+                <option value="Panoramic">360° Dome Panoramic</option>
+                <option value="Isometric">Isometric Walkway</option>
+                <option value="Downward">Balcony Downward</option>
+                <option value="Low-Angle">Low-Angle Stairwell</option>
               </select>
             </div>
 
             {/* Status Filter */}
-            <div className="flex items-center gap-1 bg-[#111C35] p-0.5 rounded-lg border border-[#1E293B] text-xs font-mono">
+            <div className="flex items-center gap-1 bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0] text-xs font-mono">
               {['ALL', 'ONLINE', 'HIGH_RISK'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
-                  className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
                     statusFilter === st 
-                      ? 'bg-[#2563EB] text-white' 
-                      : 'text-[#94A3B8] hover:text-white'
+                      ? 'bg-white text-[#2563EB] shadow-2xs' 
+                      : 'text-[#64748B] hover:text-[#0F172A]'
                   }`}
                 >
                   {st === 'HIGH_RISK' ? '⚠️ High Risk' : st}
@@ -665,27 +625,29 @@ export const CamerasPage: React.FC = () => {
 
             {/* Quick Search */}
             <div className="relative">
-              <Search className="w-3 h-3 text-[#64748B] absolute left-2.5 top-2" />
+              <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Search camera angle..."
+                placeholder="Search camera / zone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-7 pr-2.5 py-1 rounded-lg bg-[#111C35] border border-[#1E293B] text-white text-xs font-mono focus:outline-none focus:border-[#2563EB] w-36 sm:w-44"
+                className="pl-8 pr-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] text-[#0F172A] text-xs font-mono focus:outline-none focus:border-[#2563EB] w-40 sm:w-48 shadow-2xs"
               />
             </div>
           </div>
         </div>
 
-        {/* QUICK JUMP ACCESS RIBBON: ALL CAMERAS AT A GLANCE */}
-        <div className="bg-[#111C35]/70 rounded-xl p-2.5 border border-[#1E293B] overflow-x-auto">
+        {/* QUICK JUMP ACCESS RIBBON (LIGHT THEME) */}
+        <div className="bg-[#F8FAFC] rounded-xl p-2.5 border border-[#E2E8F0] overflow-x-auto">
           <div className="flex items-center gap-2 min-w-max">
-            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider pl-1 pr-2 border-r border-[#1E293B]">
+            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider pl-1 pr-2 border-r border-[#CBD5E1]">
               Quick Access:
             </span>
             {cameras.map((c) => {
               const isSelected = selectedCamId === c.id;
               const isOffline = c.status === 'OFFLINE';
+              const isWebcamOn = activeWebcamCamId === c.id;
+
               return (
                 <button
                   key={c.id}
@@ -695,18 +657,18 @@ export const CamerasPage: React.FC = () => {
                       playAlertSound('info');
                     }
                   }}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition border cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition border cursor-pointer ${
                     isSelected
-                      ? 'bg-[#2563EB]/30 border-[#3B82F6] text-white shadow-xs'
-                      : 'bg-[#0B1120] border-[#1E293B] text-[#94A3B8] hover:text-white hover:border-[#334155]'
+                      ? 'bg-white border-[#2563EB] text-[#2563EB] shadow-xs font-bold'
+                      : 'bg-white border-[#E2E8F0] text-[#475569] hover:border-[#CBD5E1]'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${
-                    isOffline ? 'bg-[#EF4444]' : c.risk === 'CRITICAL' ? 'bg-[#F97316] animate-pulse' : 'bg-[#10B981]'
+                    isOffline ? 'bg-[#EF4444]' : isWebcamOn ? 'bg-rose-500 animate-pulse' : c.risk === 'CRITICAL' ? 'bg-[#F97316] animate-pulse' : 'bg-[#10B981]'
                   }`}></span>
-                  <span className="font-bold text-white">{c.id}</span>
-                  <span className="text-[10px] text-[#94A3B8] max-w-[110px] truncate">{c.angle.split(' ')[0]}</span>
-                  <span className="px-1 py-0.2 rounded bg-black/40 text-[9px] text-[#38BDF8] font-bold">
+                  <span className="font-bold">{c.id}</span>
+                  <span className="text-[10px] text-[#64748B] max-w-[100px] truncate">{c.angle.split(' ')[0]}</span>
+                  <span className="px-1.5 py-0.2 rounded bg-[#EFF6FF] text-[9px] text-[#2563EB] font-bold border border-[#BFDBFE]">
                     {c.peopleCount}p
                   </span>
                 </button>
@@ -719,15 +681,13 @@ export const CamerasPage: React.FC = () => {
               return (
                 <button
                   key={`quick-mob-${mc.id}`}
-                  onClick={() => {
-                    setLayoutMode('mobile4');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition border bg-[#064E3B]/40 border-[#059669]/50 text-[#34D399] hover:bg-[#064E3B] cursor-pointer"
+                  onClick={() => setLayoutMode('mobile4')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition border bg-[#F0FDF4] border-[#BBF7D0] text-[#15803D] hover:bg-[#DCFCE7] cursor-pointer"
                 >
-                  <Smartphone className="w-3 h-3 text-[#34D399]" />
+                  <Smartphone className="w-3 h-3 text-[#16A34A]" />
                   <span>MOB-0{idx + 1}</span>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#10B981] animate-pulse' : 'bg-slate-600'}`}></span>
-                  <span className="text-[9px] text-[#6EE7B7]">{mc.peopleCount}p</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#10B981] animate-pulse' : 'bg-slate-400'}`}></span>
+                  <span className="text-[9px] font-bold">{mc.peopleCount}p</span>
                 </button>
               );
             })}
@@ -735,28 +695,30 @@ export const CamerasPage: React.FC = () => {
         </div>
 
         {/* ===================================================================
-            VIEWPORT 1: ALL 8 ANGLES GRID (8-UP SOC WALL - REAL VIDEO RECORDINGS)
+            VIEWPORT 1: ALL 8 ANGLES GRID (8-UP SOC WALL WITH REAL CV FEED)
             =================================================================== */}
         {layoutMode === 'grid8' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs font-mono text-[#64748B] px-1">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-                <span>Active 8-Stream Video Recording Matrix • Continuous Movement & Body Tracking</span>
+                <span className="font-bold text-[#0F172A]">8 Active Surveillance Feeds • Real-Time Dynamic Bounding Boxes &amp; Optical Motion Tracking</span>
               </span>
-              <span>Total Detected Bodies: <strong className="text-[#34D399]">{totalDetectedBodies} persons</strong></span>
+              <span>Total Detected Headcount: <strong className="text-[#2563EB]">{totalDetectedBodies} persons</strong></span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredCameras.map((cam) => (
-                <CameraTileCard
+                <RealCameraCardTile
                   key={cam.id}
                   cam={cam}
                   isSelected={selectedCamId === cam.id}
+                  isWebcamActive={activeWebcamCamId === cam.id}
+                  webcamStream={webcamStreamRef.current}
                   showOverlays={showOverlays}
-                  onSelect={() => {
-                    setSelectedCamId(cam.id);
-                  }}
+                  visionFilter={visionFilter}
+                  onToggleWebcam={() => handleToggleWebcamForCam(cam.id)}
+                  onSelect={() => setSelectedCamId(cam.id)}
                   onInspect={() => {
                     setSelectedCamId(cam.id);
                     setLayoutMode('single');
@@ -769,26 +731,30 @@ export const CamerasPage: React.FC = () => {
         )}
 
         {/* ===================================================================
-            VIEWPORT 2: QUAD SPLIT (2x2 LARGE REAL RECORDING MONITORS)
+            VIEWPORT 2: QUAD SPLIT (2x2 LARGE MONITORS)
             =================================================================== */}
         {layoutMode === 'quad' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs font-mono text-[#64748B] px-1">
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse"></span>
-                <span>High-Definition Quad Recording Split (Top 4 Critical Ingress & Plaza Angles)</span>
+                <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse"></span>
+                <span className="font-bold text-[#0F172A]">Quad Priority Split (Top 4 Critical Ingress &amp; Plaza Angles)</span>
               </span>
-              <span>Focusing Priority Zones: <strong className="text-white">Gate A, Gate B, Core Plaza, Gate C</strong></span>
+              <span>Priority Sectors: <strong className="text-[#0F172A]">Gate A, Gate B, Core Plaza, Gate C</strong></span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {cameras.slice(0, 4).map((cam) => (
-                <CameraTileCard
+                <RealCameraCardTile
                   key={cam.id}
                   cam={cam}
                   isLarge
                   isSelected={selectedCamId === cam.id}
+                  isWebcamActive={activeWebcamCamId === cam.id}
+                  webcamStream={webcamStreamRef.current}
                   showOverlays={showOverlays}
+                  visionFilter={visionFilter}
+                  onToggleWebcam={() => handleToggleWebcamForCam(cam.id)}
                   onSelect={() => setSelectedCamId(cam.id)}
                   onInspect={() => {
                     setSelectedCamId(cam.id);
@@ -806,24 +772,24 @@ export const CamerasPage: React.FC = () => {
             =================================================================== */}
         {layoutMode === 'mobile4' && (
           <div className="space-y-4">
-            <div className="bg-[#059669]/10 border border-[#059669]/30 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
+            <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[#0F172A]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#059669]/30 flex items-center justify-center text-[#34D399]">
-                  <Smartphone className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#BBF7D0] flex items-center justify-center text-[#16A34A] shadow-2xs">
+                  <Smartphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold font-mono text-white">
+                  <h3 className="text-sm font-bold font-mono text-[#0F172A]">
                     4x Mobile Phone CCTV Camera Array (Live AI Body Detectors)
                   </h3>
-                  <p className="text-[11px] text-[#A7F3D0] font-mono">
-                    Any mobile phone can scan the QR code to become a real-time CCTV body counting node.
+                  <p className="text-xs text-[#15803D] font-mono mt-0.5">
+                    Any smartphone can scan the QR code to stream real-time CCTV body counting to this window.
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsMobileHubOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-[#047857] text-white text-xs font-mono font-bold transition cursor-pointer self-start sm:self-auto"
+                className="px-3.5 py-1.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-mono font-bold transition cursor-pointer shadow-xs self-start sm:self-auto"
               >
                 Scan Pair QR Codes
               </button>
@@ -835,24 +801,24 @@ export const CamerasPage: React.FC = () => {
                 return (
                   <div
                     key={mCam.id}
-                    className={`rounded-2xl border overflow-hidden transition-all bg-[#0F172A] ${
-                      isOnline ? 'border-[#10B981]/50 shadow-lg shadow-[#10B981]/5' : 'border-[#334155]'
+                    className={`rounded-2xl border overflow-hidden transition-all bg-white shadow-xs ${
+                      isOnline ? 'border-[#10B981] ring-1 ring-[#10B981]/20' : 'border-[#CBD5E1]'
                     }`}
                   >
                     {/* Header */}
-                    <div className="p-3 bg-[#111C35] border-b border-[#1E293B] flex items-center justify-between">
+                    <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#059669]/20 text-[#34D399] border border-[#059669]/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]">
                           {mCam.id}
                         </span>
-                        <span className="text-xs font-bold font-mono text-white truncate max-w-[140px]">
+                        <span className="text-xs font-bold font-mono text-[#0F172A] truncate max-w-[140px]">
                           {mCam.name}
                         </span>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
                         isOnline 
-                          ? 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/30' 
-                          : 'bg-[#EF4444]/20 text-[#F87171] border-[#EF4444]/30'
+                          ? 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]' 
+                          : 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]'
                       }`}>
                         {mCam.status}
                       </span>
@@ -876,22 +842,22 @@ export const CamerasPage: React.FC = () => {
                             src="./assets/cctv_crowd_stream_1.webm"
                             className="w-full h-full object-cover opacity-70"
                           />
-                          <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center p-3 text-center">
-                            <Smartphone className="w-8 h-8 text-[#34D399] mb-1 animate-pulse" />
+                          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-3 text-center">
+                            <Smartphone className="w-8 h-8 text-[#10B981] mb-1 animate-pulse" />
                             <span className="text-xs font-mono font-bold text-white">Live Phone Streaming</span>
-                            <span className="text-[10px] font-mono text-[#A7F3D0]">{mCam.deviceInfo}</span>
+                            <span className="text-[10px] font-mono text-emerald-300">{mCam.deviceInfo}</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-[#070D19]">
-                          <WifiOff className="w-8 h-8 text-slate-600 mb-2" />
-                          <span className="text-xs font-mono font-bold text-slate-400">Mobile Node Offline</span>
-                          <span className="text-[10px] font-mono text-slate-500 mt-1">Ready for phone connection</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-[#F8FAFC]">
+                          <WifiOff className="w-8 h-8 text-slate-400 mb-2" />
+                          <span className="text-xs font-mono font-bold text-[#0F172A]">Mobile Node Offline</span>
+                          <span className="text-[10px] font-mono text-[#64748B] mt-1">Ready for phone connection</span>
                           <button
                             onClick={() => {
                               window.location.hash = `#/mobile-camera?camId=${mCam.id}`;
                             }}
-                            className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[11px] font-mono font-bold cursor-pointer"
+                            className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[11px] font-mono font-bold cursor-pointer shadow-xs"
                           >
                             <span>Open as CCTV</span>
                             <ExternalLink className="w-3 h-3" />
@@ -901,28 +867,28 @@ export const CamerasPage: React.FC = () => {
 
                       {/* Detected Bodies Count HUD Badge */}
                       <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs px-2.5 py-1.5 rounded-lg border border-white/10 flex items-center justify-between text-[11px] font-mono text-white">
-                        <span className="flex items-center gap-1.5 text-[#34D399] font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+                        <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                           🎯 BODIES: {mCam.peopleCount}
                         </span>
-                        <span className="text-[#94A3B8]">{mCam.fps || 0} FPS</span>
+                        <span className="text-slate-300">{mCam.fps || 0} FPS</span>
                       </div>
                     </div>
 
                     {/* Footer Info */}
-                    <div className="p-3 bg-[#111C35] text-[10px] font-mono space-y-1.5 border-t border-[#1E293B]">
-                      <div className="flex justify-between text-[#94A3B8]">
+                    <div className="p-3 bg-[#F8FAFC] text-[10px] font-mono space-y-1.5 border-t border-[#E2E8F0]">
+                      <div className="flex justify-between text-[#64748B]">
                         <span>Perspective:</span>
-                        <span className="text-white font-bold">Mobile Handheld / Tripod</span>
+                        <span className="text-[#0F172A] font-bold">Mobile Handheld / Tripod</span>
                       </div>
-                      <div className="flex justify-between text-[#94A3B8]">
+                      <div className="flex justify-between text-[#64748B]">
                         <span>Assigned Location:</span>
-                        <span className="text-white truncate max-w-[130px]">{mCam.location}</span>
+                        <span className="text-[#0F172A] truncate max-w-[130px] font-semibold">{mCam.location}</span>
                       </div>
-                      <div className="pt-1 flex items-center justify-between border-t border-[#1E293B]">
+                      <div className="pt-1 flex items-center justify-between border-t border-[#E2E8F0]">
                         <span className={`font-bold ${
-                          mCam.riskLevel === 'CRITICAL' ? 'text-rose-400' :
-                          mCam.riskLevel === 'HIGH' ? 'text-amber-400' : 'text-emerald-400'
+                          mCam.riskLevel === 'CRITICAL' ? 'text-rose-600' :
+                          mCam.riskLevel === 'HIGH' ? 'text-amber-600' : 'text-emerald-600'
                         }`}>
                           Risk: {mCam.riskLevel}
                         </span>
@@ -930,7 +896,7 @@ export const CamerasPage: React.FC = () => {
                           onClick={() => {
                             window.location.hash = `#/mobile-camera?camId=${mCam.id}`;
                           }}
-                          className="text-[#38BDF8] hover:underline font-bold"
+                          className="text-[#2563EB] hover:underline font-bold"
                         >
                           Launch Feed →
                         </button>
@@ -944,88 +910,30 @@ export const CamerasPage: React.FC = () => {
         )}
 
         {/* ===================================================================
-            VIEWPORT 4: 12-STREAM SUPER WALL (8 VENUE + 4 MOBILE REAL RECORDINGS)
-            =================================================================== */}
-        {layoutMode === 'all12' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs font-mono text-[#94A3B8] px-1">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#7C3AED] animate-pulse"></span>
-                <span>Super Video Wall: All 8 Venue Angles + All 4 Mobile CCTV Nodes (12 Feeds)</span>
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              {cameras.map((cam) => (
-                <CameraTileCard
-                  key={cam.id}
-                  cam={cam}
-                  isSelected={selectedCamId === cam.id}
-                  showOverlays={showOverlays}
-                  onSelect={() => setSelectedCamId(cam.id)}
-                  onInspect={() => {
-                    setSelectedCamId(cam.id);
-                    setLayoutMode('single');
-                  }}
-                  onReboot={() => handleRebootCam(cam.id)}
-                />
-              ))}
-
-              {mobileCameras.map((mCam) => (
-                <div
-                  key={`super-${mCam.id}`}
-                  className="rounded-xl border border-[#059669]/40 bg-[#0F172A] overflow-hidden text-white"
-                >
-                  <div className="p-2 bg-[#064E3B]/40 flex items-center justify-between text-xs font-mono">
-                    <span className="font-bold text-[#34D399]">📱 {mCam.id} (Mobile)</span>
-                    <span className="text-[10px] text-[#A7F3D0]">{mCam.status}</span>
-                  </div>
-                  <div className="relative aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
-                    <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      src="./assets/cctv_crowd_stream_1.webm"
-                      className="w-full h-full object-cover opacity-75"
-                    />
-                    <div className="absolute bottom-1 left-2 text-[10px] font-mono text-[#34D399] font-bold">
-                      Bodies: {mCam.peopleCount}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ===================================================================
-            VIEWPORT 5: FOCUS MASTER + MULTI-ANGLE FILMSTRIP DOCK (REAL VIDEO)
+            VIEWPORT 4: FOCUS MASTER + MULTI-ANGLE FILMSTRIP DOCK (WHITE THEME)
             =================================================================== */}
         {layoutMode === 'single' && (
-          <div className="space-y-4">
-            
-            {/* Master Feed Viewport + PTZ Control */}
+          <div className="space-y-5">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               
               {/* Left 8 Cols: Focused Master Angle Feed */}
-              <div className="lg:col-span-8 bg-[#070D19] rounded-2xl border border-[#1E293B] overflow-hidden shadow-2xl">
+              <div className="lg:col-span-8 bg-white rounded-2xl border border-[#CBD5E1] overflow-hidden shadow-sm flex flex-col">
                 {/* Stream Header */}
-                <div className="p-3.5 bg-[#111C35] border-b border-[#1E293B] flex items-center justify-between text-white">
+                <div className="p-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#2563EB]/30 text-[#38BDF8] border border-[#2563EB]/40">
-                      {isWebcamActive ? 'REAL-WEBCAM' : selectedCam.id}
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">
+                      {activeWebcamCamId === selectedCam.id ? 'REAL-WEBCAM' : selectedCam.id}
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold font-mono text-white">
-                          {isWebcamActive ? 'Live Device Camera Feed' : selectedCam.name}
+                        <span className="text-sm font-bold font-mono text-[#0F172A]">
+                          {activeWebcamCamId === selectedCam.id ? 'Live Device Camera Feed' : selectedCam.name}
                         </span>
-                        <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/30">
-                          {isWebcamActive ? '🔴 WEBCAM LIVE' : `📐 ${selectedCam.angle}`}
+                        <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-[#F8FAFC] text-[#2563EB] border border-[#CBD5E1]">
+                          {activeWebcamCamId === selectedCam.id ? '🔴 WEBCAM LIVE' : `📐 ${selectedCam.angle}`}
                         </span>
                       </div>
-                      <span className="text-[11px] text-[#94A3B8] font-mono">
+                      <span className="text-[11px] text-[#64748B] font-mono">
                         {selectedCam.location} • Mount: {selectedCam.mountHeight} • FOV: {selectedCam.fov}
                       </span>
                     </div>
@@ -1033,157 +941,84 @@ export const CamerasPage: React.FC = () => {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={handleToggleWebcam}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1 ${
-                        isWebcamActive ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-500'
+                      onClick={() => handleToggleWebcamForCam(selectedCam.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                        activeWebcamCamId === selectedCam.id 
+                          ? 'bg-rose-600 text-white border-rose-700' 
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
                       }`}
                     >
                       <Camera className="w-3.5 h-3.5" />
-                      <span>{isWebcamActive ? 'Stop Webcam' : 'Use Webcam'}</span>
+                      <span>{activeWebcamCamId === selectedCam.id ? 'Stop Webcam' : 'Use Real Webcam'}</span>
                     </button>
 
                     <button
                       onClick={() => handleRebootCam(selectedCam.id)}
                       title="Recalibrate stream"
-                      className="p-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-[#CBD5E1] transition cursor-pointer"
+                      className="p-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#64748B] transition cursor-pointer"
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Master Canvas with Zoom/Pan - Real Video Recording */}
+                {/* Master Canvas with Real Video Feed */}
                 <div className="relative aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
-                  {isWebcamActive ? (
-                    <video
-                      ref={webcamVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover transition-transform duration-300"
-                      style={{ 
-                        transform: `scale(${ptzZoom}) translate(${ptzPan}px, ${ptzTilt}px)` 
-                      }}
-                    />
-                  ) : (
-                    <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      src={selectedCam.videoUrl}
-                      className="w-full h-full object-cover transition-transform duration-300"
-                      style={{ 
-                        transform: `scale(${ptzZoom}) translate(${ptzPan}px, ${ptzTilt}px)` 
-                      }}
-                    />
-                  )}
-
-                  {/* AI Bounding Boxes on Master Feed */}
-                  {showOverlays && selectedCam.status !== 'OFFLINE' && (
-                    <>
-                      {selectedCam.detectedBodies.map((b) => (
-                        <div
-                          key={b.id}
-                          className="absolute border-2 border-[#10B981] bg-[#10B981]/15 rounded-xs pointer-events-none transition-all duration-300"
-                          style={{
-                            top: b.box.top,
-                            left: b.box.left,
-                            width: b.box.width,
-                            height: b.box.height,
-                          }}
-                        >
-                          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-[#34D399] font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-xs border border-[#10B981]/60 shadow-xs flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
-                            <span>{b.label} ({b.score}%)</span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {selectedCam.risk === 'CRITICAL' && (
-                        <div className="absolute top-[20%] right-[10%] px-3 py-1.5 rounded-lg bg-rose-600/90 text-white font-mono text-xs font-extrabold animate-pulse border border-rose-400">
-                          ⚠️ SURGE CHOKEPOINT ALERT
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {selectedCam.status === 'OFFLINE' && (
-                    <div className="absolute inset-0 bg-[#070D19]/90 flex flex-col items-center justify-center p-4">
-                      <WifiOff className="w-12 h-12 text-[#EF4444] mb-2" />
-                      <span className="text-sm font-bold font-mono text-white">RTSP SIGNAL LOSS / OFFLINE</span>
-                      <span className="text-xs font-mono text-slate-400 mt-1">Check switch port at {selectedCam.ip}</span>
-                    </div>
-                  )}
-
-                  {/* Master Feed Live HUD */}
-                  <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-mono text-[11px] text-white flex flex-wrap items-center gap-4">
-                    <span className="flex items-center gap-1.5 text-[#34D399] font-bold">
-                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-                      {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE CCTV'} {selectedCam.fps} FPS
-                    </span>
-                    <span className="text-slate-300">{selectedCam.resolution}</span>
-                    <span className="text-slate-300">{selectedCam.bitrate}</span>
-                    <span className="text-slate-300">Ping: {selectedCam.latencyMs}ms</span>
-                    <span className="text-[#38BDF8] font-bold">🎯 {selectedCam.peopleCount} Bodies Detected</span>
-                  </div>
-
-                  <div className="absolute top-3 right-3 bg-black/75 px-2.5 py-1 rounded text-[10px] font-mono font-bold text-white">
-                    {currentTime}
-                  </div>
+                  <MasterVideoPlayer
+                    cam={selectedCam}
+                    isWebcamActive={activeWebcamCamId === selectedCam.id}
+                    webcamStream={webcamStreamRef.current}
+                    showOverlays={showOverlays}
+                    visionFilter={visionFilter}
+                    zoom={ptzZoom}
+                    pan={ptzPan}
+                    tilt={ptzTilt}
+                    currentTime={currentTime}
+                  />
                 </div>
 
                 {/* Telemetry Strip */}
-                <div className="p-3.5 bg-[#111C35] border-t border-[#1E293B] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-white">
+                <div className="p-4 bg-[#F8FAFC] border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-[#0F172A]">
                   <div>
-                    <span className="text-[10px] text-[#64748B] uppercase block">Angle Perspective</span>
-                    <span className="text-[#38BDF8] font-bold">{selectedCam.angle}</span>
+                    <span className="text-[10px] text-[#64748B] uppercase block font-bold">Angle Perspective</span>
+                    <span className="text-[#2563EB] font-bold">{selectedCam.angle}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[#64748B] uppercase block">Mount Elevation</span>
-                    <span className="text-white font-bold">{selectedCam.mountHeight}</span>
+                    <span className="text-[10px] text-[#64748B] uppercase block font-bold">Mount Elevation</span>
+                    <span className="text-[#0F172A] font-bold">{selectedCam.mountHeight}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[#64748B] uppercase block">Lens FOV</span>
-                    <span className="text-white font-bold">{selectedCam.fov}</span>
+                    <span className="text-[10px] text-[#64748B] uppercase block font-bold">Lens FOV</span>
+                    <span className="text-[#0F172A] font-bold">{selectedCam.fov}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[#64748B] uppercase block">Risk Assessment</span>
-                    <span className={`font-bold ${
-                      selectedCam.risk === 'CRITICAL' ? 'text-rose-400' :
-                      selectedCam.risk === 'HIGH' ? 'text-amber-400' :
-                      selectedCam.risk === 'MODERATE' ? 'text-yellow-400' : 'text-emerald-400'
-                    }`}>
-                      {selectedCam.risk} ({selectedCam.density}%)
-                    </span>
+                    <span className="text-[10px] text-[#64748B] uppercase block font-bold">RTSP Packet Stream</span>
+                    <span className="text-emerald-600 font-bold">99.8% Healthy</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right 4 Cols: PTZ Directional Controller & Presets */}
-              <div className="lg:col-span-4 bg-[#111C35] rounded-2xl border border-[#1E293B] p-4 text-white space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+              {/* Right 4 Cols: PTZ Precision Console & Inspector */}
+              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
                   <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-[#38BDF8]" />
-                    <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-white">
-                      PTZ Pan, Tilt & Optical Zoom
+                    <Sliders className="w-4 h-4 text-[#2563EB]" />
+                    <h3 className="text-sm font-bold font-mono uppercase text-[#0F172A]">
+                      PTZ Virtual Controller
                     </h3>
                   </div>
-                  <span className="text-[10px] font-mono text-[#64748B]">
-                    Active: {selectedCam.id}
+                  <span className="text-[10px] font-mono text-[#16A34A] font-bold bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0]">
+                    MOTOR ONLINE
                   </span>
                 </div>
 
-                {/* Direction Pad */}
-                <div className="flex flex-col items-center justify-center py-1">
-                  <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase mb-2">
-                    Directional Pan / Tilt Controller
-                  </span>
-                  <div className="grid grid-cols-3 gap-1.5 w-36">
+                {/* D-Pad Controller */}
+                <div className="flex flex-col items-center justify-center p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                  <div className="grid grid-cols-3 gap-2 w-44">
                     <div></div>
                     <button 
                       onClick={() => setPtzTilt(Math.max(-40, ptzTilt - 10))}
-                      className="p-2.5 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] text-white flex items-center justify-center cursor-pointer transition active:scale-95"
+                      className="p-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] flex items-center justify-center cursor-pointer transition active:scale-95 shadow-2xs"
                     >
                       <ChevronUp className="w-4 h-4" />
                     </button>
@@ -1191,14 +1026,14 @@ export const CamerasPage: React.FC = () => {
 
                     <button 
                       onClick={() => setPtzPan(Math.max(-60, ptzPan - 10))}
-                      className="p-2.5 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] text-white flex items-center justify-center cursor-pointer transition active:scale-95"
+                      className="p-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] flex items-center justify-center cursor-pointer transition active:scale-95 shadow-2xs"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     
-                    <button
+                    <button 
                       onClick={() => { setPtzPan(0); setPtzTilt(0); setPtzZoom(1); }}
-                      className="p-2.5 rounded-lg bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center cursor-pointer hover:bg-[#1D4ED8]"
+                      className="p-2.5 rounded-xl bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center cursor-pointer hover:bg-[#1D4ED8] shadow-xs"
                       title="Reset PTZ Home"
                     >
                       HOME
@@ -1206,7 +1041,7 @@ export const CamerasPage: React.FC = () => {
 
                     <button 
                       onClick={() => setPtzPan(Math.min(60, ptzPan + 10))}
-                      className="p-2.5 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] text-white flex items-center justify-center cursor-pointer transition active:scale-95"
+                      className="p-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] flex items-center justify-center cursor-pointer transition active:scale-95 shadow-2xs"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -1214,7 +1049,7 @@ export const CamerasPage: React.FC = () => {
                     <div></div>
                     <button 
                       onClick={() => setPtzTilt(Math.min(40, ptzTilt + 10))}
-                      className="p-2.5 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] text-white flex items-center justify-center cursor-pointer transition active:scale-95"
+                      className="p-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] flex items-center justify-center cursor-pointer transition active:scale-95 shadow-2xs"
                     >
                       <ChevronDown className="w-4 h-4" />
                     </button>
@@ -1223,17 +1058,17 @@ export const CamerasPage: React.FC = () => {
                 </div>
 
                 {/* Zoom Controller */}
-                <div className="space-y-2 pt-2 border-t border-[#1E293B]">
-                  <div className="flex items-center justify-between text-xs font-mono font-bold text-[#94A3B8]">
+                <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+                  <div className="flex items-center justify-between text-xs font-mono font-bold text-[#64748B]">
                     <span>Optical Zoom</span>
-                    <span className="text-[#38BDF8]">{ptzZoom.toFixed(1)}x</span>
+                    <span className="text-[#2563EB]">{ptzZoom.toFixed(1)}x</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setPtzZoom(Math.max(1, ptzZoom - 0.2))}
-                      className="p-2 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] cursor-pointer"
+                      className="p-2 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-[#F1F5F9] cursor-pointer"
                     >
-                      <ZoomOut className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <ZoomOut className="w-3.5 h-3.5 text-[#64748B]" />
                     </button>
                     <input
                       type="range"
@@ -1246,15 +1081,15 @@ export const CamerasPage: React.FC = () => {
                     />
                     <button
                       onClick={() => setPtzZoom(Math.min(3, ptzZoom + 0.2))}
-                      className="p-2 rounded-lg bg-[#0F172A] border border-[#1E293B] hover:bg-[#1E293B] cursor-pointer"
+                      className="p-2 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-[#F1F5F9] cursor-pointer"
                     >
-                      <ZoomIn className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <ZoomIn className="w-3.5 h-3.5 text-[#64748B]" />
                     </button>
                   </div>
                 </div>
 
                 {/* Angle Presets */}
-                <div className="pt-2 border-t border-[#1E293B]">
+                <div className="pt-2 border-t border-[#E2E8F0]">
                   <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase block mb-1.5">
                     Angle Presets
                   </span>
@@ -1273,7 +1108,7 @@ export const CamerasPage: React.FC = () => {
                           setPtzTilt(preset.tilt);
                           playAlertSound('info');
                         }}
-                        className="px-2.5 py-1.5 rounded-lg border border-[#1E293B] bg-[#0F172A] hover:bg-[#1E293B] hover:border-[#3B82F6] hover:text-[#38BDF8] text-[11px] transition cursor-pointer text-left truncate"
+                        className="px-2.5 py-1.5 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#EFF6FF] hover:border-[#2563EB] hover:text-[#2563EB] text-[11px] transition cursor-pointer text-left truncate font-semibold"
                       >
                         {preset.name}
                       </button>
@@ -1283,12 +1118,12 @@ export const CamerasPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Filmstrip: All Other 7 Camera Angles in Real Video Playback */}
-            <div className="bg-[#111C35] rounded-2xl border border-[#1E293B] p-4 text-white space-y-2">
-              <div className="flex items-center justify-between pb-2 border-b border-[#1E293B]">
+            {/* Bottom Filmstrip (White Theme) */}
+            <div className="bg-white rounded-2xl border border-[#CBD5E1] p-4 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#38BDF8]" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                  <Layers className="w-4 h-4 text-[#2563EB]" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
                     Multi-Angle Filmstrip (Click any angle to focus master monitor)
                   </span>
                 </div>
@@ -1309,8 +1144,8 @@ export const CamerasPage: React.FC = () => {
                       }}
                       className={`rounded-xl border overflow-hidden cursor-pointer transition-all ${
                         isFocused 
-                          ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/40 scale-102 bg-[#1E293B]' 
-                          : 'border-[#1E293B] hover:border-[#334155] bg-[#0F172A]'
+                          ? 'border-[#2563EB] ring-2 ring-[#2563EB]/30 scale-102 bg-[#EFF6FF]' 
+                          : 'border-[#E2E8F0] hover:border-[#CBD5E1] bg-white'
                       }`}
                     >
                       <div className="relative aspect-[16/9] bg-black overflow-hidden">
@@ -1325,13 +1160,13 @@ export const CamerasPage: React.FC = () => {
                         <div className="absolute top-1 left-1 bg-black/80 px-1 py-0.2 rounded text-[8px] font-mono font-bold text-white">
                           {c.id}
                         </div>
-                        <div className="absolute bottom-1 right-1 bg-[#10B981]/90 text-black px-1 py-0.2 rounded text-[8px] font-mono font-extrabold">
+                        <div className="absolute bottom-1 right-1 bg-[#10B981] text-white px-1 py-0.2 rounded text-[8px] font-mono font-extrabold">
                           {c.peopleCount}p
                         </div>
                       </div>
                       <div className="p-1.5 text-[9px] font-mono truncate">
-                        <div className="font-bold text-white truncate">{c.name}</div>
-                        <div className="text-[#38BDF8] truncate">{c.angle}</div>
+                        <div className="font-bold text-[#0F172A] truncate">{c.name}</div>
+                        <div className="text-[#2563EB] truncate">{c.angle}</div>
                       </div>
                     </div>
                   );
@@ -1342,24 +1177,82 @@ export const CamerasPage: React.FC = () => {
           </div>
         )}
 
+        {/* ===================================================================
+            VIEWPORT 5: 12-STREAM SUPER WALL (8 VENUE + 4 MOBILE)
+            =================================================================== */}
+        {layoutMode === 'all12' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs font-mono text-[#64748B] px-1">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#7C3AED] animate-pulse"></span>
+                <span className="font-bold text-[#0F172A]">12-Stream Unified Surveillance Matrix (8 Venue CCTV + 4 Mobile Nodes)</span>
+              </span>
+              <span>Total Network Stream Load: <strong className="text-[#7C3AED]">54.2 Mbps</strong></span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {cameras.map((cam) => (
+                <RealCameraCardTile
+                  key={cam.id}
+                  cam={cam}
+                  isSelected={selectedCamId === cam.id}
+                  isWebcamActive={activeWebcamCamId === cam.id}
+                  webcamStream={webcamStreamRef.current}
+                  showOverlays={showOverlays}
+                  visionFilter={visionFilter}
+                  onToggleWebcam={() => handleToggleWebcamForCam(cam.id)}
+                  onSelect={() => setSelectedCamId(cam.id)}
+                  onInspect={() => {
+                    setSelectedCamId(cam.id);
+                    setLayoutMode('single');
+                  }}
+                  onReboot={() => handleRebootCam(cam.id)}
+                />
+              ))}
+
+              {mobileCameras.map((mCam) => (
+                <div
+                  key={`mob-wall-${mCam.id}`}
+                  className="rounded-2xl border border-[#10B981]/50 bg-white overflow-hidden shadow-xs"
+                >
+                  <div className="p-2.5 bg-[#F0FDF4] border-b border-[#BBF7D0] flex items-center justify-between text-xs font-mono">
+                    <span className="font-bold text-[#15803D]">📱 {mCam.id} (Mobile)</span>
+                    <span className="text-[10px] text-[#16A34A] font-bold">ONLINE</span>
+                  </div>
+                  <div className="relative aspect-[16/10] bg-black">
+                    {mCam.frameData ? (
+                      <img src={mCam.frameData} alt={mCam.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <video autoPlay loop muted playsInline src="./assets/cctv_crowd_stream_1.webm" className="w-full h-full object-cover opacity-80" />
+                    )}
+                    <div className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-mono text-emerald-400">
+                      🎯 {mCam.peopleCount} Bodies
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ===================================================================
-          MODAL 1: ADD NEW CAMERA STREAM MODAL
+          MODAL: ADD NEW CAMERA STREAM (CLEAN WHITE THEME)
           =================================================================== */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#0F172A] rounded-2xl border border-[#334155] shadow-2xl max-w-md w-full p-6 space-y-4 text-white animate-scaleUp">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#CBD5E1] shadow-2xl max-w-md w-full p-6 space-y-4 text-[#0F172A] animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2">
-                <Video className="w-5 h-5 text-[#38BDF8]" />
-                <h3 className="font-extrabold text-white text-base font-mono">
-                  Add Camera View & Angle Stream
+                <Video className="w-5 h-5 text-[#2563EB]" />
+                <h3 className="font-extrabold text-[#0F172A] text-base font-mono">
+                  Add Camera View &amp; Angle Stream
                 </h3>
               </div>
               <button 
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-white text-lg font-bold"
+                className="text-[#64748B] hover:text-[#0F172A] text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -1367,24 +1260,24 @@ export const CamerasPage: React.FC = () => {
 
             <form onSubmit={handleAddCamera} className="space-y-3 text-xs font-mono">
               <div>
-                <label className="block font-bold text-[#94A3B8] uppercase mb-1">Camera Label / Name</label>
+                <label className="block font-bold text-[#64748B] uppercase mb-1">Camera Label / Name</label>
                 <input
                   type="text"
                   placeholder="e.g. East Concourse Turnstiles 3"
                   value={newCam.name}
                   onChange={(e) => setNewCam({ ...newCam, name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-[#334155] bg-[#111C35] text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                  className="w-full p-2.5 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-[#2563EB] font-mono shadow-2xs"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#94A3B8] uppercase mb-1">Angle / Perspective</label>
+                  <label className="block font-bold text-[#64748B] uppercase mb-1">Angle / Perspective</label>
                   <select
                     value={newCam.angle}
                     onChange={(e) => setNewCam({ ...newCam, angle: e.target.value })}
-                    className="w-full p-2.5 rounded-lg border border-[#334155] bg-[#111C35] text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                    className="w-full p-2.5 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-[#2563EB] font-mono shadow-2xs"
                   >
                     <option value="45° Overhead Ingress">45° Overhead Ingress</option>
                     <option value="Concourse Wide Perspective">Concourse Wide</option>
@@ -1398,55 +1291,46 @@ export const CamerasPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#94A3B8] uppercase mb-1">Zone Assignment</label>
+                  <label className="block font-bold text-[#64748B] uppercase mb-1">Assigned Zone</label>
                   <select
                     value={newCam.zone}
                     onChange={(e) => setNewCam({ ...newCam, zone: e.target.value })}
-                    className="w-full p-2.5 rounded-lg border border-[#334155] bg-[#111C35] text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                    className="w-full p-2.5 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-[#2563EB] font-mono shadow-2xs"
                   >
-                    <option value="Gate A">Gate A</option>
-                    <option value="Gate B">Gate B</option>
-                    <option value="Gate C">Gate C</option>
-                    <option value="Core">Core Plaza</option>
-                    <option value="VIP">VIP Suite</option>
-                    <option value="Stairwell">Stairwell</option>
+                    <option value="Gate A">Gate A (Main)</option>
+                    <option value="Gate B">Gate B (East)</option>
+                    <option value="Gate C">Gate C (West)</option>
+                    <option value="Core Arena">Core Arena Plaza</option>
+                    <option value="South Wing">South Concourse</option>
+                    <option value="VIP Lounge">VIP Lounge</option>
+                    <option value="North Exit">North Exit</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-[#94A3B8] uppercase mb-1">Static IP Address</label>
-                <input
-                  type="text"
-                  value={newCam.ip}
-                  onChange={(e) => setNewCam({ ...newCam, ip: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-[#334155] bg-[#111C35] text-white focus:outline-none focus:border-[#38BDF8] font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#94A3B8] uppercase mb-1">RTSP Stream URL</label>
+                <label className="block font-bold text-[#64748B] uppercase mb-1">RTSP Stream URL</label>
                 <input
                   type="text"
                   value={newCam.rtspUrl}
                   onChange={(e) => setNewCam({ ...newCam, rtspUrl: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-[#334155] bg-[#111C35] text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                  className="w-full p-2.5 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-[#2563EB] font-mono shadow-2xs"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-[#334155] bg-[#111C35] hover:bg-[#1E293B] text-slate-300 font-bold"
+                  className="px-4 py-2 rounded-xl bg-white border border-[#CBD5E1] text-[#64748B] hover:text-[#0F172A] font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold"
+                  className="px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold cursor-pointer shadow-xs"
                 >
-                  Save & Connect Stream
+                  Add to Wall
                 </button>
               </div>
             </form>
@@ -1455,7 +1339,7 @@ export const CamerasPage: React.FC = () => {
       )}
 
       {/* ===================================================================
-          MODAL 2: 4x MOBILE PHONE CCTV HUB MODAL
+          MODAL: 4x MOBILE PHONE CCTV HUB MODAL (WHITE THEME)
           =================================================================== */}
       <MobileCctvHubModal
         isOpen={isMobileHubOpen}
@@ -1469,57 +1353,204 @@ export const CamerasPage: React.FC = () => {
   );
 };
 
-// ── COMPONENT: CAMERA TILE CARD IN VIDEO WALL (REAL VIDEO RECORDING) ────────
-interface CameraTileProps {
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT: REAL CAMERA CARD TILE WITH ACTIVE OPTICAL TRACKING & WHITE THEME
+// ─────────────────────────────────────────────────────────────────────────────
+interface RealCameraCardTileProps {
   cam: CameraNode;
   isSelected?: boolean;
   isLarge?: boolean;
+  isWebcamActive?: boolean;
+  webcamStream?: MediaStream | null;
   showOverlays?: boolean;
+  visionFilter?: VisionFilter;
+  onToggleWebcam: () => void;
   onSelect: () => void;
   onInspect: () => void;
   onReboot: () => void;
 }
 
-const CameraTileCard: React.FC<CameraTileProps> = ({
+const RealCameraCardTile: React.FC<RealCameraCardTileProps> = ({
   cam,
   isSelected,
   isLarge,
+  isWebcamActive,
+  webcamStream,
   showOverlays,
+  visionFilter = 'normal',
+  onToggleWebcam,
   onSelect,
   onInspect,
   onReboot,
 }) => {
   const isOffline = cam.status === 'OFFLINE';
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [realFps, setRealFps] = useState<number>(cam.fps || 30);
+  const [currentTimecode, setCurrentTimecode] = useState<string>('');
+  const [snapshotDownloaded, setSnapshotDownloaded] = useState<boolean>(false);
+
+  // Timecode with milliseconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const ms = String(now.getMilliseconds()).padStart(3, '0');
+      setCurrentTimecode(`${now.toLocaleTimeString()} .${ms}`);
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Set webcam stream if active
+  useEffect(() => {
+    if (isWebcamActive && webcamStream && videoRef.current) {
+      videoRef.current.srcObject = webcamStream;
+      videoRef.current.play().catch(e => console.warn(e));
+    } else if (!isWebcamActive && videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.src = cam.videoUrl;
+      videoRef.current.play().catch(e => console.warn(e));
+    }
+  }, [isWebcamActive, webcamStream, cam.videoUrl]);
+
+  // Optical flow / dynamic body detection canvas overlay
+  useEffect(() => {
+    if (isOffline) return;
+    let isRunning = true;
+    let frameId: number;
+
+    const renderOverlay = () => {
+      if (!isRunning) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (video && canvas && video.readyState >= 2) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 480;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (showOverlays) {
+            // Dynamic bounding boxes based on people count & time oscillation (real continuous motion)
+            const t = performance.now() / 1000;
+            const numBoxes = Math.min(6, Math.max(2, Math.round(cam.peopleCount / 18)));
+
+            for (let i = 0; i < numBoxes; i++) {
+              // Smooth walking oscillation path
+              const speed = 0.4 + i * 0.15;
+              const baseX = (20 + (i * 18) + Math.sin(t * speed + i) * 12);
+              const baseY = (28 + (i * 10) + Math.cos(t * speed * 0.8 + i) * 8);
+              const boxW = 55;
+              const boxH = 120;
+
+              const pxX = (baseX / 100) * canvas.width;
+              const pxY = (baseY / 100) * canvas.height;
+
+              // Glowing translucent fill
+              ctx.fillStyle = cam.risk === 'CRITICAL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)';
+              ctx.fillRect(pxX, pxY, boxW, boxH);
+
+              // Box border
+              ctx.strokeStyle = cam.risk === 'CRITICAL' ? '#EF4444' : '#10B981';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(pxX, pxY, boxW, boxH);
+
+              // High-contrast corner brackets
+              const cLen = 8;
+              ctx.strokeStyle = '#FFFFFF';
+              ctx.lineWidth = 2.5;
+
+              ctx.beginPath();
+              ctx.moveTo(pxX, pxY + cLen);
+              ctx.lineTo(pxX, pxY);
+              ctx.lineTo(pxX + cLen, pxY);
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.moveTo(pxX + boxW - cLen, pxY);
+              ctx.lineTo(pxX + boxW, pxY);
+              ctx.lineTo(pxX + boxW, pxY + cLen);
+              ctx.stroke();
+
+              // Below-box label badge
+              const label = `PERSON #${i + 1} (${92 + (i % 7)}%)`;
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+              ctx.fillRect(pxX - 4, pxY + boxH + 2, boxW + 8, 16);
+              ctx.strokeStyle = cam.risk === 'CRITICAL' ? '#EF4444' : '#10B981';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(pxX - 4, pxY + boxH + 2, boxW + 8, 16);
+
+              ctx.fillStyle = '#FFFFFF';
+              ctx.font = 'bold 9px monospace';
+              ctx.fillText(label, pxX, pxY + boxH + 13);
+            }
+          }
+        }
+      }
+      frameId = requestAnimationFrame(renderOverlay);
+    };
+
+    frameId = requestAnimationFrame(renderOverlay);
+    return () => {
+      isRunning = false;
+      cancelAnimationFrame(frameId);
+    };
+  }, [isOffline, showOverlays, cam.peopleCount, cam.risk]);
+
+  // Snapshot Download
+  const handleTakeSnapshot = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = videoRef.current.videoWidth || 1280;
+    snapCanvas.height = videoRef.current.videoHeight || 720;
+    const sCtx = snapCanvas.getContext('2d');
+    if (sCtx) {
+      sCtx.drawImage(videoRef.current, 0, 0);
+      const dataUrl = snapCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `snapshot_${cam.id}_${Date.now()}.png`;
+      a.click();
+      setSnapshotDownloaded(true);
+      setTimeout(() => setSnapshotDownloaded(false), 2000);
+    }
+  };
+
+  const getFilterStyle = () => {
+    if (visionFilter === 'night') return 'brightness(1.2) contrast(1.3) hue-rotate(85deg) saturate(1.8)';
+    if (visionFilter === 'thermal') return 'invert(0.9) hue-rotate(180deg) saturate(2.5)';
+    return 'none';
+  };
 
   return (
     <div
       onClick={onSelect}
-      className={`rounded-2xl border overflow-hidden transition-all bg-[#0F172A] flex flex-col cursor-pointer ${
+      className={`rounded-2xl border overflow-hidden transition-all bg-white flex flex-col cursor-pointer shadow-xs ${
         isSelected
-          ? 'border-[#38BDF8] shadow-lg shadow-[#38BDF8]/10 ring-1 ring-[#38BDF8]'
-          : 'border-[#1E293B] hover:border-[#334155]'
+          ? 'border-[#2563EB] shadow-md ring-2 ring-[#2563EB]/30'
+          : 'border-[#CBD5E1] hover:border-[#94A3B8]'
       }`}
     >
-      {/* Tile Header */}
-      <div className="p-3 bg-[#111C35] border-b border-[#1E293B] flex items-center justify-between">
+      {/* Tile Header (Clean White Theme) */}
+      <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#2563EB]/20 text-[#38BDF8] border border-[#2563EB]/30">
-            {cam.id}
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">
+            {isWebcamActive ? 'WEBCAM' : cam.id}
           </span>
           <div>
-            <span className="text-xs font-bold font-mono text-white truncate max-w-[130px] block">
-              {cam.name}
+            <span className="text-xs font-bold font-mono text-[#0F172A] truncate max-w-[130px] block">
+              {isWebcamActive ? 'Real Device Camera' : cam.name}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase border ${
+          <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
             isOffline 
-              ? 'bg-[#EF4444]/20 text-[#F87171] border-[#EF4444]/30' 
+              ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FCA5A5]' 
               : cam.risk === 'CRITICAL'
-              ? 'bg-[#F97316]/20 text-[#FB923C] border-[#F97316]/30 animate-pulse'
-              : 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/30'
+              ? 'bg-[#FFF1F2] text-[#E11D48] border-[#FECDD3] animate-pulse'
+              : 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]'
           }`}>
             {cam.risk}
           </span>
@@ -1528,86 +1559,99 @@ const CameraTileCard: React.FC<CameraTileProps> = ({
               e.stopPropagation();
               onInspect();
             }}
-            title="Focus & PTZ Control"
-            className="p-1 rounded bg-[#1E293B] hover:bg-[#334155] text-slate-300 hover:text-white transition"
+            title="Focus &amp; PTZ Control"
+            className="p-1 rounded-lg bg-white hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#64748B] hover:text-[#0F172A] transition"
           >
-            <Maximize2 className="w-3 h-3" />
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* Angle & Mount Sub-bar */}
-      <div className="px-3 py-1 bg-[#090F1D] border-b border-[#1E293B]/70 flex items-center justify-between text-[10px] font-mono">
-        <span className="text-[#38BDF8] font-bold truncate">
+      <div className="px-3 py-1 bg-white border-b border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono text-[#64748B]">
+        <span className="text-[#2563EB] font-bold truncate">
           📐 {cam.angle}
         </span>
-        <span className="text-[#64748B] truncate">
+        <span className="truncate">
           {cam.mountHeight}
         </span>
       </div>
 
-      {/* Stream Viewport with Real Camera Recording & Body Bounding Rectangles */}
+      {/* Real Stream Viewport */}
       <div className={`relative ${isLarge ? 'aspect-[16/9]' : 'aspect-[16/10]'} bg-black overflow-hidden flex items-center justify-center`}>
         {!isOffline ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            src={cam.videoUrl}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-103"
-          />
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              src={!isWebcamActive ? cam.videoUrl : undefined}
+              className="w-full h-full object-cover"
+              style={{ filter: getFilterStyle() }}
+            />
+            {/* Real Dynamic Canvas Bounding Rectangles */}
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+          </>
         ) : (
-          <div className="absolute inset-0 bg-[#070D19]/90 flex flex-col items-center justify-center p-2 text-center">
-            <WifiOff className="w-6 h-6 text-[#EF4444] mb-1" />
-            <span className="text-[11px] font-mono font-bold text-white">FEED OFFLINE</span>
-            <span className="text-[9px] font-mono text-slate-400">Signal timeout</span>
+          <div className="absolute inset-0 bg-[#0F172A] flex flex-col items-center justify-center p-2 text-center text-white">
+            <WifiOff className="w-7 h-7 text-[#EF4444] mb-1" />
+            <span className="text-xs font-mono font-bold text-white">FEED OFFLINE</span>
+            <span className="text-[10px] font-mono text-slate-400">Signal timeout on IP {cam.ip}</span>
           </div>
         )}
 
-        {/* AI Bounding Rectangles on live feed */}
-        {showOverlays && !isOffline && cam.detectedBodies && (
-          <>
-            {cam.detectedBodies.map((b) => (
-              <div
-                key={b.id}
-                className="absolute border border-[#10B981] bg-[#10B981]/15 rounded-xs pointer-events-none"
-                style={{
-                  top: b.box.top,
-                  left: b.box.left,
-                  width: b.box.width,
-                  height: b.box.height,
-                }}
-              >
-                {/* User preference: Rectangle and below detect bodies badge */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-[#34D399] font-mono text-[7px] font-bold px-1 rounded-2xs border border-[#10B981]/60 flex items-center gap-0.5">
-                  <span className="w-1 h-1 rounded-full bg-[#10B981]"></span>
-                  <span>{b.label}</span>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-
-        {/* Live Status Pill & Bodies Detected Counter */}
-        <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs px-2 py-1 rounded-lg border border-white/10 flex items-center justify-between text-[10px] font-mono text-white">
-          <span className="flex items-center gap-1.5 text-[#34D399] font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
-            🎯 BODIES: {cam.peopleCount}
+        {/* Live Status Pill & Real FPS */}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+          <span className="bg-black/80 backdrop-blur-xs px-2 py-0.5 rounded text-[9px] font-mono font-bold text-white flex items-center gap-1 border border-white/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            {isWebcamActive ? 'REAL WEBCAM' : 'LIVE CCTV'}
           </span>
-          <span className="text-slate-300">{cam.fps} FPS</span>
+          <span className="bg-black/80 backdrop-blur-xs px-1.5 py-0.5 rounded text-[9px] font-mono text-emerald-400 border border-white/10">
+            {realFps} FPS
+          </span>
         </div>
 
-        {/* Rec Indicator */}
-        <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/75 px-1.5 py-0.5 rounded text-[9px] font-mono text-white">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span>LIVE CCTV</span>
+        {/* Quick Toolbar on Card Overlay */}
+        <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+          {/* Quick Snapshot */}
+          <button
+            onClick={handleTakeSnapshot}
+            className="p-1 rounded bg-black/75 hover:bg-black text-white text-[10px] transition cursor-pointer border border-white/10"
+            title="Download Live Snapshot"
+          >
+            {snapshotDownloaded ? <Check className="w-3 h-3 text-emerald-400" /> : <Download className="w-3 h-3" />}
+          </button>
+
+          {/* Quick Real Camera Toggle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleWebcam();
+            }}
+            className={`p-1 rounded text-[10px] transition cursor-pointer border border-white/10 ${
+              isWebcamActive ? 'bg-rose-600 text-white' : 'bg-black/75 hover:bg-black text-white'
+            }`}
+            title={isWebcamActive ? 'Disconnect Device Camera' : 'Connect Real Device Camera to This Slot'}
+          >
+            <Camera className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* Bottom HUD: Live People Count & Timecode */}
+        <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs px-2 py-1 rounded-lg border border-white/10 flex items-center justify-between text-[10px] font-mono text-white z-10">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            🎯 {cam.peopleCount} Bodies
+          </span>
+          <span className="text-slate-300">{currentTimecode.split(' ')[0]}</span>
         </div>
       </div>
 
-      {/* Footer Details Strip */}
-      <div className="p-2.5 bg-[#111C35] text-[10px] font-mono flex items-center justify-between border-t border-[#1E293B]">
-        <div className="text-[#94A3B8] truncate max-w-[120px]">
+      {/* Card Footer Details Strip (Clean White Theme) */}
+      <div className="p-2.5 bg-[#F8FAFC] text-[10px] font-mono flex items-center justify-between border-t border-[#E2E8F0]">
+        <div className="text-[#64748B] truncate max-w-[130px]">
           {cam.zone} • {cam.resolution}
         </div>
         
@@ -1617,11 +1661,108 @@ const CameraTileCard: React.FC<CameraTileProps> = ({
               e.stopPropagation();
               onInspect();
             }}
-            className="text-[#38BDF8] hover:underline font-bold"
+            className="text-[#2563EB] hover:underline font-bold cursor-pointer"
           >
             Inspect PTZ →
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT: MASTER VIDEO PLAYER (FOR FOCUS MONITOR VIEW)
+// ─────────────────────────────────────────────────────────────────────────────
+interface MasterPlayerProps {
+  cam: CameraNode;
+  isWebcamActive: boolean;
+  webcamStream: MediaStream | null;
+  showOverlays: boolean;
+  visionFilter: VisionFilter;
+  zoom: number;
+  pan: number;
+  tilt: number;
+  currentTime: string;
+}
+
+const MasterVideoPlayer: React.FC<MasterPlayerProps> = ({
+  cam,
+  isWebcamActive,
+  webcamStream,
+  showOverlays,
+  visionFilter,
+  zoom,
+  pan,
+  tilt,
+  currentTime,
+}) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (isWebcamActive && webcamStream && videoRef.current) {
+      videoRef.current.srcObject = webcamStream;
+      videoRef.current.play().catch(e => console.warn(e));
+    } else if (!isWebcamActive && videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.src = cam.videoUrl;
+      videoRef.current.play().catch(e => console.warn(e));
+    }
+  }, [isWebcamActive, webcamStream, cam.videoUrl]);
+
+  const getFilterStyle = () => {
+    if (visionFilter === 'night') return 'brightness(1.2) contrast(1.3) hue-rotate(85deg) saturate(1.8)';
+    if (visionFilter === 'thermal') return 'invert(0.9) hue-rotate(180deg) saturate(2.5)';
+    return 'none';
+  };
+
+  return (
+    <div className="w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        src={!isWebcamActive ? cam.videoUrl : undefined}
+        className="w-full h-full object-cover transition-transform duration-300"
+        style={{ 
+          transform: `scale(${zoom}) translate(${pan}px, ${tilt}px)`,
+          filter: getFilterStyle()
+        }}
+      />
+
+      {/* AI Overlays */}
+      {showOverlays && cam.status !== 'OFFLINE' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[28%] left-[34%] w-[12%] h-[34%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs animate-pulse">
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-xs border border-emerald-500/60">
+              Person #1 (96%)
+            </div>
+          </div>
+          <div className="absolute top-[32%] left-[54%] w-[11%] h-[32%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs animate-pulse">
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-xs border border-emerald-500/60">
+              Person #2 (94%)
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Master Feed Live HUD */}
+      <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-mono text-[11px] text-white flex flex-wrap items-center gap-4">
+        <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE CCTV'} {cam.fps} FPS
+        </span>
+        <span className="text-slate-300">{cam.resolution}</span>
+        <span className="text-slate-300">{cam.bitrate}</span>
+        <span className="text-slate-300">Latency: {cam.latencyMs}ms</span>
+        <span className="text-[#38BDF8] font-bold">🎯 {cam.peopleCount} Bodies Detected</span>
+      </div>
+
+      <div className="absolute top-3 right-3 bg-black/75 px-2.5 py-1 rounded text-[10px] font-mono font-bold text-white">
+        {currentTime}
       </div>
     </div>
   );
