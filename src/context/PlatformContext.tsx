@@ -19,6 +19,7 @@ import {
   PermissionKey,
   RiskSeverity
 } from '../types/platform';
+import { supabaseAuth } from '../services/supabaseAuth';
 import { 
   ROLES_CONFIG, 
   INITIAL_PROFILES, 
@@ -41,6 +42,9 @@ interface PlatformContextType {
   switchRole: (role: UserRole) => void;
   loginAsRole: (role: UserRole) => void;
   loginWithEmail: (email: string, role?: UserRole) => boolean;
+  loginWithSupabase: (email: string, password: string) => Promise<{ success: boolean; message: string; role?: UserRole }>;
+  registerWithSupabase: (params: { email: string; password: string; fullName: string; role: UserRole; phone?: string }) => Promise<{ success: boolean; message: string }>;
+  isSupabaseConfigured: boolean;
   logout: () => void;
   hasPermission: (permission: PermissionKey) => boolean;
   updateCurrentUserProfile: (fields: Partial<UserProfile>) => void;
@@ -143,6 +147,20 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Default active user is ADMIN (Marcus Vance) for comprehensive overview
   const [currentUser, setCurrentUser] = useState<UserProfile>(INITIAL_PROFILES[0]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isSupabaseConfigured, setIsSupabaseConfigured] = useState<boolean>(supabaseAuth.isConfigured());
+
+  // Sync with live Supabase session changes
+  useEffect(() => {
+    setIsSupabaseConfigured(supabaseAuth.isConfigured());
+    const unsubscribe = supabaseAuth.onAuthStateChange((session, user) => {
+      if (session && user) {
+        const mapped = supabaseAuth.mapSupabaseUserToProfile(user);
+        setCurrentUser(mapped);
+        setIsAuthenticated(true);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // 2. Events & Selected Event Context
   const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
@@ -223,7 +241,33 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return false;
   };
 
-  const logout = () => {
+  const loginWithSupabase = async (email: string, password: string) => {
+    const res = await supabaseAuth.signIn({ email, password });
+    if (res.success && res.user) {
+      const mapped = supabaseAuth.mapSupabaseUserToProfile(res.user);
+      setCurrentUser(mapped);
+      setIsAuthenticated(true);
+      logAction('SUPABASE_AUTH_LOGIN', `USER:${mapped.id}`, `User authenticated via Supabase JWT: ${email}`);
+    }
+    return res;
+  };
+
+  const registerWithSupabase = async (params: { 
+    email: string; 
+    password: string; 
+    fullName: string; 
+    role: UserRole; 
+    phone?: string 
+  }) => {
+    const res = await supabaseAuth.signUp(params);
+    if (res.success && res.user) {
+      logAction('SUPABASE_AUTH_SIGNUP', `USER:${res.user.id}`, `User registered via Supabase Auth: ${params.email} as ${params.role}`);
+    }
+    return res;
+  };
+
+  const logout = async () => {
+    await supabaseAuth.signOut();
     setIsAuthenticated(false);
     logAction('USER_LOGOUT', `USER:${currentUser.id}`, `User ${currentUser.email} logged out`);
   };
@@ -633,6 +677,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       switchRole,
       loginAsRole,
       loginWithEmail,
+      loginWithSupabase,
+      registerWithSupabase,
+      isSupabaseConfigured,
       logout,
       hasPermission,
       updateCurrentUserProfile,
