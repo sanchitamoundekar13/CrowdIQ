@@ -275,19 +275,101 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
           ctx.lineTo(x + w, y + h - cornerLen);
           ctx.stroke();
 
-          // Center Torso Tracking Reticle
-          const centerX = x + w / 2;
-          const centerY = y + h * 0.38;
-          ctx.fillStyle = hudColor;
+          // -----------------------------------------------------------------
+          // A. DEDICATED FACE BOUNDING BOX & 5-POINT BIOMETRIC LANDMARK MESH
+          // -----------------------------------------------------------------
+          const faceW = Math.max(26, Math.min(w * 0.50, 110));
+          const faceH = Math.max(28, Math.min(h * 0.24, faceW * 1.25));
+          const faceX = x + (w - faceW) / 2;
+          const faceY = y + Math.max(2, h * 0.035);
+
+          const leftEye = { x: faceX + faceW * 0.33, y: faceY + faceH * 0.38 };
+          const rightEye = { x: faceX + faceW * 0.67, y: faceY + faceH * 0.38 };
+          const noseTip = { x: faceX + faceW * 0.50, y: faceY + faceH * 0.56 };
+          const mouthLeft = { x: faceX + faceW * 0.36, y: faceY + faceH * 0.76 };
+          const mouthRight = { x: faceX + faceW * 0.64, y: faceY + faceH * 0.76 };
+          const ipd = Math.abs(rightEye.x - leftEye.x);
+
+          // Face translucent fill & border
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.16)';
+          ctx.fillRect(faceX, faceY, faceW, faceH);
+          ctx.strokeStyle = '#00F0FF';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(faceX, faceY, faceW, faceH);
+
+          // Face corner brackets
+          const fCorn = Math.min(8, faceW * 0.25);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
-          ctx.fill();
+          ctx.moveTo(faceX, faceY + fCorn); ctx.lineTo(faceX, faceY); ctx.lineTo(faceX + fCorn, faceY);
+          ctx.moveTo(faceX + faceW - fCorn, faceY); ctx.lineTo(faceX + faceW, faceY); ctx.lineTo(faceX + faceW, faceY + fCorn);
+          ctx.moveTo(faceX, faceY + faceH - fCorn); ctx.lineTo(faceX, faceY + faceH); ctx.lineTo(faceX + fCorn, faceY + faceH);
+          ctx.moveTo(faceX + faceW - fCorn, faceY + faceH); ctx.lineTo(faceX + faceW, faceY + faceH); ctx.lineTo(faceX + faceW, faceY + faceH - fCorn);
+          ctx.stroke();
+
+          // Biometric Triangulation Lines
+          ctx.strokeStyle = 'rgba(0, 240, 255, 0.55)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(leftEye.x, leftEye.y); ctx.lineTo(rightEye.x, rightEye.y);
+          ctx.moveTo(leftEye.x, leftEye.y); ctx.lineTo(noseTip.x, noseTip.y);
+          ctx.moveTo(rightEye.x, rightEye.y); ctx.lineTo(noseTip.x, noseTip.y);
+          ctx.moveTo(noseTip.x, noseTip.y); ctx.lineTo(mouthLeft.x, mouthLeft.y);
+          ctx.moveTo(noseTip.x, noseTip.y); ctx.lineTo(mouthRight.x, mouthRight.y);
+          ctx.moveTo(mouthLeft.x, mouthLeft.y); ctx.lineTo(mouthRight.x, mouthRight.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // 5 Pulsing Biometric Keypoints
+          const landmarks = [leftEye, rightEye, noseTip, mouthLeft, mouthRight];
+          landmarks.forEach(pt => {
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, 2 * Math.PI); ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, 2, 0, 2 * Math.PI); ctx.fill();
+          });
+
+          // Face Biometric Readout Tag Above Face
+          const scorePct = Math.round(person.score * 100);
+          const fPillW = Math.max(170, faceW + 20);
+          const fPillX = Math.max(4, faceX + (faceW - fPillW) / 2);
+          const fPillY = Math.max(4, faceY - 26);
+          ctx.fillStyle = 'rgba(11, 15, 25, 0.94)';
+          ctx.fillRect(fPillX, fPillY, fPillW, 23);
+          ctx.strokeStyle = '#00F0FF';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(fPillX, fPillY, fPillW, 23);
+          ctx.fillStyle = '#38BDF8';
+          ctx.font = 'bold 9px monospace';
+          ctx.fillText(`👤 FACE BIOMETRIC: ACQUIRED (${scorePct}%)`, fPillX + 5, fPillY + 10);
+          ctx.fillStyle = '#94A3B8';
+          ctx.font = '8px monospace';
+          ctx.fillText(`IPD: ${ipd.toFixed(1)}px • 512-D VECTOR LOCKED`, fPillX + 5, fPillY + 19);
 
           // -----------------------------------------------------------------
-          // BELOW THE RECTANGLE: "DETECTED BODY" BADGE
+          // B. UPPER-TORSO GARMENT SAMPLING RETICLE
           // -----------------------------------------------------------------
-          const scorePct = Math.round(person.score * 100);
-          const badgeText = `🟢 DETECTED BODY: Person #${index + 1} (${scorePct}%)`;
+          const torsoX = Math.max(0, Math.round(x + w * 0.22));
+          const torsoY = Math.max(0, Math.round(faceY + faceH + 2));
+          const torsoW = Math.max(8, Math.round(w * 0.56));
+          const torsoH = Math.max(8, Math.round(h * 0.34));
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([3, 3]);
+          ctx.strokeRect(torsoX, torsoY, torsoW, torsoH);
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+          ctx.fillRect(torsoX, torsoY + torsoH - 14, Math.min(torsoW, 140), 14);
+          ctx.fillStyle = '#FBBF24';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('👕 ATTIRE: SAMPLING RGB', torsoX + 3, torsoY + torsoH - 3);
+
+          // -----------------------------------------------------------------
+          // C. BELOW THE RECTANGLE: "DETECTED BODY & FACE" BADGE
+          // -----------------------------------------------------------------
+          const badgeText = `🟢 DETECTED BODY: Person #${index + 1} (${scorePct}%) • FACE: ACQUIRED`;
 
           const badgeY = Math.min(canvas.height - 24, y + h + 6);
           const badgeW = badgeText.length * 7.5 + 16;
@@ -439,8 +521,8 @@ export function MobileCameraNodePage({ onNavigate }: { onNavigate?: (route: stri
 
       {/* Main Video & AI Detection Viewport */}
       <main className="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden">
-        {/* Hidden video element supplying raw camera frames */}
-        <video ref={videoRef} playsInline muted className="hidden" />
+        {/* Active offscreen video element supplying frames to canvas */}
+        <video ref={videoRef} playsInline muted className="absolute opacity-0 pointer-events-none -z-50 w-1 h-1" />
 
         {/* Processed AI Vision Canvas */}
         <canvas ref={canvasRef} className="w-full h-full object-contain max-h-[75vh]" />

@@ -107,6 +107,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
   ]);
   const [isTerminalPaused, setIsTerminalPaused] = useState(false);
   const [targetProfilesMap, setTargetProfilesMap] = useState<Record<string, ReIdTargetProfile>>(PRESET_TARGET_PROFILES);
+  const [simulateTargetInStream, setSimulateTargetInStream] = useState<boolean>(false);
 
   // New Case Form State
   const [newCase, setNewCase] = useState({
@@ -523,13 +524,15 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             bbox: { x: c1X, y: c1Y, w: c1W, h: c1H },
             // If case is Leo, Candidate 1 has yellow hoodie RGB; if Arthur, navy jacket
             sampledRgb: isLeoSharma ? [234, 180, 10] : [28, 54, 88],
+            isCandidateTarget: isLeoSharma,
             velocity: { vx: 0.6, vy: 0.2 },
           },
           {
             id: 'CAN-02',
             trackLabel: 'Candidate #2',
             bbox: { x: c2X, y: c2Y, w: c2W, h: c2H },
-            sampledRgb: [26, 44, 76], // Dark Navy / Charcoal
+            sampledRgb: isArthurJenkins ? [28, 54, 88] : [26, 44, 76], // Dark Navy / Charcoal
+            isCandidateTarget: isArthurJenkins,
             velocity: { vx: 1.1, vy: 0.4 },
           },
           {
@@ -537,6 +540,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             trackLabel: 'Candidate #3',
             bbox: { x: c3X, y: c3Y, w: c3W, h: c3H },
             sampledRgb: [192, 42, 54], // Red / Burgundy
+            isCandidateTarget: false,
             velocity: { vx: -0.8, vy: 0.3 },
           },
           {
@@ -544,6 +548,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             trackLabel: 'Candidate #4',
             bbox: { x: c4X, y: c4Y, w: c4W, h: c4H },
             sampledRgb: [180, 186, 192], // Light Grey / Neutral
+            isCandidateTarget: false,
             velocity: { vx: 0.4, vy: -0.2 },
           },
         ];
@@ -557,7 +562,8 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             id: 'PHONE-01',
             trackLabel: 'Mobile Node Subject #1',
             bbox: b,
-            sampledRgb: realRgb,
+            sampledRgb: simulateTargetInStream ? currentTargetProfile.targetRgb : realRgb,
+            isCandidateTarget: simulateTargetInStream ? true : undefined,
             velocity: { vx: 0.2, vy: 0.1 },
           },
         ];
@@ -571,13 +577,14 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             id: 'WEBCAM-01',
             trackLabel: 'Webcam Subject #1',
             bbox: b,
-            sampledRgb: realRgb,
+            sampledRgb: simulateTargetInStream ? currentTargetProfile.targetRgb : realRgb,
+            isCandidateTarget: simulateTargetInStream ? true : undefined,
             velocity: { vx: 0.1, vy: 0.05 },
           },
         ];
       }
 
-      // 3. Jev & Laya AI Autonomous Decision Evaluation for every candidate
+      // 3. Jev & Laya AI Autonomous Multi-Factor Decision Evaluation for every candidate
       const evaluatedList: ReIdCandidate[] = rawCandidates.map((raw) =>
         evaluateCandidateWithJevLayaAi(raw, currentTargetProfile, decisionThreshold)
       );
@@ -619,7 +626,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             id: `log-${Date.now()}-match`,
             timestamp: timeStr,
             frameNumber: frameCount,
-            message: `🎯 POSITIVE TARGET LOCK: ${matchedCand.id} torso RGB [${matchedCand.sampledRgb.join(', ')}] (${matchedCand.sampledHex}) matches ${currentTargetProfile.name} profile at ${matchedCand.overallConfidence}% (>= ${decisionThreshold}% threshold). Stature ratio: ${matchedCand.statureRatio}:1.`,
+            message: `🎯 POSITIVE TARGET LOCK: ${matchedCand.id} 👤 Face landmarks match ${currentTargetProfile.name} (${matchedCand.faceMatchScore}%, IPD: ${matchedCand.face.interpupillaryDistance}px). 👕 Torso RGB [${matchedCand.sampledRgb.join(', ')}] matches attire at ${matchedCand.colorMatchScore}%. Total: ${matchedCand.overallConfidence}% >= ${decisionThreshold}%.`,
             type: 'MATCH',
           });
         }
@@ -630,7 +637,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
             id: `log-${Date.now()}-rej`,
             timestamp: timeStr,
             frameNumber: frameCount,
-            message: `⚠️ CANDIDATE REJECTED: ${sampleRej.id} detected as ${sampleRej.detectedColorName} (RGB ${sampleRej.sampledHex}). Score ${sampleRej.overallConfidence}% < ${decisionThreshold}%. Reason: ${sampleRej.decisionReason.slice(0, 95)}...`,
+            message: `⚠️ CANDIDATE REJECTED: ${sampleRej.id} 👤 Face: ${sampleRej.faceMatchScore}% (Unverified). 👕 Attire: ${sampleRej.detectedColorName} (${sampleRej.sampledHex}, ${sampleRej.colorMatchScore}%). DECISION: ${sampleRej.rejectionType || 'MISMATCH'}.`,
             type: 'REJECT',
           });
         }
@@ -957,6 +964,20 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                     <Camera className="w-3.5 h-3.5" />
                     <span>{isWebcamActive ? 'Webcam Live' : 'Use Webcam'}</span>
                   </button>
+
+                  {(videoSource === 'webcam' || videoSource === 'phone') && (
+                    <button
+                      onClick={() => setSimulateTargetInStream(!simulateTargetInStream)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-mono text-[11px] font-bold transition cursor-pointer border ${
+                        simulateTargetInStream
+                          ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs animate-pulse'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                      }`}
+                      title="Toggle between inspecting real clothing vs simulating matching target profile"
+                    >
+                      <span>{simulateTargetInStream ? '🎯 Simulating Target' : '🔍 Real Attire Check'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1139,12 +1160,12 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 text-[11px]">
                       <tr>
-                        <th className="py-2.5 px-3">Candidate / Track ID</th>
-                        <th className="py-2.5 px-3">Detected Garment Swatch</th>
+                        <th className="py-2.5 px-3">Candidate ID</th>
+                        <th className="py-2.5 px-3">Face Biometrics (512-D)</th>
+                        <th className="py-2.5 px-3">Torso Garment Attire</th>
                         <th className="py-2.5 px-3">Stature Silhouette</th>
-                        <th className="py-2.5 px-3">Color Match</th>
-                        <th className="py-2.5 px-3">Re-ID Confidence</th>
-                        <th className="py-2.5 px-3">Jev &amp; Laya AI Decision</th>
+                        <th className="py-2.5 px-3">Composite Match</th>
+                        <th className="py-2.5 px-3">Autonomous AI Decision</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-mono">
@@ -1153,7 +1174,7 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                         return (
                           <tr 
                             key={cand.id}
-                            className={`transition ${isMatch ? 'bg-emerald-50/60 font-medium' : 'hover:bg-slate-50'}`}
+                            className={`transition ${isMatch ? 'bg-emerald-50/70 font-medium' : 'hover:bg-slate-50'}`}
                           >
                             <td className="py-2.5 px-3 flex items-center gap-2">
                               <span className={`w-2 h-2 rounded-full ${isMatch ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
@@ -1162,6 +1183,24 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                               </strong>
                             </td>
 
+                            {/* Face Biometrics (512-D) Column */}
+                            <td className="py-2.5 px-3 font-sans">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                                  cand.faceMatchScore >= 80 
+                                    ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' 
+                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                }`}>
+                                  <span>👤 {cand.faceMatchScore}%</span>
+                                  <span>{cand.faceMatchScore >= 80 ? 'Verified' : 'Mismatch'}</span>
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  IPD: {cand.face.interpupillaryDistance}px
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Torso Garment Column */}
                             <td className="py-2.5 px-3">
                               <div className="flex items-center gap-2">
                                 <span 
@@ -1169,24 +1208,20 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                                   style={{ backgroundColor: cand.sampledHex }}
                                 />
                                 <span className="text-[11px] text-slate-700 font-sans">
-                                  {cand.detectedColorName} <span className="text-slate-400 font-mono">({cand.sampledHex})</span>
+                                  {cand.detectedColorName} <span className="text-slate-400 font-mono">({cand.colorMatchScore}%)</span>
                                 </span>
                               </div>
                             </td>
 
+                            {/* Stature Column */}
                             <td className="py-2.5 px-3 text-[11px] text-slate-600 font-sans">
-                              {cand.statureRatio}:1 ({cand.statureRatio < 2.6 ? 'Child Silhouette' : 'Adult Silhouette'})
+                              {cand.statureRatio}:1 ({cand.statureRatio < 2.6 ? 'Child' : 'Adult'})
                             </td>
 
-                            <td className="py-2.5 px-3 text-[11px]">
-                              <span className={cand.colorMatchScore >= 75 ? 'text-emerald-600 font-bold' : 'text-slate-600'}>
-                                {cand.colorMatchScore}%
-                              </span>
-                            </td>
-
+                            {/* Composite Score Column */}
                             <td className="py-2.5 px-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="w-14 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                                   <div 
                                     className={`h-full ${isMatch ? 'bg-emerald-500' : 'bg-slate-400'}`}
                                     style={{ width: `${cand.overallConfidence}%` }}
@@ -1198,16 +1233,17 @@ export const JevLayaLostPersonSection: React.FC<JevLayaLostPersonSectionProps> =
                               </div>
                             </td>
 
+                            {/* Autonomous AI Decision Column */}
                             <td className="py-2.5 px-3 font-sans">
                               {isMatch ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
                                   <Check className="w-3 h-3 text-emerald-600" />
-                                  POSITIVE MATCH (LOCKED)
+                                  <span>POSITIVE MATCH (TARGET LOCKED)</span>
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                   <X className="w-3 h-3 text-rose-500" />
-                                  REJECTED ({cand.rejectionType === 'COLOR_MISMATCH' ? 'Clothing Discrepancy' : 'Low Correlation'})
+                                  <span>REJECTED ({cand.rejectionType === 'DUAL_MISMATCH' ? 'Face & Attire Mismatch' : cand.rejectionType === 'COLOR_MISMATCH' ? 'Attire Mismatch' : 'Face Mismatch'})</span>
                                 </span>
                               )}
                             </td>

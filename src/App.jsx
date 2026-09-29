@@ -34,11 +34,12 @@ import { NotificationsPage } from './pages/NotificationsPage.tsx';
 function AppContent() {
   // Synchronize route with URL hash for seamless direct navigation & bookmarking
   const getRouteFromHash = () => {
-    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    const raw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    const hash = raw.split('?')[0].split('/')[0];
     if (['mobile-camera', 'mobile-cctv', 'cctv-node'].some(k => hash.includes(k))) return 'mobile-camera';
     if (['notifications', 'notification'].includes(hash)) return 'notifications';
     if (['admin', 'admin-portal', 'admin-console'].includes(hash)) return 'admin';
-    if (['monitoring', 'live-monitor'].includes(hash)) return 'monitoring';
+    if (['monitoring', 'live-monitor', 'live-cameras', 'live'].includes(hash)) return 'monitoring';
     if (['cameras', 'camera', 'cctv'].includes(hash)) return 'cameras';
     if (['events', 'event', 'schedule'].includes(hash)) return 'events';
     if (['zones', 'sectors', 'map'].includes(hash)) return 'zones';
