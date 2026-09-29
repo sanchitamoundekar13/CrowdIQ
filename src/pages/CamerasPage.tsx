@@ -826,9 +826,13 @@ export const CamerasPage: React.FC = () => {
                 isSelected={selectedCamId === cam.id}
                 isWebcamActive={activeWebcamCamId === cam.id}
                 webcamStream={webcamStreamRef.current}
+                matchingMobileCam={mobileCameras.find(m => m.id === cam.id)}
                 showOverlays={showOverlays}
                 visionFilter={visionFilter}
                 onToggleWebcam={() => handleToggleWebcamForCam(cam.id)}
+                onOpenMobileNode={() => {
+                  window.open(`${window.location.origin}${window.location.pathname}#/mobile-camera?camId=${cam.id}`, '_blank');
+                }}
                 onSelect={() => setSelectedCamId(cam.id)}
                 onInspect={() => {
                   setSelectedCamId(cam.id);
@@ -863,9 +867,13 @@ export const CamerasPage: React.FC = () => {
                 isSelected={selectedCamId === cam.id}
                 isWebcamActive={activeWebcamCamId === cam.id}
                 webcamStream={webcamStreamRef.current}
+                matchingMobileCam={mobileCameras.find(m => m.id === cam.id)}
                 showOverlays={showOverlays}
                 visionFilter={visionFilter}
                 onToggleWebcam={() => handleToggleWebcamForCam(cam.id)}
+                onOpenMobileNode={() => {
+                  window.open(`${window.location.origin}${window.location.pathname}#/mobile-camera?camId=${cam.id}`, '_blank');
+                }}
                 onSelect={() => setSelectedCamId(cam.id)}
                 onInspect={() => {
                   setSelectedCamId(cam.id);
@@ -1048,6 +1056,21 @@ export const CamerasPage: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => {
+                      window.open(`${window.location.origin}${window.location.pathname}#/mobile-camera?camId=${selectedCam.id}`, '_blank');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border ${
+                      mobileCameras.some(m => m.id === selectedCam.id && m.status === 'ONLINE')
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs'
+                    }`}
+                    title="Connect mobile phone camera to this slot"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>{mobileCameras.some(m => m.id === selectedCam.id && m.status === 'ONLINE') ? 'Phone Cam Linked' : 'Link Phone Cam'}</span>
+                  </button>
+
+                  <button
                     onClick={() => handleToggleWebcamForCam(selectedCam.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border ${
                       activeWebcamCamId === selectedCam.id 
@@ -1075,6 +1098,7 @@ export const CamerasPage: React.FC = () => {
                   cam={selectedCam}
                   isWebcamActive={activeWebcamCamId === selectedCam.id}
                   webcamStream={webcamStreamRef.current}
+                  matchingMobileCam={mobileCameras.find(m => m.id === selectedCam.id)}
                   showOverlays={showOverlays}
                   visionFilter={visionFilter}
                   zoom={ptzZoom}
@@ -1427,9 +1451,11 @@ interface RealCameraCardTileProps {
   isLarge?: boolean;
   isWebcamActive?: boolean;
   webcamStream?: MediaStream | null;
+  matchingMobileCam?: MobileCameraNode;
   showOverlays?: boolean;
   visionFilter?: VisionFilter;
   onToggleWebcam: () => void;
+  onOpenMobileNode: () => void;
   onSelect: () => void;
   onInspect: () => void;
   onReboot: () => void;
@@ -1441,14 +1467,17 @@ const RealCameraCardTile: React.FC<RealCameraCardTileProps> = ({
   isLarge,
   isWebcamActive,
   webcamStream,
+  matchingMobileCam,
   showOverlays,
   visionFilter = 'normal',
   onToggleWebcam,
+  onOpenMobileNode,
   onSelect,
   onInspect,
   onReboot,
 }) => {
   const isOffline = cam.status === 'OFFLINE';
+  const isPhoneLive = matchingMobileCam && matchingMobileCam.status === 'ONLINE' && matchingMobileCam.frameData;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [realFps, setRealFps] = useState<number>(cam.fps || 30);
@@ -1631,7 +1660,13 @@ const RealCameraCardTile: React.FC<RealCameraCardTileProps> = ({
 
       {/* Stream Viewport (16:9 Clean Monitor) */}
       <div className={`relative ${isLarge ? 'aspect-[16/9]' : 'aspect-[16/10]'} bg-slate-950 overflow-hidden flex items-center justify-center`}>
-        {!isOffline ? (
+        {isPhoneLive ? (
+          <img
+            src={matchingMobileCam.frameData}
+            alt={cam.name}
+            className="w-full h-full object-cover"
+          />
+        ) : !isOffline ? (
           <>
             <video
               ref={videoRef}
@@ -1656,17 +1691,35 @@ const RealCameraCardTile: React.FC<RealCameraCardTileProps> = ({
 
         {/* Live Status Pill & Real FPS */}
         <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-          <span className="bg-slate-900/80 backdrop-blur-xs px-2 py-0.5 rounded text-[10px] font-mono font-bold text-white flex items-center gap-1.5 border border-white/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-            {isWebcamActive ? 'WEBCAM' : 'LIVE'}
+          <span className={`backdrop-blur-xs px-2 py-0.5 rounded text-[10px] font-mono font-bold text-white flex items-center gap-1.5 border shadow-2xs ${
+            isPhoneLive
+              ? 'bg-emerald-600/90 border-emerald-400'
+              : 'bg-slate-900/80 border-white/10'
+          }`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            {isPhoneLive ? 'PHONE LIVE' : isWebcamActive ? 'WEBCAM' : 'LIVE'}
           </span>
           <span className="bg-slate-900/80 backdrop-blur-xs px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-400 border border-white/10">
-            {realFps} FPS
+            {isPhoneLive ? matchingMobileCam.fps || 30 : realFps} FPS
           </span>
         </div>
 
         {/* Quick Toolbar on Card Overlay */}
         <div className="absolute top-2 right-2 flex items-center gap-1 z-10 opacity-90 group-hover:opacity-100 transition">
+          {/* Quick Phone Node Link */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenMobileNode();
+            }}
+            className={`p-1.5 rounded-lg text-[10px] transition cursor-pointer border border-white/10 shadow-2xs ${
+              isPhoneLive ? 'bg-emerald-600 text-white' : 'bg-slate-900/75 hover:bg-slate-900 text-white'
+            }`}
+            title={isPhoneLive ? 'Phone Camera Active (Click to open node)' : 'Link Smartphone Camera to this slot'}
+          >
+            <Smartphone className="w-3 h-3" />
+          </button>
+
           {/* Quick Snapshot */}
           <button
             onClick={handleTakeSnapshot}
@@ -1730,6 +1783,7 @@ interface MasterPlayerProps {
   cam: CameraNode;
   isWebcamActive: boolean;
   webcamStream: MediaStream | null;
+  matchingMobileCam?: MobileCameraNode;
   showOverlays: boolean;
   visionFilter: VisionFilter;
   zoom: number;
@@ -1742,6 +1796,7 @@ const MasterVideoPlayer: React.FC<MasterPlayerProps> = ({
   cam,
   isWebcamActive,
   webcamStream,
+  matchingMobileCam,
   showOverlays,
   visionFilter,
   zoom,
@@ -1750,6 +1805,7 @@ const MasterVideoPlayer: React.FC<MasterPlayerProps> = ({
   currentTime,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isPhoneLive = matchingMobileCam && matchingMobileCam.status === 'ONLINE' && matchingMobileCam.frameData;
 
   useEffect(() => {
     if (isWebcamActive && webcamStream && videoRef.current) {
@@ -1770,22 +1826,34 @@ const MasterVideoPlayer: React.FC<MasterPlayerProps> = ({
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950 flex items-center justify-center">
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        src={!isWebcamActive ? cam.videoUrl : undefined}
-        className="w-full h-full object-cover transition-transform duration-300"
-        style={{ 
-          transform: `scale(${zoom}) translate(${pan}px, ${tilt}px)`,
-          filter: getFilterStyle()
-        }}
-      />
+      {isPhoneLive ? (
+        <img
+          src={matchingMobileCam.frameData}
+          alt={cam.name}
+          className="w-full h-full object-cover transition-transform duration-300"
+          style={{ 
+            transform: `scale(${zoom}) translate(${pan}px, ${tilt}px)`,
+            filter: getFilterStyle()
+          }}
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          src={!isWebcamActive ? cam.videoUrl : undefined}
+          className="w-full h-full object-cover transition-transform duration-300"
+          style={{ 
+            transform: `scale(${zoom}) translate(${pan}px, ${tilt}px)`,
+            filter: getFilterStyle()
+          }}
+        />
+      )}
 
       {/* AI Overlays */}
-      {showOverlays && cam.status !== 'OFFLINE' && (
+      {showOverlays && cam.status !== 'OFFLINE' && !isPhoneLive && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[28%] left-[34%] w-[12%] h-[34%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs animate-pulse">
             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/90 text-emerald-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-xs border border-emerald-500/60">
@@ -1804,12 +1872,14 @@ const MasterVideoPlayer: React.FC<MasterPlayerProps> = ({
       <div className="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 font-mono text-[11px] text-white flex flex-wrap items-center gap-4">
         <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE RTSP'} {cam.fps} FPS
+          {isWebcamActive ? 'LIVE WEBCAM' : isPhoneLive ? `LIVE PHONE CAM (${matchingMobileCam.deviceInfo || 'Mobile'})` : 'LIVE RTSP'} {isPhoneLive ? matchingMobileCam.fps || 30 : cam.fps} FPS
         </span>
         <span className="text-slate-300">{cam.resolution}</span>
         <span className="text-slate-300">{cam.bitrate}</span>
         <span className="text-slate-300">Latency: {cam.latencyMs}ms</span>
-        <span className="text-sky-400 font-bold">{cam.peopleCount} Bodies Detected</span>
+        <span className="text-sky-400 font-bold">
+          {isPhoneLive ? `🎯 ${matchingMobileCam.peopleCount} Phone Bodies Detected` : `${cam.peopleCount} Bodies Detected`}
+        </span>
       </div>
 
       <div className="absolute top-3 right-3 bg-slate-900/80 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold text-white border border-white/10">
