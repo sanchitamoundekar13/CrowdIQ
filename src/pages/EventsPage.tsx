@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import { 
   Calendar, 
@@ -18,8 +18,15 @@ import {
   Plus,
   Video,
   Trash2,
-  Edit2
+  Edit2,
+  ShieldAlert,
+  ArrowRight,
+  Radio,
+  Search,
+  ExternalLink
 } from 'lucide-react';
+import { JevLayaLostPersonSection } from '../components/events/JevLayaLostPersonSection';
+import { jevLayaAiService } from '../services/jevLayaAiService';
 
 interface EventItem {
   id: string;
@@ -88,8 +95,11 @@ const INITIAL_EVENTS: EventItem[] = [
 export const EventsPage: React.FC = () => {
   const { settings, updateSettings, totalPeople, averageDensity, playAlertSound } = useSimulation();
 
+  // Active Tab: 'events' | 'jev-laya'
+  const [activeTab, setActiveTab] = useState<'events' | 'jev-laya'>('jev-laya');
   const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
   const [formData, setFormData] = useState({
     eventName: settings.eventName || 'World Championship Finals 2026',
     venueCapacity: settings.venueCapacity || 25000,
@@ -112,6 +122,16 @@ export const EventsPage: React.FC = () => {
     status: 'SCHEDULED' as 'LIVE' | 'SCHEDULED' | 'COMPLETED' | 'PAUSED',
     riskLevel: 'LOW'
   });
+
+  // Check URL hash params for tab
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('tab=events')) {
+      setActiveTab('events');
+    } else if (hash.includes('tab=jev-laya') || hash.includes('tab=lost-person')) {
+      setActiveTab('jev-laya');
+    }
+  }, []);
 
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,264 +175,353 @@ export const EventsPage: React.FC = () => {
   const occupancyPercent = Math.min(100, Math.round((totalPeople / (formData.venueCapacity || 25000)) * 100));
 
   return (
-    <div className="space-y-6 pb-12 animate-fadeIn">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+    <div className="space-y-6 pb-12 font-sans text-slate-900 animate-fadeIn">
+      
+      {/* ===================================================================
+          PAGE HEADER WITH DUAL SUBSYSTEM TABS (WHITE THEME)
+          =================================================================== */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-[#2563EB]" />
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F172A]">
-              Events Management & Venue Schedules
-            </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                  Events Operations &amp; Intelligence
+                </h1>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Active Arena Schedule
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Venue capacity management, camera sector assignments, and Jev &amp; Laya AI Lost Person Locator
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-[#64748B] font-mono mt-0.5">
-            Configure event capacities, assigned sector zones, assigned surveillance cameras, and real-time status
-          </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Subsystem Switcher Tabs */}
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer"
+            onClick={() => setActiveTab('jev-laya')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition cursor-pointer ${
+              activeTab === 'jev-laya'
+                ? 'bg-white text-blue-600 shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>Create New Event</span>
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span>Jev &amp; Laya AI Locator</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+              AMBER
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('events')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition cursor-pointer ${
+              activeTab === 'events'
+                ? 'bg-white text-blue-600 shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Events Directory ({events.length})</span>
           </button>
         </div>
       </div>
 
-      {/* Active Event Hero Card */}
-      <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-2xl border border-slate-800 p-6 shadow-xl text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                ACTIVE LIVE EVENT
-              </span>
-              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                {liveEvent.id}
-              </span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              {liveEvent.title}
-            </h2>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-300">
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-blue-400" />
-                Metropolitan Arena • All Concourses
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-emerald-400" />
-                Live: {liveEvent.time}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <DoorOpen className="w-4 h-4 text-purple-400" />
-                Zones: {liveEvent.zones.join(', ')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Video className="w-4 h-4 text-amber-400" />
-                Cameras: {liveEvent.assignedCameras.join(', ')}
-              </span>
-            </div>
-          </div>
-
-          {/* Real-time Headcount Telemetry */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 sm:p-5 flex flex-col justify-center min-w-[260px]">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-1">
-              <span>VENUE OCCUPANCY</span>
-              <span className="text-emerald-400 font-bold">{occupancyPercent}%</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold font-mono text-white">
-                {totalPeople.toLocaleString()}
-              </span>
-              <span className="text-xs font-mono text-slate-400">
-                / {liveEvent.capacity.toLocaleString()} cap
-              </span>
-            </div>
-
-            <div className="w-full bg-slate-700/60 rounded-full h-2 mt-3 overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-500 ${
-                  occupancyPercent > 85 ? 'bg-rose-500' :
-                  occupancyPercent > 70 ? 'bg-amber-400' : 'bg-blue-500'
-                }`}
-                style={{ width: `${occupancyPercent}%` }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2">
-              <span>Avg Density: <strong>{averageDensity}%</strong></span>
-              <span>Available Seats: <strong>{Math.max(0, liveEvent.capacity - totalPeople).toLocaleString()}</strong></span>
-            </div>
-          </div>
+      {/* ===================================================================
+          TAB 1: JEV & LAYA AI LOST PERSON & CHILD LOCATOR
+          =================================================================== */}
+      {activeTab === 'jev-laya' && (
+        <div className="space-y-6">
+          <JevLayaLostPersonSection
+            onNavigateToCamera={(camId, targetName) => {
+              window.location.hash = `#/cameras?camId=${camId}&targetName=${encodeURIComponent(targetName)}`;
+            }}
+          />
         </div>
-      </div>
+      )}
 
-      {/* Events Management Table */}
-      <div className="bg-white rounded-2xl border border-[#CBD5E1] p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
-          <div>
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
-              Events Directory & Operations Ledger ({events.length})
-            </h3>
-            <p className="text-[11px] text-[#64748B] font-mono mt-0.5">
-              Capacity quotas, assigned zones, surveillance camera bindings, and lifecycle state
-            </p>
+      {/* ===================================================================
+          TAB 2: EVENTS DIRECTORY & SCHEDULES
+          =================================================================== */}
+      {activeTab === 'events' && (
+        <div className="space-y-6">
+          
+          {/* Quick Amber Alert Notice Banner */}
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold shadow-2xs shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold block text-rose-950">
+                  Active Code Amber Child Search in Progress (Leo Sharma, 8 yrs)
+                </span>
+                <span className="text-[11px] text-rose-800">
+                  Target confirmed on CAM-02 (Gate 2 Turnstiles). Jev &amp; Laya AI cross-camera neural tracking active.
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('jev-laya')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition cursor-pointer shadow-xs self-start sm:self-auto shrink-0"
+            >
+              <span>Open Jev &amp; Laya AI Locator</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
-            <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase text-[10px]">
-                <th className="p-3">Event Code & Title</th>
-                <th className="p-3">Date & Time</th>
-                <th className="p-3">Capacity</th>
-                <th className="p-3">Active Zones</th>
-                <th className="p-3">Assigned Cameras</th>
-                <th className="p-3">Event Status</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {events.map((ev) => (
-                <tr key={ev.id} className="hover:bg-[#F8FAFC] transition">
-                  <td className="p-3">
-                    <div className="font-bold text-[#0F172A]">{ev.title}</div>
-                    <span className="text-[10px] text-[#2563EB] font-bold">{ev.id}</span>
-                  </td>
-                  <td className="p-3 text-[#475569]">
-                    <div>{ev.date}</div>
-                    <div className="text-[10px] text-[#64748B]">{ev.time}</div>
-                  </td>
-                  <td className="p-3 font-bold text-[#0F172A]">
-                    {ev.capacity.toLocaleString()}
-                    <span className="text-[10px] text-[#64748B] block font-normal">
-                      {ev.status === 'LIVE' ? `${totalPeople.toLocaleString()} inside` : '0 attendees'}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {ev.zones.map(z => (
-                        <span key={z} className="px-1.5 py-0.5 rounded text-[9px] bg-[#F1F5F9] text-[#334155] border border-[#CBD5E1]">
-                          {z}
+          {/* Active Event Hero Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs text-slate-900">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    ACTIVE LIVE EVENT
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    {liveEvent.id}
+                  </span>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                  {liveEvent.title}
+                </h2>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    Metropolitan Arena • All Concourses
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-emerald-600" />
+                    Live: {liveEvent.time}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <DoorOpen className="w-4 h-4 text-purple-600" />
+                    Zones: {liveEvent.zones.join(', ')}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Video className="w-4 h-4 text-amber-500" />
+                    Cameras: {liveEvent.assignedCameras.join(', ')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Real-time Headcount Telemetry */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col justify-center min-w-[260px]">
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-1 font-medium">
+                  <span>VENUE OCCUPANCY</span>
+                  <span className="text-emerald-600 font-bold">{occupancyPercent}%</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold font-mono text-slate-900">
+                    {totalPeople.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    / {liveEvent.capacity.toLocaleString()} cap
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-200 rounded-full h-2 mt-3 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      occupancyPercent > 85 ? 'bg-rose-500' :
+                      occupancyPercent > 70 ? 'bg-amber-500' : 'bg-blue-600'
+                    }`}
+                    style={{ width: `${occupancyPercent}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 font-medium">
+                  <span>Avg Density: <strong>{averageDensity}%</strong></span>
+                  <span>Available Seats: <strong>{Math.max(0, liveEvent.capacity - totalPeople).toLocaleString()}</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Events Management Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Events Directory &amp; Operations Ledger ({events.length})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Capacity quotas, assigned zones, surveillance camera bindings, and lifecycle state
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create Event</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold">
+                    <th className="p-3">Event Code &amp; Title</th>
+                    <th className="p-3">Date &amp; Time</th>
+                    <th className="p-3">Capacity</th>
+                    <th className="p-3">Active Zones</th>
+                    <th className="p-3">Assigned Cameras</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {events.map((ev) => (
+                    <tr key={ev.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3">
+                        <div className="font-bold text-slate-900">{ev.title}</div>
+                        <span className="text-[10px] text-blue-600 font-mono font-bold">{ev.id}</span>
+                      </td>
+                      <td className="p-3 text-slate-600">
+                        <div>{ev.date}</div>
+                        <div className="text-[11px] text-slate-400">{ev.time}</div>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-900">
+                        {ev.capacity.toLocaleString()}
+                        <span className="text-[11px] text-slate-400 block font-normal">
+                          {ev.status === 'LIVE' ? `${totalPeople.toLocaleString()} inside` : '0 attendees'}
                         </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1 max-w-[180px]">
-                      {ev.assignedCameras.map(cam => (
-                        <span key={cam} className="px-1.5 py-0.5 rounded text-[9px] bg-[#EFF6FF] text-[#2563EB] font-bold border border-[#BFDBFE]">
-                          {cam}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <select
-                      value={ev.status}
-                      onChange={(e) => handleUpdateStatus(ev.id, e.target.value as any)}
-                      className={`px-2 py-1 rounded text-[10px] font-bold uppercase border cursor-pointer font-mono ${
-                        ev.status === 'LIVE' ? 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]' :
-                        ev.status === 'SCHEDULED' ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]' :
-                        ev.status === 'PAUSED' ? 'bg-[#FEFCE8] text-[#CA8A04] border-[#FEF08A]' :
-                        'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]'
-                      }`}
-                    >
-                      <option value="LIVE">LIVE</option>
-                      <option value="SCHEDULED">SCHEDULED</option>
-                      <option value="PAUSED">PAUSED</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                    </select>
-                  </td>
-                  <td className="p-3 text-right">
-                    <button
-                      onClick={() => handleDeleteEvent(ev.id)}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                      title="Remove event"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {ev.zones.map(z => (
+                            <span key={z} className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
+                              {z}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-1 max-w-[180px]">
+                          {ev.assignedCameras.map(cam => (
+                            <span key={cam} className="px-2 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 font-mono font-bold border border-blue-200">
+                              {cam}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={ev.status}
+                          onChange={(e) => handleUpdateStatus(ev.id, e.target.value as any)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold uppercase border cursor-pointer ${
+                            ev.status === 'LIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            ev.status === 'SCHEDULED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            ev.status === 'PAUSED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          <option value="LIVE">LIVE</option>
+                          <option value="SCHEDULED">SCHEDULED</option>
+                          <option value="PAUSED">PAUSED</option>
+                          <option value="COMPLETED">COMPLETED</option>
+                        </select>
+                      </td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleDeleteEvent(ev.id)}
+                          className="p-1 rounded text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                          title="Remove event"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Create Event Modal */}
+      {/* ===================================================================
+          MODAL: CREATE NEW EVENT
+          =================================================================== */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-scaleUp">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-scaleUp text-slate-900">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#2563EB]" />
-                <h3 className="font-extrabold text-[#0F172A] text-base">Create & Schedule New Event</h3>
+                <Calendar className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-slate-900 text-base">Create &amp; Schedule New Event</h3>
               </div>
               <button 
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateEvent} className="space-y-3.5 text-xs font-mono">
+            <form onSubmit={handleCreateEvent} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 uppercase mb-1">Event Title</label>
+                <label className="block font-semibold text-slate-700 mb-1">Event Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Continental Derby Match 2026"
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500 transition"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Date</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Date</label>
                   <input
                     type="text"
                     value={newEvent.date}
                     onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Time</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Time</label>
                   <input
                     type="text"
                     value={newEvent.time}
                     onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Capacity Quota</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Capacity Quota</label>
                   <input
                     type="number"
                     value={newEvent.capacity}
                     onChange={(e) => setNewEvent({ ...newEvent, capacity: Number(e.target.value) })}
-                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Initial Status</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Initial Status</label>
                   <select
                     value={newEvent.status}
                     onChange={(e) => setNewEvent({ ...newEvent, status: e.target.value as any })}
-                    className="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:outline-hidden focus:border-blue-500 font-mono"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     <option value="SCHEDULED">SCHEDULED</option>
                     <option value="LIVE">LIVE</option>
@@ -422,7 +531,7 @@ export const EventsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase mb-1">Assigned Concourses / Zones</label>
+                <label className="block font-semibold text-slate-700 mb-1">Assigned Concourses / Zones</label>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {['Gate A', 'Gate B', 'Gate C', 'Core Plaza', 'VIP Lounge', 'North Exit', 'South Wing'].map((zone) => {
                     const isSelected = newEvent.zones.includes(zone);
@@ -436,10 +545,10 @@ export const EventsPage: React.FC = () => {
                             : [...newEvent.zones, zone];
                           setNewEvent({ ...newEvent, zones: updated });
                         }}
-                        className={`px-2.5 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
                           isSelected 
-                            ? 'bg-[#2563EB] text-white border-[#1D4ED8]' 
-                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
                         {zone}
@@ -450,7 +559,7 @@ export const EventsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase mb-1">Assigned CCTV Cameras</label>
+                <label className="block font-semibold text-slate-700 mb-1">Assigned CCTV Cameras</label>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {['CAM-01', 'CAM-02', 'CAM-03', 'CAM-04', 'CAM-05', 'CAM-06', 'CAM-07', 'CAM-08'].map((cam) => {
                     const isSelected = newEvent.assignedCameras.includes(cam);
@@ -464,10 +573,10 @@ export const EventsPage: React.FC = () => {
                             : [...newEvent.assignedCameras, cam];
                           setNewEvent({ ...newEvent, assignedCameras: updated });
                         }}
-                        className={`px-2 py-1 rounded text-[10px] font-bold border transition cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition cursor-pointer ${
                           isSelected 
-                            ? 'bg-[#16A34A] text-white border-[#15803D]' 
-                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                            ? 'bg-emerald-600 text-white border-emerald-600' 
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
                         {cam}
@@ -481,21 +590,22 @@ export const EventsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+                  className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-xs"
                 >
-                  Save & Register Event
+                  Register Event
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 };

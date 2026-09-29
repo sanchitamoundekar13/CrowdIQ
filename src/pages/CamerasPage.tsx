@@ -39,7 +39,8 @@ import {
   Server,
   Zap,
   HardDrive,
-  Users
+  Users,
+  ShieldAlert
 } from 'lucide-react';
 
 import { MobileCctvHubModal } from '../components/live/MobileCctvHubModal';
@@ -276,6 +277,9 @@ export const CamerasPage: React.FC = () => {
   const [ptzTilt, setPtzTilt] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Jev & Laya AI Active Lost Person Tracking
+  const [activeLostPersonTracking, setActiveLostPersonTracking] = useState<{ camId: string; targetName: string } | null>(null);
+
   // New Camera Form
   const [newCam, setNewCam] = useState({
     name: '',
@@ -340,6 +344,32 @@ export const CamerasPage: React.FC = () => {
       unsubscribe();
       clearInterval(timer);
     };
+  }, []);
+
+  // Listen for Jev & Laya AI Target Tracking Link from Events Page
+  useEffect(() => {
+    const parseUrlTarget = () => {
+      const hash = window.location.hash;
+      if (hash.includes('camId=')) {
+        const queryStr = hash.includes('?') ? hash.split('?')[1] : '';
+        const params = new URLSearchParams(queryStr);
+        const camId = params.get('camId');
+        const targetName = params.get('targetName');
+        if (camId) {
+          setSelectedCamId(camId);
+          setLayoutMode('single');
+          if (targetName) {
+            setActiveLostPersonTracking({ camId, targetName });
+            playAlertSound('critical');
+            setToastMessage(`🎯 Jev & Laya AI: Live Tracking Active for ${targetName} on ${camId}`);
+            setTimeout(() => setToastMessage(null), 4000);
+          }
+        }
+      }
+    };
+    parseUrlTarget();
+    window.addEventListener('hashchange', parseUrlTarget);
+    return () => window.removeEventListener('hashchange', parseUrlTarget);
   }, []);
 
   const selectedCam = cameras.find(c => c.id === selectedCamId) || cameras[0];
@@ -510,13 +540,44 @@ export const CamerasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium flex items-center justify-between shadow-xs animate-fadeIn">
-          <span className="flex items-center gap-2.5">
-            <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
-            <span>{toastMessage}</span>
-          </span>
+      {/* Jev & Laya AI Active Target Tracking Banner */}
+      {activeLostPersonTracking && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-400 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-2xs shrink-0">
+              <ShieldAlert className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-slate-900">
+                  Jev &amp; Laya AI Live Target Tracking: {activeLostPersonTracking.targetName}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 animate-pulse border border-amber-300">
+                  LIVE INTERCEPT LOCKED
+                </span>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-0.5">
+                Target identified on {activeLostPersonTracking.camId}. Surveillance stream locked in Master Inspector mode.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                window.location.hash = '#/events?tab=lost-person';
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold shadow-2xs cursor-pointer"
+            >
+              ← Return to Case Dossier in Events
+            </button>
+            <button
+              onClick={() => setActiveLostPersonTracking(null)}
+              className="p-1.5 rounded-lg text-amber-700 hover:text-amber-900 cursor-pointer"
+              title="Dismiss Tracking Banner"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
