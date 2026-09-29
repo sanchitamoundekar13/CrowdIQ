@@ -1,6 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
+import * as tf from '@tensorflow/tfjs';
+import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import { useSimulation } from '../context/SimulationContext';
-import { Wifi, WifiOff, Compass, AlertTriangle, Grid, Maximize2, Cpu, TrendingUp, Activity, Layers, Camera, Video } from 'lucide-react';
+import { mobileCctvService, DEFAULT_MOBILE_CAMERAS } from '../services/mobileCctvService';
+import { 
+  Wifi, 
+  WifiOff, 
+  AlertTriangle, 
+  Grid, 
+  Maximize2, 
+  Cpu, 
+  Activity, 
+  Layers, 
+  Camera, 
+  Video,
+  Smartphone,
+  RefreshCw,
+  ShieldAlert,
+  FlipHorizontal,
+  Copy,
+  Check,
+  Sliders,
+  Users,
+  Radio,
+  ExternalLink,
+  Eye,
+  SlidersHorizontal
+} from 'lucide-react';
 
 interface RiskEngine {
   density: number;    // % 0-100
@@ -9,6 +35,11 @@ interface RiskEngine {
   flowInstability: number; // turbulence score
   score: number;      // composite 0-100
   reason: string;
+}
+
+interface DetectedPerson {
+  bbox: [number, number, number, number]; // [x, y, width, height]
+  score: number;
 }
 
 const CAMERAS = [
@@ -98,54 +129,30 @@ function RiskEnginePanel({ cam }: { cam: typeof CAMERAS[0] }) {
                 <span className="font-semibold text-[#374151] font-mono">{f.label}</span>
                 <span className="font-bold font-mono" style={{ color: barColor(f.value) }}>{f.value}%</span>
               </div>
-              <div className="h-2.5 rounded-full bg-[#E2E8F0] overflow-hidden">
+              <div className="h-2 rounded-full bg-[#F1F5F9] overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-700"
+                  className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${f.value}%`, background: barColor(f.value) }}
                 />
               </div>
-              <div className="text-[10px] text-[#94A3B8] mt-0.5 font-mono">{f.desc}</div>
+              <span className="text-[10px] text-[#94A3B8] font-mono">{f.desc}</span>
             </div>
           ))}
         </div>
 
-        {/* Score + Reason */}
-        <div className="space-y-3">
-          {/* Score bar */}
+        {/* AI diagnostic summary */}
+        <div className="border-t lg:border-t-0 lg:border-l border-[#E2E8F0] lg:pl-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-semibold text-[#374151] font-mono">Risk Score</span>
-              <span className="font-extrabold font-mono" style={{ color: scoreColor }}>{re.score}/100</span>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-1 font-mono">
+              Diagnostic Rationale
             </div>
-            <div className="h-3 rounded-full bg-[#E2E8F0] overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${re.score}%`, background: scoreColor }}
-              />
-            </div>
+            <p className="text-xs text-[#334155] leading-relaxed bg-[#F8FAFC] rounded-lg p-3 border border-[#E2E8F0]">
+              {re.reason}
+            </p>
           </div>
-
-          {/* Pipeline chips */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {['Camera Feed', 'YOLOv8', 'DeepSORT', 'Risk Engine'].map((step, i, arr) => (
-              <React.Fragment key={step}>
-                <span className="text-[10px] font-mono font-semibold text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#BFDBFE]">{step}</span>
-                {i < arr.length - 1 && <span className="text-[#CBD5E1] text-[10px]">›</span>}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Reason box */}
-          <div className={`p-3 rounded-xl border text-xs leading-relaxed font-mono ${
-            cam.risk === 'CRITICAL' ? 'bg-[#FFF1ED] border-[#F97316] text-[#9A3412]' :
-            cam.risk === 'HIGH'     ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#DC2626]' :
-            cam.risk === 'MODERATE' ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]' :
-                                      'bg-[#F0FDF4] border-[#BBF7D0] text-[#14532D]'
-          }`}>
-            <div className="flex items-center gap-1 font-bold mb-1 text-[10px] uppercase tracking-wide opacity-70">
-              <Activity className="w-3 h-3" />Reason
-            </div>
-            {re.reason}
+          <div className="mt-3 pt-3 border-t border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono text-[#64748B]">
+            <span>Model: DeepSORT v3.2</span>
+            <span className="text-emerald-600 font-bold">● Active</span>
           </div>
         </div>
       </div>
@@ -153,180 +160,609 @@ function RiskEnginePanel({ cam }: { cam: typeof CAMERAS[0] }) {
   );
 }
 
-// ── REAL VIDEO RECORDING FEED COMPONENT (NO STATIC IMAGES) ─────────────────
-function Feed({ 
-  cam, 
-  tall, 
-  isWebcamActive, 
-  webcamRef 
-}: { 
-  cam: typeof CAMERAS[0]; 
-  tall: boolean;
-  isWebcamActive?: boolean;
-  webcamRef?: React.RefObject<HTMLVideoElement | null>;
-}) {
-  const [ts, setTs] = useState(new Date().toLocaleTimeString());
-  useEffect(() => {
-    const t = setInterval(() => setTs(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  if (cam.status === 'OFFLINE') {
-    return (
-      <div className={`bg-[#060C1A] ${tall ? 'h-64 sm:h-80' : 'h-44'} flex flex-col items-center justify-center gap-2 border border-slate-800`}>
-        <WifiOff className="w-8 h-8 text-rose-500 mb-1" />
-        <span className="text-slate-400 text-xs font-mono font-bold">RTSP SIGNAL LOSS / FEED OFFLINE</span>
-        <span className="text-slate-600 text-[10px] font-mono">{cam.id} • {cam.location}</span>
-      </div>
-    );
-  }
-
-  const barW = Math.min(100, (cam.density / 10) * 100);
-  const barColor = cam.density > 7 ? '#DC2626' : cam.density > 5 ? '#D97706' : cam.density > 3 ? '#EAB308' : '#16A34A';
-
-  return (
-    <div className={`relative overflow-hidden ${tall ? 'h-64 sm:h-80' : 'h-44'} bg-black border border-slate-800 group`}>
-      {/* Real Video Playback - Live Camera Recording */}
-      {isWebcamActive && webcamRef ? (
-        <video
-          ref={webcamRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          src={cam.videoUrl}
-          className="w-full h-full object-cover"
-        />
-      )}
-
-      {/* Real-time Simulated YOLO Body Detection Bounding Rectangles */}
-      <div className="absolute top-[28%] left-[34%] w-[12%] h-[34%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs pointer-events-none transition-all duration-300">
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[7px] font-bold px-1 rounded-2xs border border-emerald-500/60 shadow-xs flex items-center gap-0.5">
-          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Person #1 (96%)</span>
-        </div>
-      </div>
-      
-      <div className="absolute top-[32%] left-[55%] w-[11%] h-[32%] border-2 border-emerald-400 bg-emerald-500/15 rounded-xs pointer-events-none transition-all duration-300">
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-emerald-400 font-mono text-[7px] font-bold px-1 rounded-2xs border border-emerald-500/60 shadow-xs flex items-center gap-0.5">
-          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Person #2 (94%)</span>
-        </div>
-      </div>
-
-      {cam.risk === 'CRITICAL' && (
-        <div className="absolute top-[30%] left-[72%] w-[13%] h-[36%] border-2 border-rose-500 bg-rose-500/20 rounded-xs pointer-events-none animate-pulse">
-          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-rose-600 text-white font-mono text-[7px] font-bold px-1 rounded-2xs">
-            SURGE CRITICAL
-          </div>
-        </div>
-      )}
-
-      {/* Top HUD */}
-      <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-        <span className="bg-black/85 text-[10px] font-mono font-bold text-white px-2 py-0.5 rounded flex items-center gap-1.5 border border-white/10 shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          {isWebcamActive ? 'LIVE WEBCAM' : 'LIVE CCTV'} {cam.fps} FPS
-        </span>
-        <span className="bg-black/85 text-[10px] font-mono text-blue-300 px-2 py-0.5 rounded border border-white/10">{cam.res}</span>
-      </div>
-
-      <div className="absolute top-2 right-2 z-10">
-        <span
-          style={{ background: RISK[cam.risk]?.bg, color: RISK[cam.risk]?.color, borderColor: RISK[cam.risk]?.border }}
-          className="text-[10px] font-bold px-2 py-0.5 rounded border font-mono shadow-xs"
-        >
-          {RISK[cam.risk]?.emoji} {cam.risk}
-        </span>
-      </div>
-
-      {/* Bottom HUD */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/85 backdrop-blur-xs px-3 py-1.5 border-t border-white/10 z-10">
-        <div className="flex justify-between items-center text-[10px] font-mono mb-1 text-white">
-          <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            🎯 {cam.people} bodies detected
-          </span>
-          <span className="text-slate-300">{ts}</span>
-        </div>
-        <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${barW}%`, background: barColor }} />
-        </div>
-      </div>
-    </div>
-  );
+// ─────────────────────────────────────────────────────────────────────────────
+// REAL AI CAMERA VIEWER (SAME ARCHITECTURE AS MOBILE-CAMERA NODE)
+// Powered by TensorFlow.js COCO-SSD Human Body Detector with Live Bounding Boxes
+// ─────────────────────────────────────────────────────────────────────────────
+interface RealAiCameraViewerProps {
+  cam: typeof CAMERAS[0];
+  sourceMode: 'webcam' | 'cctv';
+  onToggleSource: () => void;
+  onPeopleDetected?: (count: number, density: number, risk: string) => void;
 }
 
-export function LiveCamerasPage() {
-  useSimulation();
-  const [selectedId, setSelectedId] = useState('CAM-04');
-  const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
-  const [filterRisk, setFilterRisk] = useState('ALL');
-  const [ts, setTs] = useState(new Date().toLocaleTimeString());
-  
-  // Real device webcam stream support
-  const [isWebcamActive, setIsWebcamActive] = useState(false);
-  const webcamRef = useRef<HTMLVideoElement | null>(null);
-  const webcamStreamRef = useRef<MediaStream | null>(null);
+function RealAiCameraViewer({ cam, sourceMode, onToggleSource, onPeopleDetected }: RealAiCameraViewerProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const modelRef = useRef<cocoSsd.ObjectDetection | null>(null);
+  const isDetectingRef = useRef<boolean>(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(performance.now());
+  const frameCountRef = useRef<number>(0);
 
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('user');
+  const [modelLoading, setModelLoading] = useState<boolean>(true);
+  const [modelError, setModelError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+
+  // Vision telemetry
+  const [peopleCount, setPeopleCount] = useState<number>(cam.people);
+  const [detectedPersons, setDetectedPersons] = useState<DetectedPerson[]>([]);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.40);
+  const [density, setDensity] = useState<number>(Math.round(cam.density * 10));
+  const [fps, setFps] = useState<number>(cam.fps || 30);
+  const [riskLevel, setRiskLevel] = useState<'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL'>(cam.risk as any);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  // 1. Initialize TensorFlow.js & COCO-SSD
   useEffect(() => {
-    const t = setInterval(() => setTs(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(t);
-  }, []);
+    let isMounted = true;
+    setModelLoading(true);
+    setModelError(null);
 
-  const handleToggleWebcam = async () => {
-    if (isWebcamActive) {
-      if (webcamStreamRef.current) {
-        webcamStreamRef.current.getTracks().forEach(t => t.stop());
-        webcamStreamRef.current = null;
+    const initModel = async () => {
+      try {
+        await tf.ready();
+        const loadedModel = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+        if (isMounted) {
+          modelRef.current = loadedModel;
+          setModelLoading(false);
+          console.log('✅ RealCamera: TensorFlow.js COCO-SSD initialized.');
+        }
+      } catch (err: any) {
+        console.error('Failed to load TensorFlow model:', err);
+        if (isMounted) {
+          setModelError(err.message || 'Failed to initialize vision model.');
+          setModelLoading(false);
+        }
       }
-      setIsWebcamActive(false);
-    } else {
+    };
+
+    initModel();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Setup Video Source (Webcam or CCTV Video file)
+  const setupVideoSource = async () => {
+    setCameraError(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (sourceMode === 'webcam') {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
+          video: {
+            facingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
         });
-        webcamStreamRef.current = stream;
-        setIsWebcamActive(true);
-        setViewMode('detail');
-        setTimeout(() => {
-          if (webcamRef.current) {
-            webcamRef.current.srcObject = stream;
-          }
-        }, 100);
+        streamRef.current = stream;
+        video.srcObject = stream;
+        await video.play();
+        setIsStreaming(true);
+      } catch (err: any) {
+        console.error('Webcam permission error:', err);
+        setCameraError(`Camera error: ${err.message || 'Permission denied or webcam in use.'}`);
+        setIsStreaming(false);
+      }
+    } else {
+      // CCTV Video Stream
+      video.srcObject = null;
+      video.src = cam.videoUrl;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      try {
+        await video.play();
+        setIsStreaming(true);
       } catch (err) {
-        console.error('Failed to open webcam', err);
-        alert('Could not access device camera. Please check camera permissions in your browser.');
+        console.error('Video playback error:', err);
       }
     }
   };
 
   useEffect(() => {
-    if (isWebcamActive && webcamRef.current && webcamStreamRef.current) {
-      webcamRef.current.srcObject = webcamStreamRef.current;
-    }
-  }, [isWebcamActive, selectedId, viewMode]);
-
-  useEffect(() => {
+    setupVideoSource();
     return () => {
-      if (webcamStreamRef.current) {
-        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
+  }, [sourceMode, facingMode, cam.videoUrl]);
+
+  // 3. Real-Time Detection & High-Tech HUD Canvas Loop (Exact style as MobileCameraNodePage)
+  useEffect(() => {
+    if (!isStreaming || modelLoading) return;
+
+    let isMounted = true;
+    let lastTelemetryPush = 0;
+
+    const detectAndRender = async () => {
+      if (!isMounted || !videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      if (video.readyState >= 2 && ctx) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+
+        // Draw camera video feed frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Compute real FPS
+        const now = performance.now();
+        frameCountRef.current += 1;
+        if (now - lastTimeRef.current >= 1000) {
+          const currentFps = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
+          setFps(currentFps);
+          frameCountRef.current = 0;
+          lastTimeRef.current = now;
+        }
+
+        // Run real AI body detection using TensorFlow COCO-SSD
+        let realPersons: DetectedPerson[] = [];
+
+        if (modelRef.current && !isDetectingRef.current) {
+          isDetectingRef.current = true;
+          try {
+            const predictions = await modelRef.current.detect(video);
+            // Filter strictly for human bodies ('person' class) above confidence threshold
+            realPersons = predictions
+              .filter((p) => p.class === 'person' && p.score >= confidenceThreshold)
+              .map((p) => ({
+                bbox: p.bbox,
+                score: p.score,
+              }));
+
+            setDetectedPersons(realPersons);
+            setPeopleCount(realPersons.length);
+          } catch (e) {
+            console.warn('Frame detection step error:', e);
+          } finally {
+            isDetectingRef.current = false;
+          }
+        } else {
+          realPersons = detectedPersons;
+        }
+
+        // Calculate density & risk based on real detected people
+        const realCount = realPersons.length;
+        const calculatedDensity = Math.min(100, Math.round((realCount / 10) * 100));
+        setDensity(calculatedDensity);
+
+        const calculatedRisk: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' =
+          calculatedDensity >= 80 ? 'CRITICAL' :
+          calculatedDensity >= 60 ? 'HIGH' :
+          calculatedDensity >= 35 ? 'MODERATE' : 'LOW';
+
+        setRiskLevel(calculatedRisk);
+
+        if (onPeopleDetected) {
+          onPeopleDetected(realCount, calculatedDensity, calculatedRisk);
+        }
+
+        // Visual HUD Styling Colors
+        const hudColor = calculatedRisk === 'CRITICAL' ? '#EF4444' :
+                         calculatedRisk === 'HIGH' ? '#F97316' :
+                         calculatedRisk === 'MODERATE' ? '#F59E0B' : '#00F0FF';
+
+        // 4. Render Human Body Rectangle & Below "DETECTED BODY" Badge
+        realPersons.forEach((person, index) => {
+          let [x, y, w, h] = person.bbox;
+
+          // Ensure vertical human body rectangular proportions
+          if (h < w * 1.3) {
+            const adjustedH = Math.max(h, w * 1.45);
+            const deltaH = adjustedH - h;
+            y = Math.max(0, y - deltaH * 0.2);
+            h = Math.min(canvas.height - y - 28, adjustedH);
+          }
+
+          // Subtle glowing translucent body fill inside rectangle
+          ctx.fillStyle = calculatedRisk === 'CRITICAL' ? 'rgba(239, 68, 68, 0.08)' :
+                          calculatedRisk === 'HIGH' ? 'rgba(249, 115, 22, 0.08)' :
+                          'rgba(0, 240, 255, 0.08)';
+          ctx.fillRect(x, y, w, h);
+
+          // Human Body Bounding Rectangle
+          ctx.strokeStyle = hudColor;
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(x, y, w, h);
+
+          // High-contrast corner brackets on the rectangle
+          const cornerLen = Math.min(20, w * 0.25, h * 0.15);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 3;
+
+          // Top-Left
+          ctx.beginPath();
+          ctx.moveTo(x, y + cornerLen);
+          ctx.lineTo(x, y);
+          ctx.lineTo(x + cornerLen, y);
+          ctx.stroke();
+
+          // Top-Right
+          ctx.beginPath();
+          ctx.moveTo(x + w - cornerLen, y);
+          ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + cornerLen);
+          ctx.stroke();
+
+          // Bottom-Left
+          ctx.beginPath();
+          ctx.moveTo(x, y + h - cornerLen);
+          ctx.lineTo(x, y + h);
+          ctx.lineTo(x + cornerLen, y + h);
+          ctx.stroke();
+
+          // Bottom-Right
+          ctx.beginPath();
+          ctx.moveTo(x + w - cornerLen, y + h);
+          ctx.lineTo(x + w, y + h);
+          ctx.lineTo(x + w, y + h - cornerLen);
+          ctx.stroke();
+
+          // Label Badge Below Box
+          const badgeText = `DETECTED BODY • P#${index + 1} (${Math.round(person.score * 100)}%)`;
+          const badgeW = Math.max(160, w);
+          const badgeX = x + (w - badgeW) / 2;
+          const badgeY = Math.min(canvas.height - 24, y + h + 4);
+
+          // Badge Background
+          ctx.fillStyle = 'rgba(11, 15, 25, 0.92)';
+          ctx.fillRect(badgeX, badgeY, badgeW, 22);
+
+          // Badge Border
+          ctx.strokeStyle = hudColor;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(badgeX, badgeY, badgeW, 22);
+
+          // Badge Text
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 11px monospace';
+          ctx.fillText(badgeText, badgeX + 8, badgeY + 15);
+        });
+
+        // 5. Render Top Neural HUD Overlay Banner
+        ctx.fillStyle = 'rgba(11, 15, 25, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, 38);
+
+        ctx.fillStyle = '#00F0FF';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(`📷 ${cam.id} | TENSORFLOW.JS BODY DETECTOR`, 14, 24);
+
+        ctx.fillStyle = realCount > 0 ? '#10B981' : '#94A3B8';
+        ctx.fillText(`HUMAN BODIES: ${realCount}`, canvas.width - 180, 24);
+
+        // 6. Broadcast Telemetry & Frame Snapshot
+        if (now - lastTelemetryPush > 400) {
+          lastTelemetryPush = now;
+          const frameSnapshot = canvas.toDataURL('image/jpeg', 0.5);
+
+          mobileCctvService.updateTelemetry({
+            id: cam.id,
+            name: cam.name,
+            location: cam.location,
+            peopleCount: realCount,
+            density: calculatedDensity,
+            fps: fps || 30,
+            riskLevel: calculatedRisk,
+            deviceInfo: sourceMode === 'webcam' ? `Webcam (${facingMode})` : 'CCTV RTSP Loop',
+            frameData: frameSnapshot,
+            facingMode,
+          });
+        }
+      }
+
+      animationFrameRef.current = requestAnimationFrame(detectAndRender);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(detectAndRender);
+
+    return () => {
+      isMounted = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isStreaming, modelLoading, cam.id, facingMode, confidenceThreshold, fps, sourceMode]);
+
+  const handleCopyMobileLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}#/mobile-camera?camId=${cam.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="bg-[#070A12] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col font-sans select-none text-white">
+      {/* Top Controls Header */}
+      <div className="bg-[#0F172A] border-b border-[#1E293B] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2.5 h-2.5 rounded-full ${modelLoading ? 'bg-amber-400 animate-ping' : 'bg-[#10B981] animate-pulse'}`}></span>
+          <div>
+            <div className="text-sm font-extrabold text-white font-mono flex items-center gap-2">
+              <span>{cam.id} • {cam.name}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1E293B] text-[#38BDF8] border border-[#38BDF8]/30">
+                {sourceMode === 'webcam' ? '🔴 REAL WEBCAM' : '📹 CCTV STREAM'}
+              </span>
+            </div>
+            <div className="text-[11px] text-[#94A3B8] font-mono">
+              {modelLoading ? 'Initializing TensorFlow Lite Neural Detector...' : 'TensorFlow.js Real-time Body Detection Active'}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Switch Source: Webcam <-> CCTV Video */}
+          <button
+            onClick={onToggleSource}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+              sourceMode === 'webcam'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-700 shadow-sm'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>{sourceMode === 'webcam' ? 'Switch to CCTV Stream' : 'Use Real Device Camera'}</span>
+          </button>
+
+          {/* Flip camera if webcam */}
+          {sourceMode === 'webcam' && (
+            <button
+              onClick={() => setFacingMode(prev => prev === 'user' ? 'environment' : 'user')}
+              className="p-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-white transition cursor-pointer"
+              title="Flip Front / Rear Camera"
+            >
+              <FlipHorizontal className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* AI Settings Toggle */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className={`p-1.5 rounded-lg border transition cursor-pointer ${
+              showSettings ? 'bg-[#2563EB] border-[#3B82F6] text-white' : 'bg-[#1E293B] border-[#334155] text-[#94A3B8]'
+            }`}
+            title="AI Vision Sensitivity Settings"
+          >
+            <Sliders className="w-4 h-4" />
+          </button>
+
+          {/* Open Mobile Node */}
+          <button
+            onClick={() => {
+              window.location.hash = `#/mobile-camera?camId=${cam.id}`;
+            }}
+            className="px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-xs font-mono text-white flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+            <span>Open Mobile Node</span>
+          </button>
+        </div>
+      </div>
+
+      {/* AI Settings Drawer */}
+      {showSettings && (
+        <div className="bg-[#0B0F19] border-b border-[#1E293B] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono animate-fadeIn">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <span className="text-[#94A3B8] uppercase text-[10px]">AI Confidence Threshold:</span>
+            <input
+              type="range"
+              min="0.30"
+              max="0.80"
+              step="0.05"
+              value={confidenceThreshold}
+              onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
+              className="w-36 accent-[#2563EB] cursor-pointer"
+            />
+            <span className="font-bold text-[#00F0FF]">{Math.round(confidenceThreshold * 100)}%</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
+            <Cpu className="w-4 h-4 text-[#10B981]" />
+            Engine: TensorFlow.js Lite MobileNet v2 Person Detector
+          </div>
+        </div>
+      )}
+
+      {/* Main Viewport & Canvas */}
+      <div className="relative aspect-[16/9] sm:aspect-[16/10] bg-black flex flex-col items-center justify-center overflow-hidden">
+        {/* Hidden video element supplying raw camera frames */}
+        <video ref={videoRef} playsInline muted className="hidden" />
+
+        {/* Processed AI Vision Canvas */}
+        <canvas ref={canvasRef} className="w-full h-full object-contain" />
+
+        {/* Loading Weights Overlay */}
+        {modelLoading && (
+          <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-6 space-y-3 z-20">
+            <RefreshCw className="w-10 h-10 text-[#00F0FF] animate-spin" />
+            <h3 className="text-sm font-bold font-mono text-white">Loading Neural Vision Weights...</h3>
+            <p className="text-xs text-[#94A3B8] font-mono text-center max-w-xs">
+              Initializing TensorFlow MobileNet on-device person detector. Please hold on...
+            </p>
+          </div>
+        )}
+
+        {/* Camera Permission Error Overlay */}
+        {cameraError && (
+          <div className="absolute inset-0 bg-black/90 p-6 flex flex-col items-center justify-center text-center space-y-4 z-20">
+            <ShieldAlert className="w-14 h-14 text-[#EF4444]" />
+            <div className="space-y-1 max-w-sm">
+              <h3 className="text-base font-bold text-white">Camera Offline</h3>
+              <p className="text-xs text-[#94A3B8] font-mono">{cameraError}</p>
+            </div>
+            <button
+              onClick={setupVideoSource}
+              className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs flex items-center gap-2 cursor-pointer font-mono"
+            >
+              <RefreshCw className="w-4 h-4" /> Grant / Retry Camera
+            </button>
+          </div>
+        )}
+
+        {/* Live Status Tag */}
+        {isStreaming && !modelLoading && (
+          <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#10B981]/50 flex items-center gap-2 z-10">
+            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+            <span className="text-xs font-mono font-extrabold text-[#10B981]">
+              LIVE: {cam.id}
+            </span>
+          </div>
+        )}
+
+        {/* Floating Telemetry Stats Bar (Exact Style from Mobile Node) */}
+        <div className="absolute bottom-3 left-3 right-3 bg-[#0F172A]/90 backdrop-blur-md border border-[#1E293B] rounded-xl p-3 sm:p-3.5 shadow-2xl flex items-center justify-between gap-3 z-10">
+          <div>
+            <div className="text-[10px] font-mono uppercase text-[#94A3B8] tracking-wider flex items-center gap-1">
+              <Users className="w-3 h-3 text-[#00F0FF]" /> Detected Bodies
+            </div>
+            <div className="text-xl sm:text-2xl font-black font-mono text-[#00F0FF]">
+              {peopleCount} <span className="text-xs font-normal text-[#64748B]">Bodies</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-mono uppercase text-[#94A3B8] tracking-wider">
+              Density
+            </div>
+            <div className="text-lg sm:text-xl font-bold font-mono text-white">
+              {density}%
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-mono uppercase text-[#94A3B8] tracking-wider">
+              Risk Index
+            </div>
+            <span className={`text-xs font-extrabold font-mono px-2.5 py-1 rounded-md border ${
+              riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
+              riskLevel === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border-orange-500/40' :
+              riskLevel === 'MODERATE' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' :
+              'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+            }`}>
+              {riskLevel}
+            </span>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-mono uppercase text-[#94A3B8] tracking-wider">
+              FPS
+            </div>
+            <div className="text-sm font-bold font-mono text-emerald-400">
+              {fps || 30}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time DETECTED BODIES Live Tray (Exact Style as Mobile Node) */}
+      <div className="bg-[#0B0F19] border-t border-[#1E293B] px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${peopleCount > 0 ? 'bg-[#10B981] animate-ping' : 'bg-slate-500'}`} />
+            <span className="text-xs font-mono font-bold uppercase text-white tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[#00F0FF]" />
+              DETECTED BODIES: <span className="text-base text-[#00F0FF]">{peopleCount}</span>
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-[#94A3B8]">
+            {peopleCount > 0 ? 'Human body recognition active' : 'Waiting for persons to enter frame...'}
+          </span>
+        </div>
+
+        {/* Live Detected Body Cards */}
+        {detectedPersons.length > 0 ? (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {detectedPersons.map((p, idx) => (
+              <div 
+                key={idx} 
+                className="shrink-0 bg-[#1E293B] border border-[#00F0FF]/40 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs font-mono shadow-sm"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="font-bold text-white">Body #{idx + 1}</span>
+                <span className="text-[10px] text-[#00F0FF] bg-[#0F172A] px-1.5 py-0.5 rounded border border-[#00F0FF]/20">
+                  {Math.round(p.score * 100)}% match
+                </span>
+                <span className="text-[10px] text-[#94A3B8]">
+                  [W: {Math.round(p.bbox[2])}px × H: {Math.round(p.bbox[3])}px]
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[11px] font-mono text-slate-500 italic py-1 flex items-center gap-2">
+            <span>⚪ 0 Human Bodies detected. Stand in front of camera or load crowd feed.</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Share Node */}
+      <div className="bg-[#0F172A] border-t border-[#1E293B] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-[#94A3B8] font-mono">
+          <Radio className="w-4 h-4 text-[#10B981] animate-pulse" />
+          Live Neural Telemetry Streamed to CrowdIQ Operations Command
+        </div>
+
+        <button
+          onClick={handleCopyMobileLink}
+          className="w-full sm:w-auto px-4 py-1.5 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-white font-mono font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+        >
+          {copied ? <Check className="w-4 h-4 text-[#10B981]" /> : <Copy className="w-4 h-4 text-[#3B82F6]" />}
+          {copied ? 'Link Copied!' : `Copy Node #${cam.id} Link`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN LIVE CAMERAS PAGE COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+export function LiveCamerasPage() {
+  useSimulation();
+  const [selectedId, setSelectedId] = useState('CAM-01');
+  const [viewMode, setViewMode] = useState<'detail' | 'grid'>('detail');
+  const [sourceMode, setSourceMode] = useState<'webcam' | 'cctv'>('webcam');
+  const [filterRisk, setFilterRisk] = useState('ALL');
+  const [ts, setTs] = useState(new Date().toLocaleTimeString());
+  
+  // Realtime detections across cameras
+  const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const t = setInterval(() => setTs(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  const selected = CAMERAS.find(c => c.id === selectedId) || CAMERAS[3];
+  const rawSelected = CAMERAS.find(c => c.id === selectedId) || CAMERAS[0];
+  const selected = {
+    ...rawSelected,
+    people: liveCounts[rawSelected.id] !== undefined ? liveCounts[rawSelected.id] : rawSelected.people
+  };
+
   const filtered = filterRisk === 'ALL' ? CAMERAS : CAMERAS.filter(c => c.risk === filterRisk);
   const online = CAMERAS.filter(c => c.status === 'ONLINE').length;
-  const totalDet = CAMERAS.filter(c => c.status === 'ONLINE').reduce((s, c) => s + c.people, 0);
+  const totalDet = CAMERAS.filter(c => c.status === 'ONLINE').reduce((s, c) => s + (liveCounts[c.id] ?? c.people), 0);
   const avgD = (CAMERAS.filter(c => c.status === 'ONLINE').reduce((s, c) => s + c.density, 0) / online).toFixed(1);
   const hiRisk = CAMERAS.filter(c => c.risk === 'HIGH' || c.risk === 'CRITICAL').length;
 
@@ -341,18 +777,19 @@ export function LiveCamerasPage() {
     { label: 'Camera Status',      val: selected.status,                      isRisk: false, hi: false },
     { label: 'FPS',                val: `${selected.fps} fps`,                isRisk: false, hi: false },
     { label: 'Resolution',         val: selected.res,                         isRisk: false, hi: false },
+    { label: 'AI Detector',        val: 'TensorFlow.js COCO-SSD',             isRisk: false, hi: true  },
     { label: 'Last Updated',       val: ts,                                   isRisk: false, hi: false },
   ];
 
   return (
     <div className="space-y-5 pb-12">
-      {/* ── Header ── */}
+      {/* ── Top Header ── */}
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] bg-[#EFF6FF] px-2.5 py-0.5 rounded">Live Monitor</span>
             <span className="text-[11px] font-semibold text-[#059669] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#BBF7D0] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />REAL CAMERA RECORDING
+              <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />REAL-TIME TENSORFLOW.JS BODY DETECTOR
             </span>
             {hiRisk > 0 && (
               <span className="text-[11px] font-semibold text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded border border-[#FCA5A5] flex items-center gap-1">
@@ -361,21 +798,21 @@ export function LiveCamerasPage() {
             )}
           </div>
           <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">CCTV Surveillance &amp; Crowd Monitor</h1>
-          <p className="text-xs text-[#64748B] mt-0.5 font-mono">Real-time CCTV recordings — continuous pedestrian movement, body tracking, density • {ts}</p>
+          <p className="text-xs text-[#64748B] mt-0.5 font-mono">Real-time device camera / CCTV streams with neural bounding boxes &amp; density analytics • {ts}</p>
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Webcam Live Toggle */}
+          {/* Toggle Webcam vs CCTV */}
           <button
-            onClick={handleToggleWebcam}
+            onClick={() => setSourceMode(m => m === 'webcam' ? 'cctv' : 'webcam')}
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
-              isWebcamActive
+              sourceMode === 'webcam'
                 ? 'bg-rose-600 text-white border-rose-700 shadow-xs animate-pulse'
                 : 'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-700'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>{isWebcamActive ? '🔴 Stop Real Webcam' : '📹 Use Real Device Camera'}</span>
+            <span>{sourceMode === 'webcam' ? '🔴 Live Device Webcam' : '📹 Use Real Device Camera'}</span>
           </button>
 
           <span className="text-xs font-mono text-[#64748B] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
@@ -387,7 +824,7 @@ export function LiveCamerasPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#2563EB] text-white cursor-pointer hover:bg-[#1D4ED8] transition font-mono"
           >
             {viewMode === 'grid'
-              ? <><Maximize2 className="w-3.5 h-3.5" />Detail View</>
+              ? <><Maximize2 className="w-3.5 h-3.5" />AI Node View</>
               : <><Grid className="w-3.5 h-3.5" />Grid View</>}
           </button>
           
@@ -398,7 +835,7 @@ export function LiveCamerasPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#0F172A] text-white hover:bg-slate-800 transition cursor-pointer font-mono"
           >
             <Layers className="w-3.5 h-3.5 text-blue-400" />
-            <span>🪟 All Angles Video Wall</span>
+            <span>🪟 Video Wall</span>
           </button>
         </div>
       </div>
@@ -406,8 +843,8 @@ export function LiveCamerasPage() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Online Cameras', value: `${online}/${CAMERAS.length}`, sub: 'recordings streaming', color: '#059669', bg: '#F0FDF4' },
-          { label: 'Total Detected', value: totalDet,                       sub: 'persons in frame',    color: '#2563EB', bg: '#EFF6FF' },
+          { label: 'Active Feeds',   value: `${online}/${CAMERAS.length}`, sub: sourceMode === 'webcam' ? 'Live Device Camera' : 'CCTV Streams', color: '#059669', bg: '#F0FDF4' },
+          { label: 'Total Detected', value: totalDet,                       sub: 'persons tracked',    color: '#2563EB', bg: '#EFF6FF' },
           { label: 'High Risk',      value: hiRisk,                          sub: 'cameras flagged',    color: '#DC2626', bg: '#FEF2F2' },
           { label: 'Avg Density',    value: `${avgD}/m²`,                   sub: 'venue average',      color: '#D97706', bg: '#FFFBEB' },
         ].map((s, i) => (
@@ -419,81 +856,139 @@ export function LiveCamerasPage() {
         ))}
       </div>
 
-      {/* ── Risk Engine Panel ── always visible, tracks selected or highest-risk camera ── */}
-      <RiskEnginePanel cam={viewMode === 'detail' ? selected : (CAMERAS.filter(c => c.status === 'ONLINE').sort((a,b) => b.re.score - a.re.score)[0] || CAMERAS[7])} />
-
-      {/* ── Detail View with Real Camera Recording ── */}
+      {/* ── DETAIL VIEW: EXACT SAME AI CAMERA NODE AS MOBILE-CAMERA ── */}
       {viewMode === 'detail' && (
-        <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden">
-          <div className="bg-[#060C1A] px-4 py-2.5 flex items-center gap-3 border-b border-slate-800">
-            <span className="text-[11px] font-mono font-bold text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">{selected.id}</span>
-            <span className="text-white text-sm font-bold">{selected.name}</span>
-            <span className="text-slate-400 text-[11px] font-mono truncate">{selected.location}</span>
-            <div className="ml-auto shrink-0 flex items-center gap-2">
-              {isWebcamActive && (
-                <span className="text-[10px] font-mono font-bold bg-rose-600/30 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded animate-pulse">
-                  ● DEVICE WEBCAM ACTIVE
-                </span>
-              )}
-              {selected.status === 'ONLINE'
-                ? <span className="text-[11px] text-green-400 font-mono flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />REAL VIDEO LIVE</span>
-                : <span className="text-[11px] text-red-400 font-mono">OFFLINE</span>}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <Feed 
-                cam={selected} 
-                tall={true} 
-                isWebcamActive={isWebcamActive} 
-                webcamRef={webcamRef} 
-              />
-            </div>
-            <div className="border-t lg:border-t-0 lg:border-l border-[#E2E8F0] p-5 overflow-y-auto" style={{ maxHeight: 370 }}>
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB] mb-3">Live Telemetry</h3>
-              {tele.map((row, i) => (
-                <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-[#F1F5F9] last:border-0">
-                  <span className="text-[11px] text-[#64748B] font-mono shrink-0">{row.label}</span>
-                  {row.isRisk
-                    ? <span style={{ color: RISK[row.val]?.color, background: RISK[row.val]?.bg, borderColor: RISK[row.val]?.border }}
-                        className="text-[11px] font-bold px-2 py-0.5 rounded border font-mono">{RISK[row.val]?.emoji} {row.val}</span>
-                    : <span className={`text-[11px] font-mono font-bold text-right ${row.hi ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>{row.val}</span>}
-                </div>
+        <div className="space-y-4">
+          {/* Camera Slot Selector Bar */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-3 flex items-center justify-between gap-3 flex-wrap shadow-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold text-[#64748B]">Active AI Slot:</span>
+              {CAMERAS.slice(0, 4).map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedId(c.id)}
+                  className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition cursor-pointer border ${
+                    c.id === selectedId
+                      ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
+                      : 'bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:bg-[#EFF6FF]'
+                  }`}
+                >
+                  {c.id} • {c.name}
+                </button>
               ))}
             </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  window.location.hash = `#/mobile-camera?camId=${selectedId}`;
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#2563EB] bg-[#EFF6FF] px-3 py-1.5 rounded-lg border border-[#BFDBFE] hover:bg-[#DBEAFE] transition cursor-pointer"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Open Direct on Phone (#{selectedId}) →</span>
+              </button>
+            </div>
           </div>
-          <div className="border-t border-[#E2E8F0] p-3 flex items-center gap-2 flex-wrap bg-[#F8FAFC]">
-            <span className="text-[11px] font-mono text-[#64748B]">Switch Camera:</span>
-            {CAMERAS.map(c => (
-              <button key={c.id} onClick={() => c.status === 'ONLINE' && setSelectedId(c.id)} disabled={c.status === 'OFFLINE'}
-                className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded transition cursor-pointer
-                  ${c.id === selectedId ? 'bg-[#2563EB] text-white' : 'bg-white border border-[#E2E8F0] text-[#475569] hover:border-[#2563EB]'}
-                  ${c.status === 'OFFLINE' ? 'opacity-40 cursor-not-allowed' : ''}`}>{c.id}</button>
-            ))}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Real AI Camera Viewer (2 Cols) */}
+            <div className="lg:col-span-2">
+              <RealAiCameraViewer
+                cam={selected}
+                sourceMode={sourceMode}
+                onToggleSource={() => setSourceMode(m => m === 'webcam' ? 'cctv' : 'webcam')}
+                onPeopleDetected={(count) => {
+                  setLiveCounts(prev => ({ ...prev, [selected.id]: count }));
+                }}
+              />
+            </div>
+
+            {/* Live Telemetry & Inspector (1 Col) */}
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-3">
+                  <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB]">Live Node Telemetry</h3>
+                  <span className="text-[10px] font-mono font-bold bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0] px-2 py-0.5 rounded">
+                    ACTIVE SENSOR
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {tele.map((row, i) => (
+                    <div key={i} className="flex items-start justify-between gap-2 py-1.5 border-b border-[#F1F5F9] last:border-0">
+                      <span className="text-[11px] text-[#64748B] font-mono shrink-0">{row.label}</span>
+                      {row.isRisk ? (
+                        <span
+                          style={{ color: RISK[row.val]?.color, background: RISK[row.val]?.bg, borderColor: RISK[row.val]?.border }}
+                          className="text-[11px] font-bold px-2 py-0.5 rounded border font-mono"
+                        >
+                          {RISK[row.val]?.emoji} {row.val}
+                        </span>
+                      ) : (
+                        <span className={`text-[11px] font-mono font-bold text-right ${row.hi ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
+                          {row.val}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-[#E2E8F0] space-y-2">
+                <div className="text-[10px] font-mono text-[#64748B] uppercase">Mobile QR / Direct Link</div>
+                <div className="p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-mono text-[#334155] flex items-center justify-between">
+                  <span className="truncate">#/mobile-camera?camId={selected.id}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#/mobile-camera?camId=${selected.id}`);
+                      alert('Direct Mobile Node link copied to clipboard!');
+                    }}
+                    className="text-[#2563EB] hover:underline font-bold shrink-0 ml-2 cursor-pointer"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Grid View with Real Camera Recordings ── */}
+      {/* ── GRID VIEW (8 CCTV CAMERAS) ── */}
       {viewMode === 'grid' && (
-        <>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-[#64748B]">Filter by risk:</span>
-            {['ALL', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL'].map(r => (
-              <button key={r} onClick={() => setFilterRisk(r)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-md transition cursor-pointer
-                  ${filterRisk === r ? 'bg-[#2563EB] text-white' : 'bg-white border border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC]'}`}>
-                {r}
-              </button>
-            ))}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#64748B]">Filter by risk:</span>
+              {['ALL', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL'].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFilterRisk(r)}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    filterRisk === r ? 'bg-[#2563EB] text-white' : 'bg-white border border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC]'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <span className="text-xs font-mono text-[#64748B]">Click any feed to open in AI Node View</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {filtered.map(cam => (
-              <div key={cam.id}
-                onClick={() => { setSelectedId(cam.id); setViewMode('detail'); }}
-                className={`bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden cursor-pointer hover:border-[#2563EB] transition
-                  ${cam.id === selectedId ? 'ring-2 ring-[#2563EB]' : ''}`}>
+              <div
+                key={cam.id}
+                onClick={() => {
+                  setSelectedId(cam.id);
+                  setViewMode('detail');
+                }}
+                className={`bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden cursor-pointer hover:border-[#2563EB] transition group ${
+                  cam.id === selectedId ? 'ring-2 ring-[#2563EB]' : ''
+                }`}
+              >
                 <div className="p-3 bg-[#0B1120] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded">{cam.id}</span>
@@ -507,18 +1002,37 @@ export function LiveCamerasPage() {
                   </span>
                 </div>
                 
-                {/* Real Video Feed in Grid */}
-                <Feed cam={cam} tall={false} />
+                {/* Video Preview */}
+                <div className="relative aspect-[16/10] bg-black overflow-hidden">
+                  <video
+                    src={cam.videoUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {liveCounts[cam.id] ?? cam.people} bodies
+                  </div>
+                  <div className="absolute bottom-2 right-2 bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-mono text-slate-300">
+                    {cam.fps} FPS
+                  </div>
+                </div>
                 
                 <div className="p-2.5 bg-white text-[10px] font-mono text-[#64748B] flex items-center justify-between border-t border-[#E2E8F0]">
-                  <span>{cam.zone} • {cam.fps} FPS</span>
-                  <span className="text-[#2563EB] font-bold">Inspect Stream →</span>
+                  <span>{cam.zone} • {cam.location.split(',')[0]}</span>
+                  <span className="text-[#2563EB] font-bold">Inspect AI Feed →</span>
                 </div>
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
+
+      {/* ── Risk Engine Panel ── */}
+      <RiskEnginePanel cam={selected} />
     </div>
   );
 }

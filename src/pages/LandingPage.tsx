@@ -78,113 +78,123 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Right Column: Realistic Dashboard Preview (Not a generic AI illustration) */}
+            {/* Right Column: Realistic Dashboard Preview (White Theme) */}
             <div className="lg:col-span-6">
-              <div className="bg-[#0F172A] rounded-2xl border border-slate-800 shadow-2xl overflow-hidden text-white font-mono text-xs">
+              <div className="bg-white rounded-2xl border border-[#CBD5E1] shadow-[0_20px_50px_rgba(37,99,235,0.08),0_4px_12px_rgba(15,23,42,0.05)] overflow-hidden text-[#0F172A] font-mono text-xs ring-1 ring-slate-900/5">
                 {/* Preview Window Chrome */}
-                <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+                <div className="px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-semibold ml-2 font-sans">
+                    <span className="text-[12px] text-[#1E293B] font-bold ml-2 font-sans">
                       CrowdIQ Operations • Live Console
                     </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0] flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
                     SURVEILLANCE ONLINE
                   </span>
                 </div>
 
                 {/* Dashboard Preview Internal Content */}
-                <div className="p-4 sm:p-5 space-y-4 bg-slate-950">
+                <div className="p-4 sm:p-5 space-y-4 bg-white">
                   {/* KPI Row */}
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                      <span className="text-[9px] text-slate-400 uppercase">Headcount</span>
-                      <div className="text-base font-bold text-white mt-0.5">18,542</div>
-                      <span className="text-[9px] text-emerald-400">+12% flow</span>
+                  <div className="grid grid-cols-3 gap-2.5 text-center">
+                    <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-2xs">
+                      <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-wider">Headcount</span>
+                      <div className="text-xl font-extrabold text-[#0F172A] mt-0.5">18,542</div>
+                      <span className="text-[10px] text-[#16A34A] font-bold">↗ +12% flow</span>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                      <span className="text-[9px] text-slate-400 uppercase">Density Load</span>
-                      <div className="text-base font-bold text-amber-400 mt-0.5">78%</div>
-                      <span className="text-[9px] text-amber-400">High Zone</span>
+                    <div className="p-3 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] shadow-2xs">
+                      <span className="text-[10px] text-[#B45309] font-bold uppercase tracking-wider">Density Load</span>
+                      <div className="text-xl font-extrabold text-[#D97706] mt-0.5">78%</div>
+                      <span className="text-[10px] text-[#B45309] font-bold">High Zone</span>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                      <span className="text-[9px] text-slate-400 uppercase">Risk Index</span>
-                      <div className="text-base font-bold text-rose-400 mt-0.5">84/100</div>
-                      <span className="text-[9px] text-rose-400">Bottleneck</span>
+                    <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FCA5A5] shadow-2xs">
+                      <span className="text-[10px] text-[#B91C1C] font-bold uppercase tracking-wider">Risk Index</span>
+                      <div className="text-xl font-extrabold text-[#DC2626] mt-0.5">84/100</div>
+                      <span className="text-[10px] text-[#B91C1C] font-bold">Bottleneck</span>
                     </div>
                   </div>
 
                   {/* Split Screen: Camera YOLO Feed + Sector Heatmap */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Camera Feed Thumbnail */}
-                    <div className="relative aspect-[16/10] rounded-lg bg-slate-900 overflow-hidden border border-slate-800">
+                    {/* Camera Feed Thumbnail in Clean White Theme */}
+                    <div className="relative aspect-[16/10] rounded-xl bg-slate-100 overflow-hidden border border-[#CBD5E1] shadow-xs">
                       <img
-                        src="./assets/crowd_detection_cctv.jpg"
+                        src="./assets/crowd_detection_cctv_white.jpg"
                         alt="CCTV surveillance feed"
-                        className="w-full h-full object-cover opacity-85"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = '/CrowdIQ/assets/crowd_detection_cctv.jpg';
+                          e.currentTarget.src = './assets/crowd_detection_cctv.jpg';
                         }}
                       />
-                      {/* Bounding box simulation */}
-                      <div className="absolute top-[28%] left-[34%] w-[20%] h-[40%] border-2 border-emerald-400 bg-emerald-400/10 rounded-xs">
-                        <span className="absolute -top-3.5 left-0 bg-emerald-500 text-slate-950 font-bold text-[7px] px-1 rounded-xs">
+                      {/* Bounding box simulation 1 */}
+                      <div className="absolute top-[32%] left-[28%] w-[16%] h-[42%] border-2 border-[#16A34A] bg-[#16A34A]/15 rounded-xs pointer-events-none">
+                        <span className="absolute -top-3.5 left-0 bg-[#16A34A] text-white font-bold text-[8px] px-1 rounded-2xs shadow-xs">
                           P#42 98%
                         </span>
                       </div>
-                      <div className="absolute bottom-1.5 left-2 bg-black/80 px-2 py-0.5 rounded text-[9px] text-slate-300">
-                        CAM-02 • Gate 2 Turnstiles
+                      {/* Bounding box simulation 2 */}
+                      <div className="absolute top-[36%] left-[48%] w-[15%] h-[38%] border-2 border-[#2563EB] bg-[#2563EB]/15 rounded-xs pointer-events-none">
+                        <span className="absolute -top-3.5 left-0 bg-[#2563EB] text-white font-bold text-[8px] px-1 rounded-2xs shadow-xs">
+                          P#43 95%
+                        </span>
+                      </div>
+                      <div className="absolute bottom-1.5 left-2 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-md text-[9px] font-sans font-bold text-[#0F172A] border border-[#CBD5E1] shadow-2xs">
+                        CAM-02 • Terminal B Ingress
+                      </div>
+                      <div className="absolute top-1.5 right-2 bg-white/90 backdrop-blur-xs text-[#15803D] border border-[#BBF7D0] px-1.5 py-0.5 rounded text-[8px] font-bold shadow-2xs flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
+                        LIVE 30 FPS
                       </div>
                     </div>
 
-                    {/* Arena Sector Heatmap Thumbnail */}
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                    {/* Arena Sector Heatmap Thumbnail in White Theme */}
+                    <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-2xs flex flex-col justify-between">
                       <div className="flex items-center justify-between text-[10px]">
-                        <span className="font-bold text-slate-300">Arena Floorplan</span>
-                        <span className="text-rose-400 font-bold">Gate B Surge</span>
+                        <span className="font-bold text-[#0F172A] font-sans">Terminal Floorplan</span>
+                        <span className="text-[#DC2626] font-bold bg-[#FEF2F2] px-1.5 py-0.5 rounded border border-[#FCA5A5]">Gate B Surge</span>
                       </div>
                       <div className="space-y-1.5 my-2">
-                        <div className="flex items-center justify-between text-[9px] text-slate-400">
-                          <span>Gate A (North)</span>
-                          <span className="text-emerald-400 font-bold">38% Safe</span>
+                        <div className="flex items-center justify-between text-[9px] text-[#475569]">
+                          <span className="font-medium">Gate A (North)</span>
+                          <span className="text-[#16A34A] font-bold">38% Safe</span>
                         </div>
-                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-emerald-500 h-full w-[38%]"></div>
+                        <div className="w-full bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-[#16A34A] h-full w-[38%]"></div>
                         </div>
-                        <div className="flex items-center justify-between text-[9px] text-slate-400">
-                          <span>Gate B (East)</span>
-                          <span className="text-rose-400 font-bold">94% Critical</span>
+                        <div className="flex items-center justify-between text-[9px] text-[#475569]">
+                          <span className="font-medium">Gate B (East)</span>
+                          <span className="text-[#DC2626] font-bold">94% Critical</span>
                         </div>
-                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-rose-500 h-full w-[94%]"></div>
+                        <div className="w-full bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-[#DC2626] h-full w-[94%]"></div>
                         </div>
-                        <div className="flex items-center justify-between text-[9px] text-slate-400">
-                          <span>Central Plaza</span>
-                          <span className="text-amber-400 font-bold">82% High</span>
+                        <div className="flex items-center justify-between text-[9px] text-[#475569]">
+                          <span className="font-medium">Central Plaza</span>
+                          <span className="text-[#D97706] font-bold">82% High</span>
                         </div>
-                        <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-amber-500 h-full w-[82%]"></div>
+                        <div className="w-full bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-[#F59E0B] h-full w-[82%]"></div>
                         </div>
                       </div>
-                      <div className="text-[9px] text-slate-500">
+                      <div className="text-[9px] text-[#64748B] font-mono border-t border-[#E2E8F0] pt-1">
                         Inflow: 214 p/min • Egress: 98 p/min
                       </div>
                     </div>
                   </div>
 
-                  {/* Active Alert Ticker */}
-                  <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-[10px] text-rose-300">
+                  {/* Active Alert Ticker in White Theme */}
+                  <div className="p-2.5 rounded-xl bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-between text-[11px] text-[#991B1B] shadow-2xs">
                     <span className="flex items-center gap-1.5 font-bold">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />
                       <span>CRITICAL: Gate 2 Bottleneck Detected (+18 p/min)</span>
                     </span>
-                    <span className="font-bold text-rose-400">20:24 IST</span>
+                    <span className="font-bold text-[#DC2626] font-mono bg-white px-2 py-0.5 rounded border border-[#FCA5A5]">20:24 IST</span>
                   </div>
                 </div>
               </div>
@@ -429,26 +439,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   { id: 'CAM-02', name: 'Gate 2 Turnstiles', zone: 'Gate B', people: 67, density: '59%', risk: 'MODERATE', riskColor: 'text-[#D97706]', border: 'border-[#FDE68A]' },
                   { id: 'CAM-04', name: 'Central Arena Plaza', zone: 'Core', people: 84, density: '82%', risk: 'HIGH', riskColor: 'text-[#DC2626]', border: 'border-[#FCA5A5]' },
                 ].map(cam => (
-                  <div key={cam.id} className="rounded-xl border border-[#CBD5E1] bg-[#0F172A] overflow-hidden text-white font-mono text-xs">
-                    <div className="relative aspect-[16/9] bg-slate-900 overflow-hidden">
+                  <div key={cam.id} className="rounded-xl border border-[#CBD5E1] bg-white overflow-hidden shadow-xs text-[#0F172A] font-mono text-xs">
+                    <div className="relative aspect-[16/9] bg-slate-100 overflow-hidden border-b border-[#E2E8F0]">
                       <img
-                        src="./assets/crowd_detection_cctv.jpg"
+                        src="./assets/crowd_detection_cctv_white.jpg"
                         alt={cam.name}
-                        className="w-full h-full object-cover opacity-85"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = '/CrowdIQ/assets/crowd_detection_cctv.jpg';
+                          e.currentTarget.src = './assets/crowd_detection_cctv.jpg';
                         }}
                       />
-                      <div className="absolute top-1.5 left-2 bg-black/70 px-1.5 py-0.5 rounded text-[9px]">
+                      <div className="absolute top-1.5 left-2 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded text-[10px] font-bold text-[#0F172A] border border-[#CBD5E1] shadow-2xs">
                         {cam.id}
                       </div>
-                      <div className="absolute bottom-1.5 right-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                      <div className="absolute bottom-1.5 right-2 bg-white/95 backdrop-blur-xs text-[#15803D] border border-[#BBF7D0] px-1.5 py-0.5 rounded text-[9px] font-bold shadow-2xs flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>
                         30 FPS
                       </div>
                     </div>
-                    <div className="p-3 space-y-1 bg-slate-950">
-                      <div className="font-bold text-white truncate">{cam.name}</div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="p-3 space-y-1.5 bg-[#F8FAFC]">
+                      <div className="font-bold text-[#0F172A] truncate font-sans text-xs">{cam.name}</div>
+                      <div className="flex items-center justify-between text-[11px] text-[#64748B]">
                         <span>Zone: {cam.zone}</span>
                         <span className={`font-bold ${cam.riskColor}`}>{cam.risk} ({cam.density})</span>
                       </div>
